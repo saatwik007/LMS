@@ -1,0 +1,7 @@
+    <svg width="140" height="140" viewBox="0 0 90 90">
+               <ellipse cx="45" cy="55" rx="30" ry="28" fill="#a3e635" />
+               <ellipse cx="32" cy="53" rx="7" ry="9" fill="#fff" />
+               <ellipse cx="58" cy="51" rx="7" ry="9" fill="#fff" />
+               {/* Eyes (star-eyes if second message) */}
+               <ellipse cx="45" cy="70" rx="7" ry="4" fill="#2dd4bf" />
+             </svg>
