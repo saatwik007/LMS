@@ -34,3 +34,21 @@ Built with the MERN stack and Next.js for high-performance, interactive learning
    ```bash
    git clone https://github.com/your-username/your-repo.git
    cd your-repo
+2. **Install Backend dependencies:**
+   ```For backend
+   cd LMS/server
+   npm install
+3. **Install Frontend dependencies:**
+   ```For frontend:
+   cd LMS/client/codingo
+   npm install
+4. **Install Frontend dependencies:**
+   ```Set up environment variables:
+   Create a .env file in server with your MongoDB URI, JWT secret, etc.
+5. **Run the app:**
+   ```Start Frontend:
+   npm run dev
+   ```Start Backend:
+   npm start
+   
+   
