@@ -56,7 +56,7 @@ export default function CodingLanguageSelector() {
             <button
               key={lang.name}
               className="flex flex-col items-center justify-center p-6 bg-gray-900 hover:bg-gray-800 border-2 border-gray-800 hover:border-emerald-400 rounded-xl shadow hover:shadow-emerald-500/20 group transition-all cursor-pointer"
-              onClick={() => navigate("/welcome")}
+              onClick={() => navigate("/signup")}
             >
               <img
                 src={lang.icon}

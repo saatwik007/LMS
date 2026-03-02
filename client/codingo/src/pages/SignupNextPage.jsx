@@ -20,7 +20,7 @@ export default function SignupProfile() {
   setErrorMsg("");
   try {
     const apiUrl = import.meta.env.VITE_API_URL || "";
-    await axios.post(`${apiUrl}/api/auth/register`, {
+    await axios.post(`${apiUrl}/api/auth/user/register`, {
       username: name, // or use a separate username field
       email,
       password: pw,

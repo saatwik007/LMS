@@ -20,7 +20,7 @@ const LoginHero = () => {
     try {
       // Update with your backend login API endpoint
 const apiUrl = import.meta.env.VITE_API_URL || "";
-const res = await axios.post(`${apiUrl}/api/auth/login`, {
+const res = await axios.post(`${apiUrl}/api/auth/user/login`, {
   emailOrUsername,
   password,
 });
