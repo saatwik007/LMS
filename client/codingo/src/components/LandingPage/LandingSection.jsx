@@ -4,14 +4,13 @@ import Robo from './Robo';
 
 
 const   LandingSection = () => {
-  
-  // const navigate = useNavigate();
-  // const handleLogin = () => {
-  //   navigate("/Login");
-  // };
-  // const handleRegister = () => {
-  //   navigate("/Register");
-  // }
+  const navigate = useNavigate();
+  const handleLogin = () => {
+    navigate("/Login");
+  };
+  const handleRegister = () => {
+    navigate("/Register");
+  }
 
   return (
     <div className="bg-gray-900 min-h-screen flex flex-col font-sans text-white">
@@ -35,10 +34,10 @@ const   LandingSection = () => {
           </p>
 
           <div className="flex gap-4">
-            <button className="px-6 py-3 rounded-md font-semibold shadow-lg hover:scale-105 transform transition">
+            <button onClick={handleRegister} className="px-6 py-3 rounded-md font-semibold shadow-lg hover:scale-105 transform transition">
               EXPLORE COURSES
             </button>
-            <button className="px-6 py-3 rounded-md border border-white/10 text-sm hover:bg-white/5 transition">
+            <button onClick={handleLogin} className="px-6 py-3 rounded-md border border-white/10 text-sm hover:bg-white/5 transition">
               Learn More
             </button>
           </div>

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { LanguagePage, HomePage } from "../../../../../../../Users/rahul/Downloads/Codify";
+// import { LanguagePage, HomePage } from "../../../../../../../Users/rahul/Downloads/Codify";
 
 // You can replace these emoji and bg gradients with your own SVGs/images
 const Features = [

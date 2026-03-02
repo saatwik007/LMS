@@ -36,6 +36,7 @@ const [currentLang, setCurrentLang] = useState(null);
         <Route path="/Dashboard" element={<DashboardPage  />} />
         <Route path="/Welcome" element={<WelcomePage  />} />
         <Route path="/levels" element={<LevelsPage />} />
+        <Route path="/levels/:courseId" element={<LevelsPageWrapper />} />
         <Route path="/languagepage" element={<LanguagePage />} /> 
         {/* Add more routes as needed */}
       </Routes>
@@ -57,6 +58,17 @@ function LanguagePageWrapper() {
       onBack={() => navigate("/")}
     />
   );
+}
+
+function LevelsPageWrapper() {
+  const { courseId } = useParams();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [courseId]);
+
+  return <LevelsPage courseId={courseId} onBack={() => navigate("/dashboard")} />;
 }
 
 export default App

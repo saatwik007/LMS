@@ -1,18 +1,10 @@
-// server.js
+// File used to start server
+
 require('dotenv').config();
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
+const app = require('./src/app');
+const connectDB = require('./src/db/db');
 
-const app = express();
-app.use(express.json());
-app.use(cors());
-
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB error:', err));
-
-app.use('/api/auth', require('./routes/auth'));
+connectDB();
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
