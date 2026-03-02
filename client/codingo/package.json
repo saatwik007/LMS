@@ -31,6 +31,11 @@
     "globals": "^16.5.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.18",
-    "vite": "^7.2.4"
-  }
+    "vite": "^7.3.0"
+  },
+  "description": "A scalable, gamified Learning Management System (LMS) for coders, inspired by Duolingo.  \r Built with the MERN stack and Next.js for high-performance, interactive learning.",
+  "main": "eslint.config.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }
