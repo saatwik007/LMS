@@ -2,10 +2,10 @@ import React from "react";
 
 export default function LearnAnywhereSection() {
   return (
-    <section className="relative w-full bg-gray-950 py-20 overflow-hidden flex flex-col items-center">
+    <section className="relative w-full bg-gray-900 py-20 overflow-hidden flex flex-col items-center">
       {/* Floating Images & Icons */}
       {/* Use your own SVGs or keep these emojis/placeholders */}
-      <div className="absolute left-0 top-1/3 w-24 h-24 hidden md:flex items-center justify-center animate-float-slow">
+      {/* <div className="absolute left-0 top-1/3 w-24 h-24 hidden md:flex items-center justify-center animate-float-slow">
         <span className="text-5xl">📱</span>
       </div>
       <div className="absolute right-0 top-12 w-24 h-24 hidden md:flex items-center justify-center animate-float">
@@ -22,17 +22,17 @@ export default function LearnAnywhereSection() {
       </div>
       <div className="absolute right-1/4 top-32 w-16 h-16 hidden md:flex items-center justify-center animate-float-slow">
         <span className="text-4xl">✨</span>
-      </div>
+      </div> */}
         
       {/* Headline */}
-      <h2 className="text-4xl md:text-5xl font-bold text-cyan-300 text-center mb-10 z-10 select-none" style={{fontFamily: 'Sora, Inter, sans-serif'}}>
+      <h2 className="text-4xl md:text-5xl font-bold text-cyan-200 text-center mb-10 z-10 select-none" style={{fontFamily: 'Sora, Inter, sans-serif'}}>
         learn anytime,<br className="hidden md:block" /> anywhere
       </h2>
       {/* App store buttons (Replace with actual links/svg as you desire) */}
-      <div className="flex gap-6 mb-10 z-10">
+      <div className="flex gap-6 max-w-200 mb-10 z-10">
         <a
           href="#"
-          className="flex items-center gap-3 bg-white rounded-xl px-6 py-4 shadow-lg hover:shadow-xl border border-gray-300 transition"
+          className="flex items-center gap-3 bg-white rounded-xl px-6 py-4 shadow-lg hover:scale-105 border border-gray-300 transition"
         >
           {/* <img
             src="https://upload.wikimedia.org/wikipedia/commons/a/ab/Apple-logo.png"
@@ -47,7 +47,7 @@ export default function LearnAnywhereSection() {
         </a>
         <a
           href="#"
-          className="flex items-center gap-3 bg-white rounded-xl px-6 py-4 shadow-lg hover:shadow-xl border border-gray-300 transition"
+          className="flex items-center gap-3 bg-white rounded-xl px-6 py-4 shadow-lg hover:scale-105 border border-gray-300 transition"
         >
           {/* <img
             src="https://upload.wikimedia.org/wikipedia/commons/d/d0/Google_Play_Arrow_logo.png"
@@ -62,9 +62,9 @@ export default function LearnAnywhereSection() {
         </a>
       </div>
       {/* Extra mobile device placeholder bottom */}
-      <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-44 h-20 hidden md:flex animate-float-fast">
+      {/* <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-44 h-20 hidden md:flex animate-float-fast">
         <span className="text-7xl">📲</span>
-      </div>
+      </div> */}
       {/* Animations */}
       <style>
         {`

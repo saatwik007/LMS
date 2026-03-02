@@ -2,7 +2,7 @@ import React from "react";
 
 export default function Footer() {
   return (
-<footer className="w-full bg-gradient-to-r from-cyan-400 to-emerald-400  text-gray-900 font-bold pt-12 pb-4 px-2 md:px-12">
+<footer className="w-full bg-gray-900 text-gray-400 font-bold pt-12 pb-4 px-2 md:px-12">
       {/* Top grid */}
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-5 gap-10 md:gap-4">
         {/* About us */}
@@ -77,14 +77,14 @@ export default function Footer() {
       </div>
 
       {/* Bottom section */}
-      <div className="mt-10 pt-6 border-t border-gray-950">
+      {/* <div className="mt-10 pt-6 border-t border-gray-950">
         <div className="max-w-7xl mx-auto px-2 md:px-0 text-[15px]">
           <span className="font-extrabold mb-2 block">Site language:</span>
           <div className="flex flex-wrap gap-3 items-center mt-2 text-[15px] font-semibold">
             العربية বাংলা Čeština Deutsch Ελληνικά English Español Français हिन्दी Magyar Bahasa Indonesia Italiano 日本語 한국어 Nederlands Polski Português Română Русский svenska தமிழ் తెలుగు ภาษาไทย Tagalog Türkçe Українська Tiếng Việt 中文
           </div>
         </div>
-      </div>
+      </div> */}
     </footer>
   );
 }
