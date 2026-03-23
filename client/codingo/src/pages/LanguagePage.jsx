@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
-import LandingPage from './LandingPage';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { courseCatalog } from "../data/courseCatalog.jsx";
 
-function InfoSection({ section, accentColor }) {
+function SkillBadgeIcon({ size = 80, label = "AI", bg = "#0ea5e9", fg = "#ffffff" }) {
+  const textSize = label.length >= 4 ? "text-xs" : "text-sm";
   return (
-    <div className="mb-9">
-      <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-        <span className="w-2 h-2 rounded-full inline-block" style={{ background: accentColor }} />
-        {section.heading}
-      </h3>
-      <p className="text-gray-400 leading-relaxed text-sm">{section.content}</p>
+    <div
+      style={{ width: size, height: size, backgroundColor: bg, color: fg }}
+      className="rounded-2xl flex items-center justify-center font-black tracking-wide shadow-lg"
+    >
+      <span className={textSize}>{label}</span>
     </div>
   );
 }
@@ -50,10 +51,6 @@ function JavaIcon({ size = 80 }) {
       <path fill="#F44336" d="M23.65,24.898c-0.998-1.609-1.722-2.943-2.725-5.455C19.229,15.2,31.24,11.366,26.37,3.999c2.111,5.089-7.577,8.235-8.477,12.473C17.07,20.37,23.645,24.898,23.65,24.898z" />
       <path fill="#F44336" d="M23.878,17.27c-0.192,2.516,2.229,3.857,2.299,5.695c0.056,1.496-1.447,2.743-1.447,2.743s2.728-0.536,3.579-2.818c0.945-2.534-1.834-4.269-1.548-6.298c0.267-1.938,6.031-5.543,6.031-5.543S24.311,11.611,23.878,17.27z" />
       <path fill="#1565C0" d="M32.084 25.055c1.754-.394 3.233.723 3.233 2.01 0 2.901-4.021 5.643-4.021 5.643s6.225-.742 6.225-5.505C37.521 24.053 34.464 23.266 32.084 25.055zM29.129 27.395c0 0 1.941-1.383 2.458-1.902-4.763 1.011-15.638 1.147-15.638.269 0-.809 3.507-1.638 3.507-1.638s-7.773-.112-7.773 2.181C11.683 28.695 21.858 28.866 29.129 27.395z" />
-      <path fill="#1565C0" d="M27.935,29.571c-4.509,1.499-12.814,1.02-10.354-0.993c-1.198,0-2.974,0.963-2.974,1.889c0,1.857,8.982,3.291,15.63,0.572L27.935,29.571z" />
-      <path fill="#1565C0" d="M18.686,32.739c-1.636,0-2.695,1.054-2.695,1.822c0,2.391,9.76,2.632,13.627,0.205l-2.458-1.632C24.271,34.404,17.014,34.579,18.686,32.739z" />
-      <path fill="#1565C0" d="M36.281,36.632c0-0.936-1.055-1.377-1.433-1.588c2.228,5.373-22.317,4.956-22.317,1.784c0-0.721,1.807-1.427,3.477-1.093l-1.42-0.839C11.26,34.374,9,35.837,9,37.017C9,42.52,36.281,42.255,36.281,36.632z" />
-      <path fill="#1565C0" d="M39,38.604c-4.146,4.095-14.659,5.587-25.231,3.057C24.341,46.164,38.95,43.628,39,38.604z" />
     </svg>
   );
 }
@@ -61,7 +58,7 @@ function JavaIcon({ size = 80 }) {
 function JsIcon({ size = 80 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-      <rect width="64" height="64" rx="8" fill="#FFFF00" />
+      <rect width="64" height="64" rx="8" fill="#ffff00" />
       <text x="50%" y="65%" textAnchor="middle" fontSize="28" fontWeight="500" fill="#000" fontFamily="Arial, Helvetica, sans-serif">JS</text>
     </svg>
   );
@@ -71,15 +68,11 @@ function CppIcon({ size = 80 }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 48 48">
       <path fill="#00549d" fillRule="evenodd" d="M22.903,3.286c0.679-0.381,1.515-0.381,2.193,0c3.355,1.883,13.451,7.551,16.807,9.434C42.582,13.1,43,13.804,43,14.566c0,3.766,0,15.101,0,18.867c0,0.762-0.418,1.466-1.097,1.847c-3.355,1.883-13.451,7.551-16.807,9.434c-0.679,0.381-1.515,0.381-2.193,0c-3.355-1.883-13.451-7.551-16.807-9.434C5.418,34.899,5,34.196,5,33.434c0-3.766,0-15.101,0-18.867c0-0.762,0.418-1.466,1.097-1.847C9.451,10.837,19.549,5.169,22.903,3.286z" clipRule="evenodd" />
-      <path fill="#0086d4" fillRule="evenodd" d="M5.304,34.404C5.038,34.048,5,33.71,5,33.255c0-3.744,0-15.014,0-18.759c0-0.758,0.417-1.458,1.094-1.836c3.343-1.872,13.405-7.507,16.748-9.38c0.677-0.379,1.594-0.371,2.271,0.008c3.343,1.872,13.371,7.459,16.714,9.331c0.27,0.152,0.476,0.335,0.66,0.576L5.304,34.404z" clipRule="evenodd" />
-      <path fill="#fff" fillRule="evenodd" d="M24,10c7.727,0,14,6.273,14,14s-6.273,14-14,14s-14-6.273-14-14S16.273,10,24,10z M24,17c3.863,0,7,3.136,7,7c0,3.863-3.137,7-7,7s-7-3.137-7-7C17,20.136,20.136,17,24,17z" clipRule="evenodd" />
-      <path fill="#0075c0" fillRule="evenodd" d="M42.485,13.205c0.516,0.483,0.506,1.211,0.506,1.784c0,3.795-0.032,14.589,0.009,18.384c0.004,0.396-0.127,0.813-0.323,1.127L23.593,24L42.485,13.205z" clipRule="evenodd" />
-      <path fill="#fff" fillRule="evenodd" d="M31 21H33V27H31zM38 21H40V27H38z" clipRule="evenodd" />
-      <path fill="#fff" fillRule="evenodd" d="M29 23H35V25H29zM36 23H42V25H36z" clipRule="evenodd" />
     </svg>
   );
 }
 
+<<<<<<< HEAD
 
 const languageData = {
 html: {
@@ -282,134 +275,152 @@ css: {
       }
     ]
   }
+=======
+const iconMap = {
+  python: PythonIcon,
+  java: JavaIcon,
+  javascript: JsIcon,
+  cpp: CppIcon,
+  claude: (props) => <SkillBadgeIcon {...props} label="CL" bg="#6d28d9" />,
+  aws: (props) => <SkillBadgeIcon {...props} label="AWS" bg="#b45309" />,
+  azure: (props) => <SkillBadgeIcon {...props} label="AZ" bg="#0ea5e9" />,
+  gcp: (props) => <SkillBadgeIcon {...props} label="GCP" bg="#2563eb" />,
+  ml: (props) => <SkillBadgeIcon {...props} label="ML" bg="#0f766e" />,
+  dl: (props) => <SkillBadgeIcon {...props} label="DL" bg="#312e81" />,
+  nlp: (props) => <SkillBadgeIcon {...props} label="NLP" bg="#be185d" />,
+  data: (props) => <SkillBadgeIcon {...props} label="DATA" bg="#0f766e" />,
+  sql: (props) => <SkillBadgeIcon {...props} label="SQL" bg="#1d4ed8" />,
+  spark: (props) => <SkillBadgeIcon {...props} label="SPK" bg="#b45309" />,
+  docker: (props) => <SkillBadgeIcon {...props} label="DKR" bg="#0284c7" />,
+  k8s: (props) => <SkillBadgeIcon {...props} label="K8S" bg="#4338ca" />,
+  security: (props) => <SkillBadgeIcon {...props} label="SEC" bg="#991b1b" />,
+  dsa: (props) => <SkillBadgeIcon {...props} label="DSA" bg="#1f2937" />
+>>>>>>> e00a5573103f84dcb993544902de6c298ac7ce59
 };
 
- function App() {
-  const [currentLang, setCurrentLang] = useState(null);
+const DefaultCourseIcon = (props) => <SkillBadgeIcon {...props} label="CRS" bg="#334155" />;
 
-  if (currentLang) {
-    return <LanguagePage langId={currentLang} onBack={() => setCurrentLang(null)} />;
-  }
-  return <LandingPage onSelect={setCurrentLang} />;
+function InfoSection({ section, accentColor }) {
+  return (
+    <div className="mb-9">
+      <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+        <span className="w-2 h-2 rounded-full inline-block" style={{ background: accentColor }} />
+        {section.heading}
+      </h3>
+      <p className="text-gray-400 leading-relaxed text-sm">{section.content}</p>
+    </div>
+  );
 }
 
-const LanguagePage = ({ langId, onBack }) => {
-  const lang = languageData[langId];
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+function MarketStat({ label, value }) {
+  return (
+    <div className="rounded-xl border border-[#1f2a38] bg-[#141b24] px-4 py-3">
+      <div className="text-xs uppercase tracking-wider text-gray-500">{label}</div>
+      <div className="text-sm sm:text-base text-white font-bold mt-1">{value}</div>
+    </div>
+  );
+}
+
+const LanguagePage = ({ langId }) => {
+  const lang = courseCatalog[langId];
   const [readMore, setReadMore] = useState(false);
-  const [searchVal, setSearchVal] = useState("");
+  const navigate = useNavigate();
 
-  if (!lang) return null;
-  const Icon = lang.icon;
+  if (!lang) {
+    return (
+      <div className="min-h-screen bg-[#0f1419] text-white p-6">
+        <div className="max-w-3xl mx-auto bg-[#1a2332] border border-[#2a3a4a] rounded-2xl p-6">
+          <h1 className="text-2xl font-bold mb-2">Course not found</h1>
+          <p className="text-gray-400">This course is not in the catalog yet.</p>
+          <button
+            type="button"
+            onClick={() => navigate("/learn")}
+            className="mt-4 px-4 py-2 rounded-lg bg-linear-to-r from-cyan-400 to-emerald-400 text-gray-950 font-bold"
+          >
+            Go to Learn Page
+          </button>
+        </div>
+      </div>
+    );
+  }
 
+  const Icon = iconMap[lang.icon] || DefaultCourseIcon;
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col font-sans">
-      {/* ── Header ── */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-gray-900/90 backdrop-blur border-b border-white/5 flex items-center px-6 py-3 gap-4">
-        {/* Logo */}
-        <button onClick={onBack} className="text-2xl font-black tracking-tight select-none" style={{ color: "#60a5fa", textShadow: "0 0 18px #3b82f6, 0 0 40px #1d4ed8" }}>
-          Codify
-        </button>
-        {/* Search */}
-        <div className="flex-1 flex justify-center">
-          <div className="relative w-full max-w-md">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            </span>
-            <input
-              value={searchVal}
-              onChange={e => setSearchVal(e.target.value)}
-              placeholder="Search languages, topics…"
-              className="w-full bg-gray-800/60 border border-white/10 rounded-full pl-9 pr-4 py-2 text-sm text-gray-200 placeholder-gray-500 outline-none focus:border-blue-500/50 transition"
-            />
-          </div>
-        </div>
-        {/* Nav buttons */}
-        <div className="flex items-center gap-3">
-          <button className="text-sm text-gray-400 hover:text-gray-200 transition">Contact Us</button>
-          <button className="text-sm bg-gray-700/60 hover:bg-gray-600/70 text-gray-200 border border-white/10 rounded-full px-4 py-1.5 transition">Sign Up</button>
-        </div>
-      </header>
-
-      {/* ── Hero: top 60vh ── */}
-      
-      <div className="pt-14 flex" style={{ height: "60vh" }}>
-        {/* Left: Logo showcase */}
-        <div className={`w-1/2 bg-linear-to-br ${lang.gradient} flex flex-col items-center justify-center gap-6 relative overflow-hidden`}>
-        
-          {/* Decorative glow rings */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[60vh]">
+        <div className={`w-full bg-linear-to-br ${lang.gradient} flex flex-col items-center justify-center gap-6 relative overflow-hidden px-4 py-10 sm:py-12`}>
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="w-72 h-72 rounded-full opacity-10 blur-3xl" style={{ background: lang.accentColor }} />
           </div>
           <div className="relative z-10 flex flex-col items-center gap-4">
             <div className="p-6 rounded-3xl bg-gray-900/50 backdrop-blur border border-white/10 shadow-2xl" style={{ boxShadow: `0 0 60px ${lang.accentColor}33` }}>
-              <Icon size={100} />
+              <Icon size={80} />
             </div>
             <div className="text-center">
-              <h1 className="text-4xl font-black text-white tracking-tight">{lang.title}</h1>
+              <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">{lang.title}</h1>
               <p className="text-sm mt-1 font-medium" style={{ color: lang.accentLight }}>{lang.tagline}</p>
             </div>
-
-            {/* Pills */}
             <div className="flex gap-2 flex-wrap justify-center">
-              {["Open Source", "High Demand", "Cross-Platform"].map(tag => (
+              {[
+                `${lang.domain}`,
+                `${lang.level}`,
+                "Career Track"
+              ].map((tag) => (
                 <span key={tag} className="text-xs px-3 py-1 rounded-full bg-white/5 border border-white/10 text-gray-300">{tag}</span>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Right: Sign In */}
-        <div className="w-1/2 bg-gray-900 flex flex-col items-center justify-center px-10">
-          <div className="w-full max-w-sm">
-            <h2 className="text-2xl font-bold text-white mb-1">Welcome back</h2>
-            <p className="text-gray-500 text-sm mb-7">Sign in to continue your learning journey</p>
+        <div className="w-full bg-gray-900 flex flex-col items-center justify-center px-4 sm:px-8 lg:px-10 py-10 sm:py-12">
+          <div className="w-full max-w-sm bg-[#1a2332] border border-[#2a3a4a] rounded-2xl p-5 sm:p-6">
+            <h2 className="text-2xl font-bold text-white mb-1">{lang.title} Market Snapshot</h2>
+            <p className="text-gray-400 text-sm mb-5">See demand, salary potential, and start now.</p>
 
-            <div className="space-y-4">
-              <div>
-                <label className="text-xs text-gray-500 uppercase tracking-widest mb-1.5 block">Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="w-full bg-gray-800/50 border border-white/8 rounded-xl px-4 py-3 text-sm text-gray-200 placeholder-gray-600 outline-none focus:border-white/20 transition"
-                />
+            <div className="space-y-3">
+              <MarketStat label="People Enrolled" value={lang.enrolled} />
+              <MarketStat label="Current Market Heat" value={lang.marketHotness} />
+              <MarketStat label="Expected Salary (after proficiency)" value={lang.salary} />
+
+              <div className="rounded-xl border border-[#1f2a38] bg-[#141b24] px-4 py-3">
+                <div className="flex items-center justify-between text-xs text-gray-500 uppercase tracking-wider">
+                  <span>Hotness Score</span>
+                  <span>{lang.hotnessScore}/100</span>
+                </div>
+                <div className="w-full mt-2 h-2 rounded-full bg-[#0f1419] border border-[#22303d] overflow-hidden">
+                  <div
+                    className="h-full bg-linear-to-r from-cyan-400 to-emerald-400"
+                    style={{ width: `${lang.hotnessScore}%` }}
+                  />
+                </div>
               </div>
-              <div>
-                <label className="text-xs text-gray-500 uppercase tracking-widest mb-1.5 block">Password</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full bg-gray-800/50 border border-white/8 rounded-xl px-4 py-3 text-sm text-gray-200 placeholder-gray-600 outline-none focus:border-white/20 transition"
-                />
-              </div>
-              <div className="flex justify-end">
-                <button className="text-xs text-gray-500 hover:text-gray-300 transition">Forgot password?</button>
-              </div>
-              <button
-                className="w-full py-3 rounded-xl text-sm font-semibold text-white transition hover:opacity-90 active:scale-95"
-                style={{ background: `linear-gradient(135deg, ${lang.accentColor}, ${lang.accentLight})`, boxShadow: `0 4px 20px ${lang.accentColor}44` }}
-              >
-                Sign In
-              </button>
-              <p className="text-center text-xs text-gray-600">
-                Don't have an account?{" "}
-                <button className="text-gray-400 hover:text-white transition underline underline-offset-2">Create one</button>
-              </p>
             </div>
+
+            <button
+              type="button"
+              onClick={() => navigate(`/levels/${lang.id}`)}
+              className="w-full mt-5 py-3 rounded-xl text-sm font-semibold text-white transition hover:opacity-90 active:scale-95"
+              style={{
+                background: `linear-gradient(135deg, ${lang.accentColor}, ${lang.accentLight})`,
+                boxShadow: `0 4px 20px ${lang.accentColor}44`
+              }}
+            >
+              Start {lang.title} Course
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/learn")}
+              className="w-full mt-3 py-2.5 rounded-xl text-sm font-semibold border border-[#2a3a4a] text-cyan-300 hover:bg-[#141b24]"
+            >
+              View All Courses
+            </button>
           </div>
         </div>
       </div>
 
-      {/* ── Info: bottom 40vh+ ── */}
       <div className="flex-1 bg-gray-900 px-6 md:px-16 py-14">
         <div className="max-w-4xl mx-auto">
-          {/* Summary */}
           <div className="mb-10">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-1 h-8 rounded-full" style={{ background: lang.accentColor }} />
@@ -418,15 +429,13 @@ const LanguagePage = ({ langId, onBack }) => {
             <p className="text-gray-400 leading-relaxed text-base">{lang.summary}</p>
           </div>
 
-          {/* First 2 sections always visible */}
           {lang.info.slice(0, 2).map((section, i) => (
             <InfoSection key={i} section={section} accentColor={lang.accentColor} />
           ))}
 
-          {/* Read more toggle */}
           <div className="mt-8">
             <button
-              onClick={() => setReadMore(r => !r)}
+              onClick={() => setReadMore((r) => !r)}
               className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-300 transition group"
               style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
             >
@@ -445,11 +454,10 @@ const LanguagePage = ({ langId, onBack }) => {
         </div>
       </div>
 
-      {/* ── Footer ── */}
       <Footer accentColor={lang.accentColor} />
     </div>
   );
-}
+};
 
 function Footer({ accentColor }) {
   return (
@@ -462,7 +470,7 @@ function Footer({ accentColor }) {
         <div>
           <h4 className="text-xs uppercase tracking-widest text-gray-400 mb-3">Platform</h4>
           <ul className="space-y-2">
-            {["Courses", "Challenges", "Leaderboard", "Streaks"].map(l => (
+            {["Courses", "Challenges", "Leaderboard", "Streaks"].map((l) => (
               <li key={l}><button className="hover:text-gray-300 transition text-left">{l}</button></li>
             ))}
           </ul>
@@ -470,7 +478,7 @@ function Footer({ accentColor }) {
         <div>
           <h4 className="text-xs uppercase tracking-widest text-gray-400 mb-3">Company</h4>
           <ul className="space-y-2">
-            {["About", "Blog", "Careers", "Press"].map(l => (
+            {["About", "Blog", "Careers", "Press"].map((l) => (
               <li key={l}><button className="hover:text-gray-300 transition text-left">{l}</button></li>
             ))}
           </ul>
@@ -478,7 +486,7 @@ function Footer({ accentColor }) {
         <div>
           <h4 className="text-xs uppercase tracking-widest text-gray-400 mb-3">Support</h4>
           <ul className="space-y-2">
-            {["Help Center", "Contact Us", "Privacy", "Terms"].map(l => (
+            {["Help Center", "Contact Us", "Privacy", "Terms"].map((l) => (
               <li key={l}><button className="hover:text-gray-300 transition text-left">{l}</button></li>
             ))}
           </ul>
@@ -491,5 +499,4 @@ function Footer({ accentColor }) {
   );
 }
 
-
-export default LanguagePage
+export default LanguagePage;

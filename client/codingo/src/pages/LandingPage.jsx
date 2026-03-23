@@ -1,5 +1,10 @@
 import React from "react";
 import FeatureSection from "../components/LandingPage/FeatureSection";
+<<<<<<< HEAD
+=======
+import LearnAnywhereSection from "../components/LandingPage/LearnAnyWhereSection";
+import LandingSubscription from "../components/LandingPage/LandingSubscription";
+>>>>>>> e00a5573103f84dcb993544902de6c298ac7ce59
 import LandingFooter from "../components/LandingPage/LandingFooter";
 import LandingSection from "../components/LandingPage/LandingSection";
 import { useNavigate } from "react-router-dom";
@@ -19,6 +24,7 @@ export default function LandingPage() {
   };
   return (
     <>
+<<<<<<< HEAD
       <ParticleCanvas />
       <div className="z-10 overflow-x-hidden" style={{ background: "#111113", color: "#f0f0f5" }}>
       <Header />
@@ -34,6 +40,14 @@ export default function LandingPage() {
       <Divider />
       <LandingFooter />
       </div>
+=======
+      <LandingSection onSelectLanguage={handleSelectLanguage} />
+      <FeatureSection onSelect={handleSelectLanguage} />
+      <LearnAnywhereSection />
+      <LandingSubscription />
+      <LandingHero />
+      <LandingFooter />
+>>>>>>> e00a5573103f84dcb993544902de6c298ac7ce59
     </>
   );
 }

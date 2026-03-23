@@ -1,5 +1,6 @@
 import './App.css'
-import { BrowserRouter, Routes, Route, useParams, useNavigate } from "react-router-dom";
+import axios from 'axios';
+import { BrowserRouter, Routes, Route, useParams, useNavigate, Navigate, useLocation } from "react-router-dom";
 import LoginPage from './pages/LoginPage.jsx'
 import RegisterationPage from './pages/RegisterationPage.jsx';
 import SignupPage from './pages/SignupPage.jsx';
@@ -8,24 +9,26 @@ import DashboardPage from './pages/DashboardPage.jsx';
 import WelcomePage from './pages/WelcomePage.jsx';
 import LevelsPage from './pages/LevelsPage';
 import LanguagePage from './pages/LanguagePage.jsx';
+import LearnPage from './pages/LearnPage.jsx';
 import { useEffect, useState } from 'react';
 import LandingPage from './pages/LandingPage.jsx';
-import LandinPageExperimental from './pages/LandinPageExperimental.jsx';
-import LevelPage from './pages/LevelPage.jsx';
-import LevelsRoute from './LevelsRoute.jsx';
 
 function App() {
 
-  const [currentLang, setCurrentLang] = useState(null);
+const [currentLang, setCurrentLang] = useState(null);
 
   if (currentLang) {
     return (
-      <LanguagePage
-        langId={currentLang}
-        onBack={() => setCurrentLang(null)}
-      />
+      <div className="min-h-[60vh] bg-[#0f1419] text-gray-200 grid place-items-center">
+        Checking your session...
+      </div>
     );
   }
+
+  return isAllowed ? children : <Navigate to="/login" replace />;
+}
+
+function App() {
 
   return (
     <BrowserRouter>
@@ -34,18 +37,13 @@ function App() {
         <Route path="/language/:langId" element={<LanguagePageWrapper />} />
         <Route path="/Login" element={<LoginPage />} />
         <Route path="/Register" element={<RegisterationPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/next-step" element={<SignupNextPage />} />
-        <Route path="/Dashboard" element={<DashboardPage />} />
-        <Route path="/Welcome" element={<WelcomePage />} />
+        <Route path="/signup" element={<SignupPage  />} />
+        <Route path="/next-step" element={<SignupNextPage  />} />
+        <Route path="/Dashboard" element={<DashboardPage  />} />
+        <Route path="/Welcome" element={<WelcomePage  />} />
+        <Route path="/levels" element={<LevelsPage />} />
         <Route path="/levels/:courseId" element={<LevelsPageWrapper />} />
-        <Route path="/languagepage" element={<LanguagePage />} />
-        <Route path="level" element={<LevelPage />} />
-        <Route path="/levels1/:courseId" element={<LevelsRoute />} />
-        <Route path="/level/:courseId/:levelNo" element={<LevelPage />} />
-
-
-        <Route path='/experimental' element={<LandinPageExperimental />} />
+        <Route path="/languagepage" element={<LanguagePage />} /> 
         {/* Add more routes as needed */}
       </Routes>
     </BrowserRouter>
@@ -71,10 +69,15 @@ function LanguagePageWrapper() {
 function LevelsPageWrapper() {
   const { courseId } = useParams();
   const navigate = useNavigate();
+  const hasSession = Boolean(localStorage.getItem('user') || localStorage.getItem('token'));
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [courseId]);
+
+  if (!hasSession) {
+    return <Navigate to="/login" replace />;
+  }
 
   return <LevelsPage courseId={courseId} onBack={() => navigate("/dashboard")} />;
 }
