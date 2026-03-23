@@ -14,6 +14,7 @@ import { useEffect, useState } from 'react';
 import LandingPage from './pages/LandingPage.jsx';
 import LandingHeader from './components/LandingPage/LandingHeader.jsx';
 import AppSidebar from './components/Layout/AppSidebar.jsx';
+import LevelPage from './pages/LevelPage.jsx';
 
 function ProtectedRoute({ children }) {
   const [isChecking, setIsChecking] = useState(true);
@@ -139,6 +140,7 @@ function AppShell() {
               </ProtectedRoute>
             )}
           />
+          <Route path="/level/:courseId/:levelNo" element={<LevelPage />} />
           <Route path="/levels/:courseId" element={<LevelsPageWrapper />} />
           <Route path="/languagepage" element={<LanguagePage />} />
         </Routes>
@@ -180,4 +182,4 @@ function LevelsPageWrapper() {
   return <LevelsPage courseId={courseId} onBack={() => navigate("/dashboard")} />;
 }
 
-export default App
+export default App  
