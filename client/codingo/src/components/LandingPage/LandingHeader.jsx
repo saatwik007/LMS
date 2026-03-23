@@ -1,4 +1,4 @@
-import {useState} from 'react'
+import {useEffect, useState} from 'react'
 import { FiSearch } from 'react-icons/fi';
 import { useNavigate } from "react-router-dom";
 
@@ -43,9 +43,15 @@ const LandingHeader = ({ onBack }) => {
   }
   
 const [searchVal, setSearchVal] = useState("");
+const [scrolled, setScrolled] = useState(false);
+        useEffect(() => {
+          const fn = () => setScrolled(window.scrollY> 20);
+          window.addEventListener("scroll", fn);
+          return () => window.removeEventListener("scroll", fn);
+        }, []);
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-gray-900/90 backdrop-blur border-b border-white/5 flex items-center px-6 gap-4">
+    <div className={`fixed top-0 left-0 right-0 z-50 flex items-center gap-5 px-8 border-b border-white/[0.07] transition-all duration-300 ${scrolled ? "bg-gray-900/95 backdrop-blur-xl shadow-[0_4px_40px_rgba(0,0,0,0.65)]" : "bg-gray-900/80 backdrop-blur-lg"}`} style={{ height: 62 }}>
       <div className="flex justify-between items-center lg:px-9 pt-4 pb-4 bg-gray-900 w-full">
         <div className="flex items-center justify-center">
           <button onClick={onBack} className="text-2xl font-black tracking-tight select-none" style={{ color: "#60a5fa", textShadow: "0 0 18px #3b82f6, 0 0 40px #1d4ed8" }}>

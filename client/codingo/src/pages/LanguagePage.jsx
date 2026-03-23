@@ -13,6 +13,28 @@ function InfoSection({ section, accentColor }) {
   );
 }
 
+function HtmlIcon({ size = 80 }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 48 48">
+      <path fill="#E65100" d="M41,5H7l3,34l14,4l14-4L41,5L41,5z" />
+      <path fill="#FF6D00" d="M24 8L24 39.9 35.2 36.7 37.7 8z" />
+      <path fill="#FFF" d="M24,25v-4h8.6l-0.7,11.5L24,35.1v-4.2l4.1-1.4l0.3-4.5H24z M32.9,17l0.3-4H24v4H32.9z" />
+      <path fill="#EEE" d="M24,30.9v4.2l-7.9-2.6L15.7,27h4l0.2,2.5L24,30.9z M19.1,17H24v-4h-9.1l0.7,12H24v-4h-4.6L19.1,17z" />
+    </svg>
+  );
+}
+
+function CssIcon({ size = 80 }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 48 48">
+      <path fill="#0277BD" d="M41,5H7l3,34l14,4l14-4L41,5L41,5z" />
+      <path fill="#039BE5" d="M24 8L24 39.9 35.2 36.7 37.7 8z" />
+      <path fill="#FFF" d="M33.1,13H24v4h4.9l-0.3,4H24v4h4.4l-0.3,4.5l-4.1,1.4v4.2l7.9-2.6L33.1,13z" />
+      <path fill="#EEE" d="M24,13h-9.1l0.3,4H24V13z M24,21h-4.6l0.3,4H24V21z M24,30.9l-4.1-1.4L19.6,27h-4l0.4,5.4L24,35.1V30.9z" />
+    </svg>
+  );
+}
+
 function PythonIcon({ size = 80 }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 50 50">
@@ -60,6 +82,74 @@ function CppIcon({ size = 80 }) {
 
 
 const languageData = {
+html: {
+  id: "html",
+  title: "HTML",
+  tagline: "Structure. Semantics. The Web's foundation.",
+  accentColor: "#e34f26",
+  accentLight: "#f7a072",
+  gradient: "from-orange-600 via-red-500 to-pink-500",
+  cardGradient: "from-orange-400 to-red-400",
+  icon: HtmlIcon,
+  summary: `HTML (HyperText Markup Language) is the standard markup language for creating and structuring content on the web. It defines the semantic structure of documents — headings, paragraphs, lists, links, images, forms, and more — which browsers render and assistive technologies interpret. HTML is not a programming language but the backbone that, together with CSS and JavaScript, makes the modern web possible.`,
+  info: [
+    {
+      heading: "Origin & History",
+      content: `HTML was created by Tim Berners-Lee in 1991 to share and link scientific documents across the early web. Initially simple and permissive, HTML evolved through community-driven standards at the W3C and WHATWG. Major milestones include HTML 2.0 (1995), HTML 4.01 (1999), and the modern HTML5 specification (2014 onward), which standardized multimedia, semantic elements, APIs, and improved interoperability across browsers. HTML's evolution prioritized backward compatibility and progressive enhancement.`
+    },
+    {
+      heading: "Core Strengths & Uses",
+      content: `HTML provides the semantic scaffolding for web content: headings for structure, paragraphs for text, anchors for navigation, forms for input, and media elements for audio and video. It enables accessibility when used with proper semantics and ARIA roles. HTML is essential for SEO, content indexing, and progressive enhancement — allowing content to remain available even when CSS or JavaScript fail. Every website, web app, email template, and many hybrid mobile apps rely on HTML as the entry point for content delivery.`
+    },
+    {
+      heading: "Why Developers Love It",
+      content: `HTML is simple to learn and immediately rewarding: a few tags produce visible results in any browser. Its declarative nature makes documents readable and maintainable. Modern HTML5 introduced semantic elements (header, nav, main, article, section, footer), native multimedia support (audio, video), and form improvements (input types, validation) that reduce reliance on polyfills and heavy JavaScript. Combined with progressive enhancement, HTML lets developers build resilient, accessible experiences that work across devices and network conditions.`
+    },
+    {
+      heading: "Drawbacks & Limitations",
+      content: `HTML alone cannot style or add interactivity — it must be paired with CSS and JavaScript. Misuse of non-semantic tags (divs and spans) or incorrect nesting harms accessibility and SEO. Browser inconsistencies and legacy quirks still exist, requiring careful testing. Over-reliance on client-side rendering can degrade initial load performance and accessibility if server-side rendering or pre-rendering is neglected. Finally, semantic correctness depends on developer discipline; poorly structured HTML undermines the web’s openness and accessibility goals.`
+    },
+    {
+      heading: "HTML Today & The Road Ahead",
+      content: `HTML remains the universal lingua franca of the web. Ongoing work focuses on richer semantics, improved accessibility primitives, and tighter integration with modern web platform APIs (e.g., Web Components, Media Capabilities, and improved form controls). The WHATWG maintains a living standard that evolves incrementally, emphasizing interoperability and progressive enhancement. As the web expands into new form factors and platforms, HTML’s role as the canonical content layer remains central — lightweight, accessible, and future-proof when used correctly.`
+    }
+  ]
+},
+
+css: {
+  id: "css",
+  title: "CSS",
+  tagline: "Style. Layout. Visual polish.",
+  accentColor: "#2965f1",
+  accentLight: "#6ea8ff",
+  gradient: "from-blue-800 via-indigo-600 to-purple-700",
+  cardGradient: "from-blue-500 to-indigo-400",
+  icon: CssIcon,
+  summary: `CSS (Cascading Style Sheets) is the language used to describe the presentation of HTML documents — how elements are laid out, colored, sized, and animated. It separates content from presentation, enabling designers and developers to craft responsive, accessible, and visually compelling user interfaces across devices and screen sizes.`,
+  info: [
+    {
+      heading: "Origin & History",
+      content: `CSS was first proposed by Håkon Wium Lie in 1994 and quickly adopted as the standard way to style web documents. The W3C standardized CSS1 in 1996, followed by CSS2 in 1998 which added positioning and media types. The modern era began with CSS3, a modular approach that allowed independent development of features (selectors, flexbox, grid, animations). Over the years, CSS evolved from simple color and font rules to a powerful layout and animation system, with ongoing additions like CSS Grid, custom properties (variables), container queries, and new color spaces.`
+    },
+    {
+      heading: "Core Strengths & Uses",
+      content: `CSS controls visual presentation: typography, spacing, color, layout, and responsive behavior. It enables device-adaptive designs via media queries, flexible layouts with Flexbox and Grid, and polished interactions through transitions and animations. CSS custom properties and the cascade make theming and design systems feasible. From simple static pages to complex single-page applications and design systems used across large product suites, CSS is the essential layer that turns structured content into usable, attractive interfaces.`
+    },
+    {
+      heading: "Why Developers Love It",
+      content: `CSS is declarative and expressive: a few well-chosen rules can transform a page. Modern layout primitives like Flexbox and Grid dramatically reduce layout complexity and fragile hacks. Custom properties enable runtime theming and reduce duplication. CSS integrates with the browser rendering pipeline, allowing hardware-accelerated animations and smooth transitions. Tooling and ecosystem support — preprocessors, PostCSS plugins, utility frameworks, and component-scoped styles — let teams adopt patterns that match their workflow, from atomic utility classes to component-driven styling.`
+    },
+    {
+      heading: "Drawbacks & Limitations",
+      content: `The cascade and global nature of CSS can cause specificity wars and unintended style leakage in large codebases. Browser inconsistencies and legacy behavior still require careful testing and fallbacks. Complex responsive designs can become verbose without disciplined architecture. Some powerful features (e.g., container queries, subgrid) arrived late and required polyfills or workarounds. Performance pitfalls exist: excessive repaints, heavy animations, and large style recalculations can degrade UX. Finally, CSS is not a programming language — logic-heavy styling often pushes developers to mix concerns or rely on JavaScript.`
+    },
+    {
+      heading: "CSS Today & The Road Ahead",
+      content: `CSS continues to expand its capabilities while keeping a focus on performance and interoperability. Recent advances — CSS Grid, container queries, logical properties for internationalization, new color formats, and Houdini APIs — give developers finer control and better performance. The community is converging on patterns for scalable, maintainable styling (design tokens, component-scoped styles, utility-first approaches). As the web targets more form factors and platforms, CSS’s role as the presentation layer remains central: lightweight, accessible, and increasingly expressive without sacrificing speed.`
+    }
+  ]
+},
+
   python: {
     id: "python",
     title: "Python",

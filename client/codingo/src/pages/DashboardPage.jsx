@@ -1,4 +1,6 @@
 import React, { useMemo, useState } from "react";
+import { getAllCourses } from '../components/LandingPage/LevelData.js';
+import Header from '../components/LandingPage/Header.jsx';
 import {
   FaRegStar,
   FaTrophy,
@@ -17,28 +19,44 @@ import {
   FaClock,
   FaTimes,
 } from "react-icons/fa";
+import ParticleCanvas from "../components/LandingPage/ParticleCanvas.jsx";
 
 export default function Dashboard() {
-  const [courses] = useState([
-    {
-      title: "JavaScript Fundamentals",
-      progress: 68,
-      lessons: "12/18 lessons",
-      tag: "In Progress",
-    },
-    {
-      title: "Python Essentials",
-      progress: 42,
-      lessons: "8/19 lessons",
-      tag: "Practice",
-    },
-    {
-      title: "React Foundations",
-      progress: 78,
-      lessons: "14/18 lessons",
-      tag: "Almost There",
-    },
-  ]);
+  // const [courses] = useState([
+  //   {
+  //     title: "JavaScript",
+  //     progress: 0,
+  //     lessons: "12/18 lessons",
+  //     tag: "In Progress",
+  //   },
+  //   {
+  //     title: "Python",
+  //     progress: 0,
+  //     lessons: "8/19 lessons",
+  //     tag: "Practice",
+  //   },
+  //   {
+  //     title: "HTML",
+  //     progress: 0,
+  //     lessons: "14/18 lessons",
+  //     tag: "Almost There",
+  //   },
+  // ]);
+
+// Create dynamic courses from LevelData
+const [courses] = useState(() => {
+  return getAllCourses().map((course) => ({
+    id:          course.id,
+    title:       course.language,
+    progress:    0,
+    lessons:     `0/${course.totalChapters} lessons`,
+    tag:         "In Progress",
+    accentColor: course.accentColor,
+  }));
+}); 
+
+  // ... rest of existing code ...
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [sortBy, setSortBy] = useState("progress_desc");
@@ -62,11 +80,11 @@ export default function Dashboard() {
   ]);
 
   const [leaderboard] = useState([
-    { rank: 1, name: "ProCoder123", xp: 5420, medal: "🥇" },
-    { rank: 2, name: "DevQueen99", xp: 5180, medal: "🥈" },
-    { rank: 3, name: "ByteMaster", xp: 5010, medal: "🥉" },
-    { rank: 4, name: "You", xp: 4850, medal: "⭐", isUser: true },
-    { rank: 5, name: "CodeNinja42", xp: 4720, medal: "📍" },
+    { rank: 1, name: "VivekMandal", xp: 10000 , medal: "⭐", isUser: true },
+    { rank: 2, name: "SatwikWahi", xp: 5420, medal: "🥇" },
+    { rank: 3, name: "SatwikWahi2", xp: 5180, medal: "🥈" },
+    { rank: 4, name: "SatwikWahi3", xp: 5010, medal: "🥉" },
+    { rank: 5, name: "SatwikWahiAgain", xp: 4720, medal: "📍" },
   ]);
   const [notifications] = useState([
     { title: "Streak secured", detail: "You saved your streak today", time: "1h ago" },
@@ -166,83 +184,34 @@ export default function Dashboard() {
   }, [courses, searchTerm, statusFilter, sortBy]);
 
   return (
-    <div className="min-h-screen bg-[#0f1419] flex font-sans text-white">
-      {/* Sidebar */}
-      <aside className="flex flex-col min-w-[70px] w-56 bg-[#1a2332] border-r border-[#2a3a4a] py-6 px-1">
-        <div className="text-2xl font-extrabold text-cyan-400 pl-7 mb-10">codyssey</div>
-        <nav className="flex flex-col gap-1 font-semibold px-4">
-          <SidebarLink active icon={<FaRegStar />} label="Dashboard" />
-          <SidebarLink icon={<FaGraduationCap />} label="Learn" />
-          <SidebarLink icon={<FaChartLine />} label="Progress" />
-          <SidebarLink icon={<FaTrophy />} label="Leaderboards" />
-          <SidebarLink icon={<FaUsers />} label="Friends" />
-          <SidebarLink icon={<FaUser />} label="Profile" />
-          <SidebarLink icon={<FaEllipsisH />} label="More" />
-        </nav>
-      </aside>
-
-      {/* Main Content */}
+    <>
+    <ParticleCanvas />
+     <Header />
+     <div className="min-h-screen text-white pt-16 z-10 scroll-smooth flex font-sans bg-[#111113]">
       <main className="flex-1 overflow-y-auto p-4 md:p-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-extrabold mb-2">Welcome Back! 👋</h1>
-          <p className="text-gray-400 text-sm">Keep your streak alive and learn something new today</p>
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Left Column - Stats & Courses */}
           <div className="lg:col-span-2 space-y-6">
             {/* Courses Card */}
-            <div className="bg-[#1a2332] rounded-2xl p-6 border border-[#2a3a4a] shadow-lg">
-              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <h2 className="text-2xl font-bold">Your Courses</h2>
-                  <FaGraduationCap className="text-cyan-400 text-2xl" />
-                </div>
-                <div className="text-xs text-gray-400">{filteredCourses.length} courses</div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
-                <label className="flex items-center gap-2 bg-[#141b24] border border-[#1f2a38] rounded-lg px-3 py-2 text-sm">
-                  <FaSearch className="text-cyan-400" />
+            <div className="bg-none rounded-2xl p-6 border-[#2a3a4a] shadow-lg">
+              {/* Filter UI - Search, Status Filter, Sort */}
+              <div className="flex flex-col sm:flex-row gap-3 mb-4 items-start sm:items-center">
+                <div className="flex-1 flex gap-2">
                   <input
-                    className="bg-transparent w-full outline-none text-xs text-gray-200"
-                    placeholder="Search courses"
+                    type="text"
+                    placeholder="Search courses..."
                     value={searchTerm}
-                    onChange={(event) => setSearchTerm(event.target.value)}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="flex-1 bg-[#0f1419] border border-[#2a3a4a] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500"
                   />
-                </label>
-                <label className="flex items-center gap-2 bg-[#141b24] border border-[#1f2a38] rounded-lg px-3 py-2 text-sm">
-                  <FaFilter className="text-cyan-400" />
-                  <select
-                    className="bg-transparent w-full outline-none text-xs text-gray-200"
-                    value={statusFilter}
-                    onChange={(event) => setStatusFilter(event.target.value)}
-                  >
-                    <option value="All">All statuses</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Practice">Practice</option>
-                    <option value="Almost There">Almost There</option>
-                  </select>
-                </label>
-                <label className="flex items-center gap-2 bg-[#141b24] border border-[#1f2a38] rounded-lg px-3 py-2 text-sm">
-                  <FaSortAmountDownAlt className="text-cyan-400" />
-                  <select
-                    className="bg-transparent w-full outline-none text-xs text-gray-200"
-                    value={sortBy}
-                    onChange={(event) => setSortBy(event.target.value)}
-                  >
-                    <option value="progress_desc">Progress: High to Low</option>
-                    <option value="progress_asc">Progress: Low to High</option>
-                    <option value="alpha">Title: A to Z</option>
-                  </select>
-                </label>
+                </div>
               </div>
+
               {filteredCourses.length === 0 ? (
                 <div className="text-center text-sm text-gray-400 py-10">No courses match your filters.</div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid  grid-cols-1 md:grid-cols-2 gap-4">
                   {filteredCourses.map((course) => (
-                    <div key={course.title} className="bg-[#141b24] rounded-xl p-4 border border-[#1f2a38]">
+                    <div key={course.id} className=" rounded-xl bg-[#141b24] p-4 border border-[#1f2a38]">
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="text-lg font-bold">{course.title}</h3>
                         <span className="text-xs font-semibold text-cyan-300 bg-cyan-600/20 border border-cyan-600/50 px-2 py-1 rounded-full">
@@ -252,14 +221,16 @@ export default function Dashboard() {
                       <p className="text-xs text-gray-400 mb-3">{course.lessons}</p>
                       <div className="w-full bg-[#0f1419] rounded-full h-2 overflow-hidden border border-[#1f2a38]">
                         <div
-                          className="bg-gradient-to-r from-cyan-400 to-emerald-400 h-full rounded-full"
+                          className="bg-linear-to-r from-cyan-400 to-emerald-400 h-full rounded-full"
                           style={{ width: `${course.progress}%` }}
                         ></div>
                       </div>
                       <div className="mt-2 text-xs text-gray-400">{course.progress}% complete</div>
                     <button
-                      className="mt-4 w-full bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 rounded-lg transition"
-                      onClick={() => handleResumeCourse(course.title)}
+                      className="mt-4 w-full bg-cyan-500 cursor-pointer hover:bg-cyan-600 text-white font-bold py-2 rounded-lg transition"
+                      onClick={() => {
+                        window.location.href = `/levels/${course.id}`;
+                      }}
                       type="button"
                     >
                         Resume
@@ -600,6 +571,7 @@ export default function Dashboard() {
         </div>
       )}
     </div>
+    </>
   );
 }
 

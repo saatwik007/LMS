@@ -1,6 +1,7 @@
 import React from "react";
 import LandingHeader from "../components/LandingPage/LandingHeader.jsx";
 import { useNavigate } from "react-router-dom";
+import Header from "../components/LandingPage/Header.jsx";
 
 // Coding languages with icons (use your own SVGs or web devicon links)
 const codingLanguages = [
@@ -36,15 +37,16 @@ export default function CodingLanguageSelector() {
   return (
     <div className="min-h-screen w-full bg-gray-950 flex flex-col font-sans">
       {/* Navbar/header */}
-      <header className="w-full flex justify-between items-center px-6 py-6 md:px-24 border-b border-gray-900">
+      {/* <header className="w-full flex justify-between items-center px-6 py-6 md:px-24 border-b border-gray-900">
         <div className="flex items-center gap-2 font-extrabold text-3xl bg-clip-text text-transparent bg-linear-to-r from-emerald-400 via-cyan-400 to-violet-400 tracking-wider">
           CODYSSEY
         </div>
         <div className="text-gray-400 font-semibold uppercase tracking-tight text-sm select-none">
           SITE LANGUAGE: ENGLISH
         </div>
-      </header>
+      </header> */}
       {/* <LandingHeader /> */}
+      <Header />
       {/* MAIN */}
       <main className="w-full max-w-5xl mx-auto flex flex-col grow items-center pb-12">
         <h1 className="text-2xl md:text-3xl font-extrabold text-center mt-8 mb-6 bg-clip-text text-transparent bg-linear-to-r from-emerald-400 via-cyan-400 to-violet-400 tracking-tight">
