@@ -1,5 +1,6 @@
 // src/routes/LevelsRoute.jsx
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import axios from 'axios';
 import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
 import { python } from '@codemirror/lang-python';
@@ -92,6 +93,7 @@ function LockIcon({ className = '' }) {
  * - Level 1 appears at the bottom. On load it scrolls to the last unlocked level.
  */
 export default function LevelsRoute({ courseId, onBack }) {
+  const apiUrl = import.meta.env.VITE_API_URL || '';
   const courseName = formatCourseName(courseId);
   const [selectedLevel, setSelectedLevel] = useState(null);
   const [code, setCode] = useState('');
@@ -119,6 +121,34 @@ export default function LevelsRoute({ courseId, onBack }) {
   );
 
   const isUnlocked = (id) => unlocked.includes(id);
+
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
+  const syncProgressWithBackend = async (levelId) => {
+    if (!courseId) return;
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      await axios.patch(
+        `${apiUrl}/api/learning/courses/${courseId}/progress`,
+        {
+          lectureNumber: levelId,
+          completed: true,
+          points: 25
+        },
+        {
+          withCredentials: true,
+          headers: getAuthHeaders()
+        }
+      );
+    } catch {
+      // Keep local UX smooth even if server sync fails.
+    }
+  };
 
   function handleEnterLevel(id) {
     if (!isUnlocked(id)) return;
@@ -199,6 +229,8 @@ export default function LevelsRoute({ courseId, onBack }) {
       if (!set.has(next) && next <= LEVEL_COUNT) set.add(next);
       return Array.from(set).sort((a, b) => a - b);
     });
+
+    syncProgressWithBackend(id);
   }
 
   // Layout constants for SVG
@@ -233,10 +265,10 @@ export default function LevelsRoute({ courseId, onBack }) {
   }, [lastUnlocked]);
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100 p-6">
+    <div className="min-h-screen bg-gray-900 text-gray-100 p-3 sm:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Top header */}
-        <header className="flex items-center justify-between mb-6">
+        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
             <div className="flex items-center gap-3">
               {courseId && onBack && (
@@ -250,7 +282,7 @@ export default function LevelsRoute({ courseId, onBack }) {
                   </svg>
                 </button>
               )}
-              <h1 className="text-3xl font-semibold tracking-tight">{courseName}</h1>
+              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">{courseName}</h1>
             </div>
             <p className="text-gray-400 mt-1">
               {courseId 
@@ -261,7 +293,7 @@ export default function LevelsRoute({ courseId, onBack }) {
           </div>
           <div className="flex items-center gap-3">
             <div className="text-sm text-gray-300">Progress</div>
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-600 to-teal-400 flex items-center justify-center shadow-lg">
+            <div className="w-10 h-10 rounded-full bg-linear-to-br from-indigo-600 to-teal-400 flex items-center justify-center shadow-lg">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-white">
                 <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
@@ -270,17 +302,17 @@ export default function LevelsRoute({ courseId, onBack }) {
         </header>
 
         {/* Main layout: left panel, center map, right panel */}
-        <div className="grid grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
           {/* Left panel */}
-          <aside className="col-span-3">
+          <aside className="xl:col-span-3 order-2 xl:order-1">
             <div
-              className="sticky top-6 bg-gray-800/70 rounded-2xl p-4 border border-gray-700 shadow-[0_10px_30px_rgba(2,6,23,0.6)] transform-gpu"
+              className="bg-gray-800/70 xl:sticky xl:top-6 rounded-2xl p-4 border border-gray-700 shadow-[0_10px_30px_rgba(2,6,23,0.6)] transform-gpu"
               style={{ transform: 'perspective(800px) translateZ(0)', backfaceVisibility: 'hidden' }}
             >
               <div className="mb-4">
                 <div className="text-sm text-gray-400">Profile</div>
                 <div className="mt-3 flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-indigo-600 to-teal-400 flex items-center justify-center text-gray-900 font-bold">CS</div>
+                  <div className="w-12 h-12 rounded-lg bg-linear-to-br from-indigo-600 to-teal-400 flex items-center justify-center text-gray-900 font-bold">CS</div>
                   <div>
                     <div className="text-sm font-medium">Codify</div>
                     <div className="text-xs text-gray-400">Level player</div>
@@ -315,14 +347,14 @@ export default function LevelsRoute({ courseId, onBack }) {
           </aside>
 
           {/* Center map */}
-          <main className="col-span-6">
-            <div className="relative bg-gradient-to-b from-gray-800/40 to-transparent rounded-2xl p-6 shadow-2xl overflow-hidden">
-              <div className="absolute -left-28 -top-28 w-72 h-72 bg-gradient-to-tr from-indigo-700/20 via-teal-400/10 to-transparent rounded-full pointer-events-none blur-3xl" />
+          <main className="xl:col-span-6 order-1 xl:order-2">
+            <div className="relative bg-linear-to-b from-gray-800/40 to-transparent rounded-2xl p-6 shadow-2xl overflow-hidden">
+              <div className="absolute -left-28 -top-28 w-72 h-72 bg-linear-to-tr from-indigo-700/20 via-teal-400/10 to-transparent rounded-full pointer-events-none blur-3xl" />
 
               <div
                 ref={scrollContainerRef}
                 className="w-full overflow-y-auto py-6"
-                style={{ maxHeight: '72vh', scrollBehavior: 'smooth' }}
+                style={{ maxHeight: '68vh', scrollBehavior: 'smooth' }}
               >
                 <div className="mx-auto" style={{ minWidth: 220 }}>
                   <svg
@@ -455,9 +487,9 @@ export default function LevelsRoute({ courseId, onBack }) {
           </main>
 
           {/* Right panel */}
-          <aside className="col-span-3">
+          <aside className="xl:col-span-3 order-3">
             <div
-              className="sticky top-6 bg-gray-800/70 rounded-2xl p-4 border border-gray-700 shadow-[0_10px_30px_rgba(2,6,23,0.6)] transform-gpu"
+              className="bg-gray-800/70 xl:sticky xl:top-6 rounded-2xl p-4 border border-gray-700 shadow-[0_10px_30px_rgba(2,6,23,0.6)] transform-gpu"
               style={{ transform: 'perspective(800px) translateZ(0)', backfaceVisibility: 'hidden' }}
             >
               <div className="mb-4">
@@ -517,10 +549,10 @@ export default function LevelsRoute({ courseId, onBack }) {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
             <div className="bg-[#0f1419] rounded-2xl shadow-2xl border border-gray-700 w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
               {/* Modal Header */}
-              <div className="flex items-center justify-between p-6 border-b border-gray-700">
+              <div className="flex items-start justify-between gap-4 p-4 sm:p-6 border-b border-gray-700">
                 <div>
-                  <h2 className="text-2xl font-bold text-white">Level {selectedLevel.id}: {selectedLevel.title}</h2>
-                  <p className="text-gray-400 mt-1">{selectedLevel.description}</p>
+                  <h2 className="text-lg sm:text-2xl font-bold text-white">Level {selectedLevel.id}: {selectedLevel.title}</h2>
+                  <p className="text-sm sm:text-base text-gray-400 mt-1">{selectedLevel.description}</p>
                 </div>
                 <button
                   onClick={closeModal}
@@ -534,7 +566,7 @@ export default function LevelsRoute({ courseId, onBack }) {
               </div>
 
               {/* Modal Body */}
-              <div className="flex-1 overflow-auto p-6 space-y-4">
+              <div className="flex-1 overflow-auto p-4 sm:p-6 space-y-4">
                 {/* Code Editor */}
                 <div className="bg-[#1a2332] rounded-lg overflow-hidden border border-gray-700">
                   <div className="bg-[#141b24] px-4 py-2 flex items-center justify-between border-b border-gray-700">
@@ -553,7 +585,7 @@ export default function LevelsRoute({ courseId, onBack }) {
                   </div>
                   <CodeMirror
                     value={code}
-                    height="400px"
+                    height="300px"
                     theme={oneDark}
                     extensions={selectedLevel.language === 'javascript' ? [javascript()] : [python()]}
                     onChange={(value) => setCode(value)}
@@ -628,14 +660,14 @@ export default function LevelsRoute({ courseId, onBack }) {
               </div>
 
               {/* Modal Footer */}
-              <div className="flex items-center justify-between p-6 border-t border-gray-700 bg-[#141b24]">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 sm:p-6 border-t border-gray-700 bg-[#141b24]">
                 <button
                   onClick={closeModal}
                   className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition"
                 >
                   Close
                 </button>
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                   <button className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition">
                     Previous Level
                   </button>

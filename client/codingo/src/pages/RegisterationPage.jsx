@@ -1,5 +1,4 @@
 import React from "react";
-import LandingHeader from "../components/LandingPage/LandingHeader.jsx";
 import { useNavigate } from "react-router-dom";
 
 // Coding languages with icons (use your own SVGs or web devicon links)
@@ -34,38 +33,27 @@ const codingLanguages = [
 export default function CodingLanguageSelector() {
   const navigate = useNavigate();
   return (
-    <div className="min-h-screen w-full bg-gray-950 flex flex-col font-sans">
-      {/* Navbar/header */}
-      <header className="w-full flex justify-between items-center px-6 py-6 md:px-24 border-b border-gray-900">
-        <div className="flex items-center gap-2 font-extrabold text-3xl bg-clip-text text-transparent bg-linear-to-r from-emerald-400 via-cyan-400 to-violet-400 tracking-wider">
-          CODYSSEY
-        </div>
-        <div className="text-gray-400 font-semibold uppercase tracking-tight text-sm select-none">
-          SITE LANGUAGE: ENGLISH
-        </div>
-      </header>
-      {/* <LandingHeader /> */}
-      {/* MAIN */}
-      <main className="w-full max-w-5xl mx-auto flex flex-col grow items-center pb-12">
-        <h1 className="text-2xl md:text-3xl font-extrabold text-center mt-8 mb-6 bg-clip-text text-transparent bg-linear-to-r from-emerald-400 via-cyan-400 to-violet-400 tracking-tight">
+    <div className="min-h-screen w-full bg-gray-950 flex flex-col font-sans px-3 sm:px-6">
+      <main className="w-full max-w-6xl mx-auto flex flex-col grow items-center pb-12 pt-6">
+        <h1 className="text-2xl md:text-3xl font-extrabold text-center mt-4 mb-6 bg-clip-text text-transparent bg-linear-to-r from-emerald-400 via-cyan-400 to-violet-400 tracking-tight">
           I want to learn...
         </h1>
         {/* Coding Languages grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 md:gap-8 w-full px-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6 md:gap-8 w-full px-1 sm:px-2">
           {codingLanguages.map((lang) => (
             <button
               key={lang.name}
-              className="flex flex-col items-center justify-center p-6 bg-gray-900 hover:bg-gray-800 border-2 border-gray-800 hover:border-emerald-400 rounded-xl shadow hover:shadow-emerald-500/20 group transition-all cursor-pointer"
+              className="flex flex-col items-center justify-center p-3 sm:p-5 md:p-6 bg-gray-900 hover:bg-gray-800 border-2 border-gray-800 hover:border-emerald-400 rounded-xl shadow hover:shadow-emerald-500/20 group transition-all cursor-pointer"
               onClick={() => navigate("/signup")}
             >
               <img
                 src={lang.icon}
                 alt={lang.name}
-                className="w-14 h-14 mb-3 grayscale group-hover:grayscale-0 group-hover:scale-110 transition"
+                className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 mb-2 sm:mb-3 grayscale group-hover:grayscale-0 group-hover:scale-110 transition"
                 loading="lazy"
               />
-              <span className="font-bold text-base text-white">{lang.name}</span>
-              <span className="text-sm text-emerald-400 font-medium">{lang.learners}</span>
+              <span className="font-bold text-sm sm:text-base text-white text-center">{lang.name}</span>
+              <span className="text-xs sm:text-sm text-emerald-400 font-medium text-center">{lang.learners}</span>
             </button>
           ))}
         </div>

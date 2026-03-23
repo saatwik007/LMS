@@ -25,14 +25,14 @@ export default function LearnAnywhereSection() {
       </div> */}
         
       {/* Headline */}
-      <h2 className="text-4xl md:text-5xl font-bold text-cyan-200 text-center mb-10 z-10 select-none" style={{fontFamily: 'Sora, Inter, sans-serif'}}>
+      <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-cyan-200 text-center mb-10 z-10 select-none px-4" style={{fontFamily: 'Sora, Inter, sans-serif'}}>
         learn anytime,<br className="hidden md:block" /> anywhere
       </h2>
       {/* App store buttons (Replace with actual links/svg as you desire) */}
-      <div className="flex gap-6 max-w-200 mb-10 z-10">
+      <div className="flex flex-wrap justify-center gap-4 sm:gap-6 w-full max-w-4xl mb-10 z-10 px-4">
         <a
           href="#"
-          className="flex items-center gap-3 bg-white rounded-xl px-6 py-4 shadow-lg hover:scale-105 border border-gray-300 transition"
+          className="flex items-center gap-3 bg-white rounded-xl px-4 sm:px-6 py-4 shadow-lg hover:scale-105 border border-gray-300 transition w-full sm:w-auto"
         >
           {/* <img
             src="https://upload.wikimedia.org/wikipedia/commons/a/ab/Apple-logo.png"
@@ -47,7 +47,7 @@ export default function LearnAnywhereSection() {
         </a>
         <a
           href="#"
-          className="flex items-center gap-3 bg-white rounded-xl px-6 py-4 shadow-lg hover:scale-105 border border-gray-300 transition"
+          className="flex items-center gap-3 bg-white rounded-xl px-4 sm:px-6 py-4 shadow-lg hover:scale-105 border border-gray-300 transition w-full sm:w-auto"
         >
           {/* <img
             src="https://upload.wikimedia.org/wikipedia/commons/d/d0/Google_Play_Arrow_logo.png"
