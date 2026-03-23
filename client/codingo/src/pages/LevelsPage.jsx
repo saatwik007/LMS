@@ -5,6 +5,9 @@ import { getCourseData } from '../components/LandingPage/LevelData';
 import ParticleCanvas from '../components/LandingPage/ParticleCanvas';
 import axios from 'axios';
 import CodeMirror from '@uiw/react-codemirror';
+// import { javascript } from '@codemirror/lang-javascript';
+// import { python } from '@codemirror/lang-python';
+// import { oneDark } from '@codemirror/theme-one-dark';
 
 const STORAGE_KEY = 'lms_levels_unlocked_v1_vertical';
 const ForeignObject = 'foreignObject';
