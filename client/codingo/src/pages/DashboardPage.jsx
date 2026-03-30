@@ -1,12 +1,8 @@
-<<<<<<< HEAD
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { getAllCourses } from '../components/LandingPage/LevelData.js';
 import Header from '../components/LandingPage/Header.jsx';
-=======
-import React, { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
->>>>>>> e00a5573103f84dcb993544902de6c298ac7ce59
 import {
   FaArrowRight,
   FaBell,
@@ -22,31 +18,10 @@ import {
   FaTimes,
   FaUsers
 } from "react-icons/fa";
-<<<<<<< HEAD
 import ParticleCanvas from "../components/LandingPage/ParticleCanvas.jsx";
+import { courseCatalog } from "../data/courseCatalog.jsx";
 
 export default function Dashboard() {
-  // const [courses] = useState([
-  //   {
-  //     title: "JavaScript",
-  //     progress: 0,
-  //     lessons: "12/18 lessons",
-  //     tag: "In Progress",
-  //   },
-  //   {
-  //     title: "Python",
-  //     progress: 0,
-  //     lessons: "8/19 lessons",
-  //     tag: "Practice",
-  //   },
-  //   {
-  //     title: "HTML",
-  //     progress: 0,
-  //     lessons: "14/18 lessons",
-  //     tag: "Almost There",
-  //   },
-  // ]);
-
 // Create dynamic courses from LevelData
 const [courses] = useState(() => {
   return getAllCourses().map((course) => ({
@@ -58,11 +33,6 @@ const [courses] = useState(() => {
     accentColor: course.accentColor,
   }));
 }); 
-
-  // ... rest of existing code ...
-
-=======
-import { courseCatalog } from "../data/courseCatalog.jsx";
 
 const featuredCourses = [
   {
@@ -107,35 +77,10 @@ const featuredCourses = [
   }
 ];
 
-const weeklyGoals = [
-  { title: "Complete 10 lessons", current: 7, total: 10 },
-  { title: "Earn 500 XP", current: 320, total: 500 },
-  { title: "Study 5 days", current: 3, total: 5 }
-];
-
-const upcomingLessons = [
-  { title: "Arrays and Loops", course: "JavaScript Fundamentals", time: "Today · 6:00 PM" },
-  { title: "Functions Deep Dive", course: "JavaScript Fundamentals", time: "Tomorrow · 7:30 PM" },
-  { title: "React State", course: "React Foundations", time: "Fri · 5:00 PM" }
-];
-
 const fallbackLeaderboard = [
   { rank: 1, name: "ProCoder123", xp: 5420, medal: "🥇" },
   { rank: 2, name: "DevQueen99", xp: 5180, medal: "🥈" },
   { rank: 3, name: "ByteMaster", xp: 5010, medal: "🥉" }
-];
-
-const friends = [
-  { name: "Alex Chen", status: "Online", xp: 2850, rank: 12 },
-  { name: "Sarah Dev", status: "Online", xp: 2640, rank: 15 },
-  { name: "Mike Johnson", status: "Away", xp: 2480, rank: 18 },
-  { name: "Emma Watson", status: "Offline", xp: 2210, rank: 24 }
-];
-
-const activityFeed = [
-  { title: "Completed", detail: "React Hooks Quiz", time: "Today" },
-  { title: "Gained", detail: "+120 XP in Python Basics", time: "Yesterday" },
-  { title: "Unlocked", detail: "Lesson 12: Objects", time: "Yesterday" }
 ];
 
 function getStoredUser() {
@@ -184,11 +129,9 @@ function CourseMarketColumn() {
   );
 }
 
-export default function DashboardPage() {
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL || "";
   const [currentUser, setCurrentUser] = useState(() => getStoredUser());
->>>>>>> e00a5573103f84dcb993544902de6c298ac7ce59
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [sortBy, setSortBy] = useState("progress_desc");
@@ -209,7 +152,6 @@ export default function DashboardPage() {
     leaderboard: []
   });
 
-<<<<<<< HEAD
   const [languages] = useState([
     { name: "JavaScript", icon: "🚀", level: 12 },
     { name: "Python", icon: "🐍", level: 8 },
@@ -251,12 +193,11 @@ export default function DashboardPage() {
     { title: "Unlocked", detail: "Lesson 12: Objects", time: "Yesterday" },
   ]);
   const [badges] = useState({ unlocked: 14, total: 30 });
-  const [showCalendarModal, setShowCalendarModal] = useState(false);
 
-  const totalXP = 4850;
-  const currentLevel = 18;
-  const xpToNextLevel = 5000;
-  const levelProgress = ((totalXP - 4500) / (5000 - 4500)) * 100;
+  // const totalXP = 4850;
+  // const currentLevel = 18;
+  // const xpToNextLevel = 5000;
+  // const levelProgress = ((totalXP - 4500) / (5000 - 4500)) * 100;
 
   const githubUsername = "your-username";
 
@@ -265,11 +206,10 @@ export default function DashboardPage() {
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
-=======
+  }
   const getAuthHeaders = () => {
     const token = localStorage.getItem("token");
     return token ? { Authorization: `Bearer ${token}` } : {};
->>>>>>> e00a5573103f84dcb993544902de6c298ac7ce59
   };
 
   useEffect(() => {
@@ -440,20 +380,17 @@ export default function DashboardPage() {
   }, []);
 
   return (
-<<<<<<< HEAD
     <>
     <ParticleCanvas />
-     <Header />
-     <div className="min-h-screen text-white pt-16 z-10 scroll-smooth flex font-sans bg-[#111113]">
+
+     {/* <div className="min-h-screen text-white pt-16 z-10 scroll-smooth flex font-sans bg-[#111113]">
       <main className="flex-1 overflow-y-auto p-4 md:p-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <div className="lg:col-span-2 space-y-6">
-            {/* Courses Card */}
             <div className="bg-none rounded-2xl p-6 border-[#2a3a4a] shadow-lg">
-              {/* Filter UI - Search, Status Filter, Sort */}
               <div className="flex flex-col sm:flex-row gap-3 mb-4 items-start sm:items-center">
-                <div className="flex-1 flex gap-2">
-=======
+                <div className="flex-1 flex gap-2"> */}
+
     <div className="min-h-screen bg-[#0f1419] font-sans text-white">
       <main className="p-3 sm:p-4 md:p-8">
         <header className="mb-7">
@@ -528,9 +465,9 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
-                <label className="flex items-center gap-2 bg-[#141b24] border border-[#1f2a38] rounded-lg px-3 py-2 text-sm">
+                <div className="flex items-center gap-2 bg-[#141b24] border border-[#1f2a38] rounded-lg px-3 py-2 text-sm">
                   <FaSearch className="text-cyan-400" />
->>>>>>> e00a5573103f84dcb993544902de6c298ac7ce59
+
                   <input
                     type="text"
                     placeholder="Search courses..."
@@ -550,11 +487,7 @@ export default function DashboardPage() {
               ) : (
                 <div className="grid  grid-cols-1 md:grid-cols-2 gap-4">
                   {filteredCourses.map((course) => (
-<<<<<<< HEAD
                     <div key={course.id} className=" rounded-xl bg-[#141b24] p-4 border border-[#1f2a38]">
-=======
-                    <div key={course.id} className="bg-[#141b24] rounded-xl p-4 border border-[#1f2a38]">
->>>>>>> e00a5573103f84dcb993544902de6c298ac7ce59
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="text-lg font-bold">{course.title}</h3>
                         <span className="text-xs font-semibold text-cyan-300 bg-cyan-600/20 border border-cyan-600/50 px-2 py-1 rounded-full">
@@ -569,7 +502,6 @@ export default function DashboardPage() {
                         ></div>
                       </div>
                       <div className="mt-2 text-xs text-gray-400">{course.progress}% complete</div>
-<<<<<<< HEAD
                     <button
                       className="mt-4 w-full bg-cyan-500 cursor-pointer hover:bg-cyan-600 text-white font-bold py-2 rounded-lg transition"
                       onClick={() => {
@@ -579,8 +511,6 @@ export default function DashboardPage() {
                     >
                         Resume
                       </button>
-=======
->>>>>>> e00a5573103f84dcb993544902de6c298ac7ce59
                     </div>
                   ))}
                 </div>
@@ -732,6 +662,8 @@ export default function DashboardPage() {
               </div>
             </div>
           </section>
+          
+      
 
           <aside className="space-y-6">
             <CourseMarketColumn />
@@ -847,9 +779,8 @@ export default function DashboardPage() {
               </div>
             </div>
           </aside>
-        </div>
-      </main>
 
+      </div>
       {showCalendarModal && (
         <div
           className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
@@ -874,10 +805,11 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
-    </div>
+      </main>
+</div>
     </>
   );
-}
+
 
 function CalendarHeatmap({ data }) {
   const getMonthLabels = () => {
@@ -990,3 +922,4 @@ function CalendarHeatmap({ data }) {
     </div>
   );
 }
+};

@@ -1,13 +1,7 @@
-<<<<<<< HEAD
-import {useEffect, useState} from 'react'
-import { FiSearch } from 'react-icons/fi';
-import { useNavigate } from "react-router-dom";
-=======
 import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { FiBell, FiChevronDown, FiEdit2, FiImage, FiLogOut, FiSearch, FiUser } from 'react-icons/fi';
 import { useLocation, useNavigate } from 'react-router-dom';
->>>>>>> e00a5573103f84dcb993544902de6c298ac7ce59
 
 function getStoredUser() {
   try {
@@ -21,26 +15,19 @@ function getStoredUser() {
 const LandingHeader = ({ onBack }) => {
   const location = useLocation();
   const navigate = useNavigate();
-<<<<<<< HEAD
-  
+ 
   const handleRegister = () => {
     navigate("/Register");
   }
-  
-const [searchVal, setSearchVal] = useState("");
-const [scrolled, setScrolled] = useState(false);
-        useEffect(() => {
+
+   useEffect(() => {
           const fn = () => setScrolled(window.scrollY> 20);
           window.addEventListener("scroll", fn);
           return () => window.removeEventListener("scroll", fn);
         }, []);
-
-  return (
-    <div className={`fixed top-0 left-0 right-0 z-50 flex items-center gap-5 px-8 border-b border-white/[0.07] transition-all duration-300 ${scrolled ? "bg-gray-900/95 backdrop-blur-xl shadow-[0_4px_40px_rgba(0,0,0,0.65)]" : "bg-gray-900/80 backdrop-blur-lg"}`} style={{ height: 62 }}>
-      <div className="flex justify-between items-center lg:px-9 pt-4 pb-4 bg-gray-900 w-full">
-=======
   const apiUrl = import.meta.env.VITE_API_URL || '';
   const [searchVal, setSearchVal] = useState('');
+  const [scrolled, setScrolled] = useState(false);
   const [currentUser, setCurrentUser] = useState(() => getStoredUser());
   const [notifications, setNotifications] = useState([]);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -278,13 +265,17 @@ const [scrolled, setScrolled] = useState(false);
   return (
     <div className="sticky top-0 z-50 bg-gray-900/90 backdrop-blur border-b border-white/5">
       <div className="relative flex justify-between items-center gap-2 px-3 sm:px-4 lg:px-9 py-3 bg-gray-900 w-full">
->>>>>>> e00a5573103f84dcb993544902de6c298ac7ce59
+   {/* <div className={`fixed top-0 left-0 right-0 z-50 flex items-center gap-5 px-8 border-b border-white/[0.07] transition-all duration-300 ${scrolled ? "bg-gray-900/95 backdrop-blur-xl shadow-[0_4px_40px_rgba(0,0,0,0.65)]" : "bg-gray-900/80 backdrop-blur-lg"}`} style={{ height: 62 }}> */}
+{/* <div className="flex justify-between items-center lg:px-9 pt-4 pb-4 bg-gray-900 w-full"> */}
         <div className="flex items-center justify-center">
-          <button onClick={handleLogoClick} className="text-xl sm:text-2xl font-black tracking-tight select-none" style={{ color: '#60a5fa', textShadow: '0 0 18px #3b82f6, 0 0 40px #1d4ed8' }}>
+          {/* <button onClick={handleLogoClick} className="text-xl sm:text-2xl font-black tracking-tight select-none" style={{ color: '#60a5fa', textShadow: '0 0 18px #3b82f6, 0 0 40px #1d4ed8' }}>
           Codify
-        </button>
+        </button> */}
+              <button onClick={handleLogoClick} className="logo-glow text-[22px] font-black tracking-tight select-none shrink-0 cursor-pointer" style={{ fontFamily: "'Syne',sans-serif" }}>
+                Codify
+            </button>
         </div>
-
+{/* 
         <div className="hidden sm:flex flex-1 justify-center px-2">
           <div className="relative w-full max-w-md">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
@@ -292,14 +283,32 @@ const [scrolled, setScrolled] = useState(false);
             </span>
             <input
               value={searchVal}
-              onChange={(e) => setSearchVal(e.target.value)}
+              onChange={(e) => setSearchVal(e.target.value)}  
               placeholder="Search languages, topics..."
               className="w-full bg-gray-800/60 border border-white/10 rounded-full pl-9 pr-4 py-2 text-sm text-gray-200 placeholder-gray-500 outline-none focus:border-blue-500/50 transition"
             />
           </div>
-        </div>
+        </div> */}
+                   <div className="flex-1 max-w-95 mx-auto relative">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
+                <input
+                    value={searchVal}
+                    placeholder="Search courses, topics..."
+                    onChange={e => setSearchVal(e.target.value)}
+                    className="w-full bg-gray-800/70 border border-white/10 rounded-[10px] py-2 pl-9 pr-4 text-[13px] text-gray-100 placeholder-gray-600 outline-none focus:border-blue-500/40 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.08)] transition-all duration-200"
+                    style={{ fontFamily: "'DM Sans',sans-serif" }}
+                />
+            </div>
+
+            
+            {/* <div className="flex items-center gap-1.5 ml-auto shrink-0">
+                <nav className="md:flex gap-4 items-center text-sm ">
+                    <a className="hover:text-gray-300 font-medium text-gray-400 cursor-pointer hover:scale-110 transition">Contact Us</a>
+                </nav>
+            </div> */}
         
         <div className="flex items-center gap-3">
+          <a className="hover:text-gray-300 font-medium text-gray-400 cursor-pointer hover:scale-110 transition">Contact Us</a>
           {!currentUser ? (
             <nav className="flex gap-2 sm:gap-3 items-center text-xs sm:text-sm">
               <button
@@ -310,14 +319,14 @@ const [scrolled, setScrolled] = useState(false);
                 <FiSearch className="text-base" />
               </button>
               <button
-                className="bg-transparent cursor-pointer hover:bg-gray-800 text-gray-200 border border-white/10 rounded-full px-3 sm:px-4 py-1.5 transition"
+                className="a-glow btn-glow text-[13px] font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-[9px] px-4 py-2 border-none cursor-pointer ml-1"
                 onClick={() => navigate('/login')}
                 type="button"
               >
                 Login
               </button>
               <button
-                className="bg-gray-700/60 cursor-pointer hover:bg-gray-600/70 text-gray-200 border border-white/10 rounded-full px-3 sm:px-4 py-1.5 transition"
+                className="text-[13px] font-medium text-gray-200 border border-white/10 rounded-[9px] px-4 py-1.5 hover:border-blue-500/50 hover:bg-blue-900/20 hover:text-blue-400 transition-all duration-200 ml-1 bg-transparent cursor-pointer"
                 onClick={() => navigate('/signup')}
                 type="button"
               >
