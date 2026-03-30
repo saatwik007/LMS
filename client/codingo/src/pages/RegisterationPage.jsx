@@ -34,27 +34,9 @@ const codingLanguages = [
 export default function CodingLanguageSelector() {
   const navigate = useNavigate();
   return (
-<<<<<<< HEAD
-    <div className="min-h-screen w-full bg-gray-950 flex flex-col font-sans">
-      {/* Navbar/header */}
-      {/* <header className="w-full flex justify-between items-center px-6 py-6 md:px-24 border-b border-gray-900">
-        <div className="flex items-center gap-2 font-extrabold text-3xl bg-clip-text text-transparent bg-linear-to-r from-emerald-400 via-cyan-400 to-violet-400 tracking-wider">
-          CODYSSEY
-        </div>
-        <div className="text-gray-400 font-semibold uppercase tracking-tight text-sm select-none">
-          SITE LANGUAGE: ENGLISH
-        </div>
-      </header> */}
-      {/* <LandingHeader /> */}
-      <Header />
-      {/* MAIN */}
-      <main className="w-full max-w-5xl mx-auto flex flex-col grow items-center pb-12">
-        <h1 className="text-2xl md:text-3xl font-extrabold text-center mt-8 mb-6 bg-clip-text text-transparent bg-linear-to-r from-emerald-400 via-cyan-400 to-violet-400 tracking-tight">
-=======
     <div className="min-h-screen w-full bg-gray-950 flex flex-col font-sans px-3 sm:px-6">
       <main className="w-full max-w-6xl mx-auto flex flex-col grow items-center pb-12 pt-6">
         <h1 className="text-2xl md:text-3xl font-extrabold text-center mt-4 mb-6 bg-clip-text text-transparent bg-linear-to-r from-emerald-400 via-cyan-400 to-violet-400 tracking-tight">
->>>>>>> e00a5573103f84dcb993544902de6c298ac7ce59
           I want to learn...
         </h1>
         {/* Coding Languages grid */}

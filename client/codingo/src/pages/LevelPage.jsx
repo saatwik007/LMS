@@ -372,22 +372,22 @@ export default function LevelPage() {
   }, [levelNo, courseId]);
 
   // ── Not found guard ───────────────────────────────────────────────────────
-  if (!levelData) {
-    return (
-      <div className="h-screen w-screen flex items-center justify-center bg-[#07070f] text-white">
-        <div className="text-center">
-          <p className="text-white/40 text-sm mb-4">Level {levelNo} not found.</p>
-          <button
-            onClick={() => navigate(`/levels/${courseId}`)}
-            className="px-5 py-2 rounded-xl text-white font-bold"
-            style={{ background: courseData.accentColor }}
-          >
-            ← Back to Levels
-          </button>
-        </div>
+if (!levelData || !levelData.parts) {
+  return (
+    <div className="h-screen w-screen flex items-center justify-center bg-[#07070f] text-white">
+      <div className="text-center">
+        <p className="text-white/40 text-sm mb-4">Level {levelNo} not found.</p>
+        <button
+          onClick={() => navigate(`/levels/${courseId}`)}
+          className="px-5 py-2 rounded-xl text-white font-bold"
+          style={{ background: courseData.accentColor }}
+        >
+          ← Back to Levels
+        </button>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   // ── Derived ───────────────────────────────────────────────────────────────
   const parts = levelData.parts;
