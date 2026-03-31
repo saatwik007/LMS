@@ -205,11 +205,13 @@ async function syncUserChallenges(userId) {
 
     switch (challenge.goalMetric) {
       case 'xp_earned': {
-        const progressDocs = await UserProgress.find({
-          user: userId,
-          updatedAt: { $gte: periodStart, $lte: periodEnd }
+        const progressDocs = await UserProgress.find({ user: userId });
+        progressDocs.forEach((doc) => {
+          const periodLectures = (doc.lectureProgress || []).filter(
+            (lec) => lec.completed && lec.completedAt >= periodStart && lec.completedAt <= periodEnd
+          );
+          currentProgress += periodLectures.reduce((sum, lec) => sum + (lec.points || 0), 0);
         });
-        currentProgress = progressDocs.reduce((sum, doc) => sum + (doc.totalPoints || 0), 0);
         break;
       }
 
@@ -475,8 +477,13 @@ async function updateCourseProgress(req, res) {
 
     const targetLecture = lecturesByNumber.get(lectureNumber);
     if (completed) {
+      const wasAlreadyCompleted = targetLecture.completed;
       targetLecture.completed = true;
-      targetLecture.completedAt = new Date();
+      // Only set completedAt on first completion transition, not on re-completions
+      // This prevents replaying lectures from re-counting old XP in new challenge periods
+      if (!wasAlreadyCompleted) {
+        targetLecture.completedAt = new Date();
+      }
       targetLecture.points = Math.max(targetLecture.points || 0, points);
     } else {
       targetLecture.completed = false;
