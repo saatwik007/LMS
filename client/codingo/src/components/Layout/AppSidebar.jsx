@@ -17,11 +17,11 @@ import { useLocation, useNavigate } from 'react-router-dom';
 const navItems = [
   { key: 'dashboard', label: 'Dashboard', icon: FaRegStar, to: '/dashboard', match: ['/dashboard'] },
   { key: 'learn', label: 'Learn', icon: FaGraduationCap, to: '/learn', match: ['/learn', '/levels', '/language'] },
+  { key: 'community', label: 'Community', icon: FaUsers, to: '/community', match: ['/community'] },
   { key: 'challenges', label: 'Challenges', icon: FaFlagCheckered, to: '/challenges', match: ['/challenges'] },
   { key: 'leaderboards', label: 'Leaderboards', icon: FaTrophy, to: '/leaderboard', match: ['/leaderboard'] },
   { key: 'profile', label: 'Profile', icon: FaMedal, to: '/profile', match: ['/profile'] },
   { key: 'progress', label: 'Progress', icon: FaChartLine, to: '/dashboard', match: [] },
-  { key: 'friends', label: 'Friends', icon: FaUsers, to: '/dashboard', match: [] },
   { key: 'more', label: 'More', icon: FaEllipsisH, to: '/dashboard', match: [] }
 ];
 

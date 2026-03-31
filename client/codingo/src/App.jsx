@@ -13,6 +13,7 @@ import LearnPage from './pages/LearnPage.jsx';
 import LeaderboardPage from './pages/LeaderboardPage.jsx';
 import ChallengePage from './pages/ChallengePage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
+import CommunityPage from './pages/CommunityPage.jsx';
 import { useEffect, useState } from 'react';
 import LandingPage from './pages/LandingPage.jsx';
 import LandingHeader from './components/LandingPage/LandingHeader.jsx';
@@ -164,6 +165,14 @@ function AppShell() {
             element={(
               <ProtectedRoute>
                 <ProfilePage />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/community"
+            element={(
+              <ProtectedRoute>
+                <CommunityPage />
               </ProtectedRoute>
             )}
           />
