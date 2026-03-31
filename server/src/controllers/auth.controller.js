@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs/promises');
+const mongoose = require('mongoose');
 const { checkAndAwardBadges } = require('./badge.controller');
 
 const PROFILE_PICS_DIR = path.join(__dirname, '..', '..', 'uploads', 'profile-pics');
@@ -49,10 +50,13 @@ function buildUserPayload(user) {
     bio: user.bio || '',
     totalXp: user.totalXp || 0,
     level: user.level || 1,
+    league: user.league || 'Bronze 1',
     streakCount: user.streakCount || 0,
+    badges: user.badges || [],
     notifications: (user.notifications || []).slice(-10).reverse(),
     friends: user.friends || [],
-    friendRequests: user.friendRequests || []
+    friendRequests: user.friendRequests || [],
+    rewards: user.rewards || []
   };
 }
 
@@ -130,7 +134,9 @@ async function loginUser(req, res) {
 
 async function getCurrentUser(req, res) {
   try {
-    const user = await userModel.findById(req.user.id).select('-password');
+    const user = await userModel.findById(req.user.id)
+      .select('-password')
+      .populate('badges.badge');
     if (!user) {
       return res.status(404).json({ message: 'User not found.' });
     }
@@ -305,11 +311,87 @@ async function updateStreak(req, res) {
     // Refresh user to capture any XP/level/league changes from badge bonuses
     const refreshedUser = await userModel.findById(req.user.id);
 
+    // ── Streak milestone notifications ──────────────────────────────────────
+    const milestones = [7, 30, 100, 365];
+    const newStreak = refreshedUser.streakCount;
+    if (milestones.includes(newStreak)) {
+      const titles = { 7: '🔥 1 Week Streak!', 30: '🔥 30 Day Streak!', 100: '💯 100 Day Streak!', 365: '🏆 365 Day Streak!' };
+      const details = { 7: 'One full week of learning — keep it going!', 30: 'A whole month! You\'re unstoppable!', 100: 'Triple digits! You\'re a learning machine!', 365: 'An entire year of daily learning. Legendary!' };
+      await userModel.findByIdAndUpdate(req.user.id, {
+        $push: { notifications: { title: titles[newStreak], detail: details[newStreak] } }
+      });
+    }
+
     return res.status(200).json({
       message: 'Streak updated.',
       streakCount: refreshedUser.streakCount,
-      user: buildUserPayload(refreshedUser)
+      streakMilestone: milestones.includes(newStreak) ? newStreak : null,
+      user: buildUserPayload(await userModel.findById(req.user.id))
     });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+async function getPublicProfile(req, res) {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.userId)) {
+      return res.status(400).json({ message: 'Invalid user ID.' });
+    }
+
+    const user = await userModel.findById(req.params.userId)
+      .select('username profilePic bio totalXp level league streakCount badges')
+      .populate('badges.badge');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    return res.status(200).json({
+      user: {
+        id: user._id,
+        username: user.username,
+        profilePic: user.profilePic || '',
+        bio: user.bio || '',
+        totalXp: user.totalXp || 0,
+        level: user.level || 1,
+        league: user.league || 'Bronze 1',
+        streakCount: user.streakCount || 0,
+        badges: user.badges || []
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+async function claimReward(req, res) {
+  try {
+    const now = new Date();
+    const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    const user = await userModel.findById(req.user.id);
+    const existing = user.rewards.find(r => r.month === month);
+    if (existing && existing.claimed) {
+      return res.status(400).json({ message: 'Reward already claimed for this month.' });
+    }
+
+    if (existing) {
+      existing.claimed = true;
+      existing.claimedAt = now;
+    } else {
+      user.rewards.push({ month, rewardType: 'monthly', claimed: true, claimedAt: now });
+    }
+
+    // Grant bonus XP for monthly reward
+    user.totalXp = (user.totalXp || 0) + 50;
+    await user.save();
+
+    await userModel.findByIdAndUpdate(req.user.id, {
+      $push: { notifications: { title: '🎁 Monthly Reward Claimed!', detail: 'You earned 50 bonus XP for your monthly reward!' } }
+    });
+
+    const refreshed = await userModel.findById(req.user.id);
+    return res.status(200).json({ message: 'Reward claimed!', bonusXp: 50, user: buildUserPayload(refreshed) });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -324,10 +406,12 @@ module.exports = {
   registerUser,
   loginUser,
   getCurrentUser,
+  getPublicProfile,
   updateProfile,
   uploadProfileImage,
   getNotifications,
   markNotificationRead,
   updateStreak,
+  claimReward,
   logoutUser
 };

@@ -309,7 +309,7 @@ async function getUserRank(userId, totalXp) {
 }
 
 async function getLeaderboard(options = {}) {
-  const { league, page = 1, limit = 20 } = options;
+  const { league, page = 1, limit = 20, period = 'alltime' } = options;
   
   // Whitelist of allowed league tiers for filtering
   const ALLOWED_LEAGUES = ['All', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
@@ -326,6 +326,72 @@ async function getLeaderboard(options = {}) {
   }
 
   const skip = (page - 1) * limit;
+
+  // Weekly: aggregate XP earned in the last 7 days from UserProgress
+  if (period === 'weekly') {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
+    // Build a match stage for league filtering on the joined user doc
+    const userMatchStage = {};
+    if (filter.league) {
+      userMatchStage['userInfo.league'] = filter.league;
+    }
+
+    const pipeline = [
+      { $unwind: '$lectureProgress' },
+      { $match: { 'lectureProgress.completed': true, 'lectureProgress.completedAt': { $gte: sevenDaysAgo } } },
+      { $group: { _id: '$user', weeklyXp: { $sum: '$lectureProgress.points' } } },
+      { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'userInfo' } },
+      { $unwind: '$userInfo' },
+      ...(Object.keys(userMatchStage).length > 0 ? [{ $match: userMatchStage }] : []),
+      { $sort: { weeklyXp: -1, 'userInfo.streakCount': -1, 'userInfo.username': 1 } },
+      {
+        $facet: {
+          metadata: [{ $count: 'total' }],
+          data: [
+            { $skip: skip },
+            { $limit: limit },
+            {
+              $project: {
+                userId: '$_id',
+                weeklyXp: 1,
+                username: '$userInfo.username',
+                totalXp: '$userInfo.totalXp',
+                level: '$userInfo.level',
+                profilePic: '$userInfo.profilePic',
+                streakCount: '$userInfo.streakCount',
+                league: '$userInfo.league'
+              }
+            }
+          ]
+        }
+      }
+    ];
+
+    const [result] = await UserProgress.aggregate(pipeline);
+    const total = result.metadata[0]?.total || 0;
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      users: (result.data || []).map((user, index) => ({
+        rank: skip + index + 1,
+        userId: String(user.userId),
+        name: user.username,
+        xp: user.weeklyXp || 0,
+        level: user.level || 1,
+        profilePic: user.profilePic || '',
+        streakCount: user.streakCount || 0,
+        league: user.league || 'Bronze 1'
+      })),
+      total,
+      page,
+      totalPages
+    };
+  }
+
+  // All-time: use totalXp on User model
   const total = await User.countDocuments(filter);
   const totalPages = Math.ceil(total / limit);
 
@@ -586,8 +652,9 @@ async function getLeaderboardHandler(req, res) {
     const league = req.query.league || 'All';
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 20));
+    const period = req.query.period === 'weekly' ? 'weekly' : 'alltime';
 
-    const leaderboardData = await getLeaderboard({ league, page, limit });
+    const leaderboardData = await getLeaderboard({ league, page, limit, period });
 
     const currentUser = await User.findById(req.user.id).select('totalXp league');
     
@@ -596,11 +663,55 @@ async function getLeaderboardHandler(req, res) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const rankInfo = await getUserRank(req.user.id, currentUser.totalXp || 0);
+    // Compute contextual rank matching the active period + league filters
+    let currentUserRank = null;
+
+    if (period === 'weekly') {
+      // Derive current user's weekly XP and rank among the same weekly dataset
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      sevenDaysAgo.setHours(0, 0, 0, 0);
+
+      const leagueMatchStage = {};
+      if (league && league !== 'All') {
+        leagueMatchStage['userInfo.league'] = new RegExp(`^${league.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i');
+      }
+
+      // Get current user's weekly XP
+      const [userWeekly] = await UserProgress.aggregate([
+        { $match: { user: toObjectId(req.user.id) } },
+        { $unwind: '$lectureProgress' },
+        { $match: { 'lectureProgress.completed': true, 'lectureProgress.completedAt': { $gte: sevenDaysAgo } } },
+        { $group: { _id: null, weeklyXp: { $sum: '$lectureProgress.points' } } }
+      ]);
+      const myWeeklyXp = userWeekly?.weeklyXp || 0;
+
+      // Count users with higher weekly XP (same league filter)
+      const rankPipeline = [
+        { $unwind: '$lectureProgress' },
+        { $match: { 'lectureProgress.completed': true, 'lectureProgress.completedAt': { $gte: sevenDaysAgo } } },
+        { $group: { _id: '$user', weeklyXp: { $sum: '$lectureProgress.points' } } },
+        { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'userInfo' } },
+        { $unwind: '$userInfo' },
+        ...(Object.keys(leagueMatchStage).length > 0 ? [{ $match: leagueMatchStage }] : []),
+        { $match: { weeklyXp: { $gt: myWeeklyXp } } },
+        { $count: 'higher' }
+      ];
+      const [rankResult] = await UserProgress.aggregate(rankPipeline);
+      currentUserRank = (rankResult?.higher || 0) + 1;
+    } else {
+      // All-time: count users with higher XP within the same league filter
+      const rankFilter = { totalXp: { $gt: currentUser.totalXp || 0 } };
+      if (league && league !== 'All') {
+        rankFilter.league = new RegExp(`^${league.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i');
+      }
+      const higherCount = await User.countDocuments(rankFilter);
+      currentUserRank = higherCount + 1;
+    }
 
     return res.status(200).json({
       leaderboard: leaderboardData.users,
-      currentUserRank: rankInfo.rank,
+      currentUserRank,
       currentUserLeague: currentUser.league || 'Bronze 1',
       total: leaderboardData.total,
       page: leaderboardData.page,
@@ -613,6 +724,120 @@ async function getLeaderboardHandler(req, res) {
   }
 }
 
+async function getMyProgress(req, res) {
+  try {
+    await ensureDefaultCourses();
+
+    const user = await User.findById(req.user.id).select(
+      'username totalXp level league streakCount profilePic'
+    );
+    if (!user) return res.status(404).json({ message: 'User not found.' });
+
+    const progressDocs = await UserProgress.find({ user: req.user.id })
+      .populate({ path: 'course', select: 'slug title description domain level totalLectures' })
+      .sort({ updatedAt: -1 });
+
+    // ── Per-course breakdown ────────────────────────────────────────────
+    const courses = progressDocs
+      .filter((d) => d.course)
+      .map((d) => {
+        const lp = d.lectureProgress || [];
+        const completedLectures = lp.filter((l) => l.completed).length;
+        const total = d.course.totalLectures || 1;
+        return {
+          id: d.course.slug,
+          title: d.course.title,
+          domain: d.course.domain,
+          level: d.course.level,
+          totalLectures: total,
+          completedLectures,
+          progress: Math.round((completedLectures / total) * 100),
+          totalPoints: d.totalPoints || 0,
+          status: d.status,
+          tag: getTagFromProgress(Math.round((completedLectures / total) * 100)),
+          lastActivityAt: d.updatedAt
+        };
+      });
+
+    // ── XP timeline (daily, used for heatmap + weekly aggregation) ──────
+    const now = new Date();
+    const oneYearAgo = new Date(now);
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    oneYearAgo.setHours(0, 0, 0, 0);
+
+    const dailyXp = {};   // "YYYY-MM-DD" -> xp
+    const dailyCount = {}; // "YYYY-MM-DD" -> lessons
+
+    for (const doc of progressDocs) {
+      for (const lec of (doc.lectureProgress || [])) {
+        if (!lec.completed || !lec.completedAt) continue;
+        const at = new Date(lec.completedAt);
+        if (at < oneYearAgo || at > now) continue;
+        const key = at.toISOString().slice(0, 10);
+        dailyXp[key] = (dailyXp[key] || 0) + (lec.points || 0);
+        dailyCount[key] = (dailyCount[key] || 0) + 1;
+      }
+    }
+
+    // Build daily array for heatmap
+    const daily = Object.entries(dailyCount)
+      .map(([date, count]) => ({ date, count, xp: dailyXp[date] || 0 }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    // Build weekly XP for the last 12 weeks
+    const weeklyXp = [];
+    for (let w = 11; w >= 0; w--) {
+      const weekEnd = new Date(now);
+      weekEnd.setDate(weekEnd.getDate() - w * 7);
+      weekEnd.setHours(23, 59, 59, 999);
+      const weekStart = new Date(weekEnd);
+      weekStart.setDate(weekStart.getDate() - 6);
+      weekStart.setHours(0, 0, 0, 0);
+
+      let xp = 0;
+      let lessons = 0;
+      for (const [dateStr, val] of Object.entries(dailyXp)) {
+        const d = new Date(dateStr + 'T12:00:00');
+        if (d >= weekStart && d <= weekEnd) {
+          xp += val;
+          lessons += dailyCount[dateStr] || 0;
+        }
+      }
+
+      const label = weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      weeklyXp.push({ weekLabel: label, xp, lessons });
+    }
+
+    // ── Stats summary ───────────────────────────────────────────────────
+    const userStats = await recomputeAndPersistUserStats(req.user.id);
+    const rankInfo = await getUserRank(req.user.id, userStats.totalXp);
+
+    const completedCourses = courses.filter((c) => c.status === 'completed').length;
+    const totalLessonsCompleted = courses.reduce((s, c) => s + c.completedLectures, 0);
+
+    return res.status(200).json({
+      stats: {
+        totalXp: userStats.totalXp,
+        level: userStats.level,
+        league: userStats.league,
+        xpToNextLevel: userStats.xpToNextLevel,
+        levelProgressPercent: userStats.levelProgressPercent,
+        rank: rankInfo.rank,
+        totalUsers: rankInfo.totalUsers,
+        streakCount: user.streakCount || 0,
+        coursesEnrolled: courses.length,
+        coursesCompleted: completedCourses,
+        totalLessonsCompleted
+      },
+      courses,
+      daily,
+      weeklyXp
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}
+
 async function getActivityHeatmap(req, res) {
   try {
     const now = new Date();
@@ -622,8 +847,9 @@ async function getActivityHeatmap(req, res) {
 
     const progressDocs = await UserProgress.find({ user: req.user.id }).lean();
 
-    // Count completed lectures per day within the last 365 days
+    // Count completed lectures and XP per day within the last 365 days
     const dayCounts = {};
+    const dayXp = {};
 
     for (const doc of progressDocs) {
       for (const lec of (doc.lectureProgress || [])) {
@@ -633,10 +859,11 @@ async function getActivityHeatmap(req, res) {
 
         const dateKey = completedAt.toISOString().slice(0, 10); // YYYY-MM-DD
         dayCounts[dateKey] = (dayCounts[dateKey] || 0) + 1;
+        dayXp[dateKey] = (dayXp[dateKey] || 0) + (lec.points || 0);
       }
     }
 
-    const activity = Object.entries(dayCounts).map(([date, count]) => ({ date, count }));
+    const activity = Object.entries(dayCounts).map(([date, count]) => ({ date, count, xp: dayXp[date] || 0 }));
     activity.sort((a, b) => a.date.localeCompare(b.date));
 
     return res.status(200).json({ activity });
@@ -650,6 +877,7 @@ module.exports = {
   enrollInCourse,
   updateCourseProgress,
   getMyLearningOverview,
+  getMyProgress,
   getLeaderboardHandler,
   getActivityHeatmap
 };

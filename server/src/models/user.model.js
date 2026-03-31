@@ -13,6 +13,13 @@ const earnedBadgeSchema = new mongoose.Schema({
   notified: { type: Boolean, default: false }
 }, { _id: true });
 
+const rewardSchema = new mongoose.Schema({
+  month: { type: String, required: true },        // e.g. "2025-07"
+  rewardType: { type: String, default: 'monthly' },
+  claimed: { type: Boolean, default: false },
+  claimedAt: { type: Date }
+}, { _id: true });
+
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true, minlength: 3 },
   email:    { type: String, required: true, unique: true },
@@ -36,7 +43,8 @@ const userSchema = new mongoose.Schema({
     }],
     default: []
   },
-  bio: { type: String, default: '', maxlength: 200 }
+  bio: { type: String, default: '', maxlength: 200 },
+  rewards: { type: [rewardSchema], default: [] }
 },
 {
     timestamps: true

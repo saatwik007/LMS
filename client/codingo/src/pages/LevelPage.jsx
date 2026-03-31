@@ -356,6 +356,9 @@ export default function LevelPage() {
   const [answers, setAnswers] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [xpBurst, setXpBurst] = useState(null);        // { amount, key, particles: [...] }
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const xpBurstKeyRef = useRef(0);
   const mainRef = useRef(null);
 
   // ── Reset all state when the level changes ────────────────────────────────
@@ -438,6 +441,17 @@ if (!levelData || !levelData.parts) {
     });
   }
 
+  function triggerXpBurst(amount) {
+    const particles = [...Array(8)].map(() => ({
+      fontSize: `${1.2 + Math.random() * 0.8}rem`,
+      left: `${40 + Math.random() * 20}%`,
+      translateY: -(80 + Math.random() * 60),
+      rotate: -15 + Math.random() * 30,
+    }));
+    setXpBurst({ amount, key: ++xpBurstKeyRef.current, particles });
+    setTimeout(() => setXpBurst(null), 1400);
+  }
+
   function handleNext() {
     if (isChallenge && !isSubmitted) {
       // ── Submit challenge
@@ -445,14 +459,18 @@ if (!levelData || !levelData.parts) {
       if (!completedParts.has(currentPartIdx)) {
         setCompletedParts(prev => new Set([...prev, currentPartIdx]));
         setEarnedXP(prev => prev + part.xp);
+        triggerXpBurst(part.xp);
+        // Level-up check: show modal when all parts completed
+        if (completedParts.size + 1 === parts.length) {
+          setTimeout(() => setShowLevelUp(true), 900);
+        }
       }
     } else if (currentPartIdx < parts.length - 1) {
       // ── Advance to next part
-      // NOTE: call setCurrentPartIdx directly instead of goToPart() to avoid
-      // the isPartAccessible guard reading stale completedParts state.
       if (!completedParts.has(currentPartIdx)) {
         setCompletedParts(prev => new Set([...prev, currentPartIdx]));
         setEarnedXP(prev => prev + part.xp);
+        triggerXpBurst(part.xp);
       }
       const nextIdx = currentPartIdx + 1;
       setCurrentPartIdx(nextIdx);
@@ -465,6 +483,12 @@ if (!levelData || !levelData.parts) {
       if (!completedParts.has(currentPartIdx)) {
         setCompletedParts(prev => new Set([...prev, currentPartIdx]));
         setEarnedXP(prev => prev + part.xp);
+        triggerXpBurst(part.xp);
+        // Level-up modal before navigating
+        setTimeout(() => {
+          setShowLevelUp(true);
+        }, 900);
+        return; // wait for user to dismiss modal
       }
       if (nextLevel) {
         navigate(`/level/${courseId}/${nextNo}`);
@@ -768,6 +792,107 @@ if (!levelData || !levelData.parts) {
           {nextLabel}
         </button>
       </div>
+
+      {/* ── XP BURST ANIMATION ─────────────────────────────────────────────── */}
+      {xpBurst && (
+        <div key={xpBurst.key} className="fixed inset-0 pointer-events-none z-100 flex items-center justify-center">
+          {xpBurst.particles.map((p, i) => (
+            <span
+              key={i}
+              className="absolute text-amber-400 font-extrabold opacity-0"
+              style={{
+                fontSize: p.fontSize,
+                animation: `xpFloat${i} 1.3s ease-out ${i * 0.06}s forwards`,
+                left: p.left,
+                top: '50%',
+              }}
+            >
+              +{xpBurst.amount} XP
+            </span>
+          ))}
+          <span
+            className="text-amber-300 font-black text-5xl md:text-6xl opacity-0"
+            style={{ animation: 'xpCenter 1.3s ease-out forwards', textShadow: '0 0 30px rgba(245,158,11,0.6)' }}
+          >
+            +{xpBurst.amount} XP
+          </span>
+
+          <style>{`
+            ${xpBurst.particles.map((p, i) => `
+              @keyframes xpFloat${i} {
+                0%   { opacity: 0; transform: translateY(0) scale(0.5); }
+                30%  { opacity: 1; }
+                100% { opacity: 0; transform: translateY(${p.translateY}px) scale(1.2) rotate(${p.rotate}deg); }
+              }
+            `).join('')}
+            @keyframes xpCenter {
+              0%   { opacity: 0; transform: scale(0.3); }
+              40%  { opacity: 1; transform: scale(1.15); }
+              70%  { opacity: 1; transform: scale(0.95); }
+              100% { opacity: 0; transform: scale(1) translateY(-30px); }
+            }
+          `}</style>
+        </div>
+      )}
+
+      {/* ── LEVEL-UP MODAL ─────────────────────────────────────────────────── */}
+      {showLevelUp && (
+        <div className="fixed inset-0 z-110 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div
+            className="relative rounded-3xl p-8 md:p-10 text-center max-w-sm w-full mx-4 border"
+            style={{
+              background: 'linear-gradient(145deg, #1a1a2e, #0d0d1a)',
+              borderColor: part.color + '55',
+              boxShadow: `0 0 60px ${part.glow}, 0 0 120px ${part.glow}`,
+            }}
+          >
+            <div className="text-6xl mb-4" style={{ animation: 'levelStar 0.6s ease-out' }}>🎉</div>
+            <h2
+              className="text-2xl md:text-3xl font-black text-white mb-2"
+              style={{ fontFamily: "'Syne', sans-serif" }}
+            >
+              Level Complete!
+            </h2>
+            <p className="text-white/50 text-sm mb-5">
+              You earned <span className="text-amber-400 font-bold">{earnedXP} XP</span> in this chapter!
+            </p>
+            <div className="flex items-center justify-center gap-2 mb-6">
+              <div
+                className="px-4 py-2 rounded-xl font-mono font-bold text-sm"
+                style={{ background: part.glow, color: part.color, border: `1px solid ${part.color}44` }}
+              >
+                ⚡ {earnedXP} / {totalXP} XP
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setShowLevelUp(false);
+                if (nextLevel) {
+                  navigate(`/level/${courseId}/${nextNo}`);
+                  window.scrollTo(0, 0);
+                } else {
+                  navigate(`/levels/${courseId}`);
+                }
+              }}
+              className="w-full py-3 rounded-xl text-white font-bold text-sm transition-all hover:brightness-110"
+              style={{
+                background: `linear-gradient(135deg, ${part.color}, ${part.color}bb)`,
+                boxShadow: `0 4px 20px ${part.glow}`,
+              }}
+            >
+              {nextLevel ? 'Continue to Next Chapter →' : 'Back to Levels'}
+            </button>
+
+            <style>{`
+              @keyframes levelStar {
+                0%   { transform: scale(0) rotate(-30deg); opacity: 0; }
+                60%  { transform: scale(1.2) rotate(10deg); opacity: 1; }
+                100% { transform: scale(1) rotate(0deg); }
+              }
+            `}</style>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

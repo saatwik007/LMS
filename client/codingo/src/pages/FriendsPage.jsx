@@ -28,6 +28,7 @@ export default function FriendsPage() {
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [confirmRemoveId, setConfirmRemoveId] = useState(null);
   const apiUrl = import.meta.env.VITE_API_URL || '';
 
   // Fetch friends list
@@ -119,8 +120,12 @@ export default function FriendsPage() {
         fetchFriends();
       }
       
-      // Update search results to reflect sent request
-      setSearchResults(prev => prev.filter(user => user._id !== userId));
+      // Update search results to show Pending state instead of removing
+      setSearchResults(prev =>
+        prev.map(user =>
+          user._id === userId ? { ...user, hasPendingRequest: true } : user
+        )
+      );
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to send friend request');
       setTimeout(() => setError(null), 3000);
@@ -161,8 +166,6 @@ export default function FriendsPage() {
   };
 
   const handleRemoveFriend = async (friendId) => {
-    if (!confirm('Are you sure you want to remove this friend?')) return;
-    
     try {
       await axios.delete(`${apiUrl}/api/social/friends/${friendId}`, {
         withCredentials: true,
@@ -170,10 +173,12 @@ export default function FriendsPage() {
       });
       setSuccessMessage('Friend removed');
       setTimeout(() => setSuccessMessage(null), 3000);
+      setConfirmRemoveId(null);
       fetchFriends();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to remove friend');
       setTimeout(() => setError(null), 3000);
+      setConfirmRemoveId(null);
     }
   };
 
@@ -216,12 +221,30 @@ export default function FriendsPage() {
       </div>
       {!showRank && (
         <div className="mt-3 flex gap-2">
-          <button
-            onClick={() => handleRemoveFriend(friend._id)}
-            className="flex-1 px-3 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg text-sm font-semibold transition flex items-center justify-center gap-2"
-          >
-            <FaTrash /> Remove
-          </button>
+          {confirmRemoveId === friend._id ? (
+            <>
+              <span className="flex-1 text-sm text-gray-300 flex items-center">Are you sure?</span>
+              <button
+                onClick={() => handleRemoveFriend(friend._id)}
+                className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition"
+              >
+                Yes
+              </button>
+              <button
+                onClick={() => setConfirmRemoveId(null)}
+                className="px-3 py-2 bg-[#1a2332] hover:bg-[#243547] text-gray-400 rounded-lg text-sm font-semibold transition"
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setConfirmRemoveId(friend._id)}
+              className="flex-1 px-3 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg text-sm font-semibold transition flex items-center justify-center gap-2"
+            >
+              <FaTrash /> Remove
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -430,6 +453,10 @@ export default function FriendsPage() {
                           {user.isFriend ? (
                             <div className="px-4 py-2 bg-emerald-600/20 text-emerald-400 rounded-lg text-sm font-semibold">
                               Friends
+                            </div>
+                          ) : user.hasPendingRequest ? (
+                            <div className="px-4 py-2 bg-yellow-600/20 text-yellow-400 rounded-lg text-sm font-semibold cursor-default">
+                              Pending
                             </div>
                           ) : (
                             <button

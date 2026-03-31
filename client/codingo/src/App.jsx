@@ -171,6 +171,14 @@ function AppShell() {
             )}
           />
           <Route
+            path="/profile/:userId"
+            element={(
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
             path="/progress"
             element={(
               <ProtectedRoute>

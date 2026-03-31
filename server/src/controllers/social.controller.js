@@ -13,27 +13,39 @@ exports.searchUsers = async (req, res) => {
       return res.json({ users: [] });
     }
 
-    const currentUser = await User.findById(currentUserId).select('friends');
+    const currentUser = await User.findById(currentUserId).select('friends friendRequests');
     
     if (!currentUser) {
       return res.status(404).json({ message: 'User not found' });
     }
 
     const friendIds = (currentUser.friends || []).map(id => id.toString());
+    // IDs of users who have sent the current user a pending request
+    const pendingFromIds = (currentUser.friendRequests || [])
+      .filter(r => r && r.from)
+      .map(r => r.from.toString());
 
     const users = await User.find({
       _id: { $ne: currentUserId },
       username: { $regex: q, $options: 'i' }
     })
-      .select('username profilePic totalXp level league streakCount')
+      .select('username profilePic totalXp level league streakCount friendRequests')
       .limit(20)
       .lean();
 
-    // Mark friendship status
-    const usersWithStatus = users.map(user => ({
-      ...user,
-      isFriend: friendIds.includes(user._id.toString())
-    }));
+    // Mark friendship & pending-request status
+    const usersWithStatus = users.map(({ friendRequests: fr, ...user }) => {
+      const hasPendingRequest =
+        // current user sent them a request
+        (fr || []).some(r => r && r.from && r.from.toString() === currentUserId) ||
+        // they sent current user a request
+        pendingFromIds.includes(user._id.toString());
+      return {
+        ...user,
+        isFriend: friendIds.includes(user._id.toString()),
+        hasPendingRequest
+      };
+    });
 
     res.json({ users: usersWithStatus });
   } catch (error) {
@@ -308,8 +320,7 @@ exports.getFriendsLeaderboard = async (req, res) => {
     const currentUser = await User.findById(currentUserId)
       .populate({
         path: 'friends',
-        select: 'username profilePic totalXp level league streakCount',
-        options: { sort: { totalXp: -1 }, limit }
+        select: 'username profilePic totalXp level league streakCount'
       })
       .lean();
 
@@ -322,7 +333,10 @@ exports.getFriendsLeaderboard = async (req, res) => {
       return res.json({ leaderboard: [] });
     }
 
-    const leaderboard = currentUser.friends.map((friend, index) => ({
+    // Sort by totalXp descending in JS and limit
+    const sorted = [...currentUser.friends].sort((a, b) => (b.totalXp || 0) - (a.totalXp || 0)).slice(0, limit);
+
+    const leaderboard = sorted.map((friend, index) => ({
       rank: index + 1,
       _id: friend._id,
       username: friend.username,
