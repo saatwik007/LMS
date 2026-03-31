@@ -3,6 +3,7 @@ import {
   FaBars,
   FaChartLine,
   FaEllipsisH,
+  FaFlagCheckered,
   FaGraduationCap,
   FaRegStar,
   FaTimes,
@@ -15,8 +16,9 @@ import { useLocation, useNavigate } from 'react-router-dom';
 const navItems = [
   { key: 'dashboard', label: 'Dashboard', icon: FaRegStar, to: '/dashboard', match: ['/dashboard'] },
   { key: 'learn', label: 'Learn', icon: FaGraduationCap, to: '/learn', match: ['/learn', '/levels', '/language'] },
+  { key: 'challenges', label: 'Challenges', icon: FaFlagCheckered, to: '/challenges', match: ['/challenges'] },
+  { key: 'leaderboards', label: 'Leaderboards', icon: FaTrophy, to: '/leaderboard', match: ['/leaderboard'] },
   { key: 'progress', label: 'Progress', icon: FaChartLine, to: '/dashboard', match: [] },
-  { key: 'leaderboards', label: 'Leaderboards', icon: FaTrophy, to: '/dashboard', match: [] },
   { key: 'friends', label: 'Friends', icon: FaUsers, to: '/dashboard', match: [] },
   { key: 'profile', label: 'Profile', icon: FaUser, to: '/dashboard', match: [] },
   { key: 'more', label: 'More', icon: FaEllipsisH, to: '/dashboard', match: [] }

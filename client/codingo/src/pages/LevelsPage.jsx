@@ -43,6 +43,7 @@ export default function LevelsRoute({ courseId, onBack }) {
   const [code, setCode] = useState('');
   const [output, setOutput] = useState('');
   const [testResults, setTestResults] = useState([]);
+  const [dailyChallenges, setDailyChallenges] = useState([]);
   const [unlocked, setUnlocked] = useState(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -145,6 +146,27 @@ export default function LevelsRoute({ courseId, onBack }) {
     }, 120);
     return () => clearTimeout(t);
   }, [lastUnlocked]);
+
+  // Fetch daily challenges
+  useEffect(() => {
+    async function fetchDailyChallenges() {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const response = await axios.get(`${apiUrl}/api/challenges?type=daily`, {
+          withCredentials: true,
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+
+        setDailyChallenges(response.data.challenges || []);
+      } catch (error) {
+        console.error('Failed to fetch daily challenges:', error);
+      }
+    }
+
+    fetchDailyChallenges();
+  }, [apiUrl]);
 
   return (
     <>
@@ -370,46 +392,38 @@ export default function LevelsRoute({ courseId, onBack }) {
           </div>
         </main>
 
-        {/* Right panel */}
+        {/* Right side panel */}
         <aside className="col-span-3">
-          <div
-            className="sticky top-6 bg-gray-800/70 rounded-2xl p-4 border border-gray-700 shadow-[0_10px_30px_rgba(2,6,23,0.6)] transform-gpu"
-            style={{ transform: 'perspective(800px) translateZ(0)', backfaceVisibility: 'hidden' }}
-          >
-            <div className="mb-4">
-              <div className="text-sm text-gray-400">Semifinals</div>
-              <div className="mt-3 p-3 rounded-md bg-gray-800/40 border border-gray-700">
-                <div className="text-sm font-medium">You're ranked #4</div>
-                <div className="text-xs text-gray-400 mt-1">You're almost at the top 3!</div>
-              </div>
-            </div>
-
+          <div className="h-full overflow-y-auto rounded-2xl bg-gray-800/30 p-5 text-gray-200 space-y-6">
             <div>
               <div className="text-sm text-gray-400 mb-2">Daily Quests</div>
               <div className="space-y-3">
-                <div className="p-3 rounded-md bg-gray-800/40 border border-gray-700">
-                  <div className="text-xs text-gray-300">Earn 50 XP</div>
-                  <div className="text-sm font-medium text-gray-100">50 / 50</div>
-                  <div className="w-full h-2 bg-gray-700 rounded mt-2 overflow-hidden">
-                    <div className="h-2 bg-emerald-400" style={{ width: '100%' }} />
+                {dailyChallenges.length === 0 ? (
+                  <div className="p-3 rounded-md bg-gray-800/40 border border-gray-700 text-xs text-gray-400">
+                    Loading challenges...
                   </div>
-                </div>
+                ) : (
+                  dailyChallenges.map((challenge) => {
+                    const progressPercent = Math.min(100, Math.round((challenge.progress / challenge.goalValue) * 100));
+                    const barColor = challenge.completed 
+                      ? 'bg-emerald-400' 
+                      : progressPercent > 66 
+                      ? 'bg-amber-400' 
+                      : 'bg-rose-400';
 
-                <div className="p-3 rounded-md bg-gray-800/40 border border-gray-700">
-                  <div className="text-xs text-gray-300">Score 90% or higher in 3 lessons</div>
-                  <div className="text-sm font-medium text-gray-100">3 / 3</div>
-                  <div className="w-full h-2 bg-gray-700 rounded mt-2 overflow-hidden">
-                    <div className="h-2 bg-amber-400" style={{ width: '100%' }} />
-                  </div>
-                </div>
-
-                <div className="p-3 rounded-md bg-gray-800/40 border border-gray-700">
-                  <div className="text-xs text-gray-300">Get 10 in a row correct in 4 lessons</div>
-                  <div className="text-sm font-medium text-gray-100">4 / 4</div>
-                  <div className="w-full h-2 bg-gray-700 rounded mt-2 overflow-hidden">
-                    <div className="h-2 bg-rose-400" style={{ width: '100%' }} />
-                  </div>
-                </div>
+                    return (
+                      <div key={challenge.id} className="p-3 rounded-md bg-gray-800/40 border border-gray-700">
+                        <div className="text-xs text-gray-300">{challenge.title}</div>
+                        <div className="text-sm font-medium text-gray-100">
+                          {challenge.progress} / {challenge.goalValue}
+                        </div>
+                        <div className="w-full h-2 bg-gray-700 rounded mt-2 overflow-hidden">
+                          <div className={`h-2 ${barColor}`} style={{ width: `${progressPercent}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
 
@@ -427,8 +441,6 @@ export default function LevelsRoute({ courseId, onBack }) {
           </div>
         </aside>
       </div>
-
-
     </div>
   </div>
   </>
