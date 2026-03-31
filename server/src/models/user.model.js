@@ -27,7 +27,16 @@ const userSchema = new mongoose.Schema({
   },
   streakCount: { type: Number, default: 0, min: 0 },
   notifications: { type: [notificationSchema], default: [] },
-  badges: { type: [earnedBadgeSchema], default: [] }
+  badges: { type: [earnedBadgeSchema], default: [] },
+  friends: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], default: [] },
+  friendRequests: { 
+    type: [{ 
+      from: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      createdAt: { type: Date, default: Date.now }
+    }],
+    default: []
+  },
+  bio: { type: String, default: '', maxlength: 200 }
 },
 {
     timestamps: true

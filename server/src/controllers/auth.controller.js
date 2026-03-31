@@ -45,10 +45,13 @@ function buildUserPayload(user) {
     username: user.username,
     email: user.email,
     profilePic: user.profilePic || '',
+    bio: user.bio || '',
     totalXp: user.totalXp || 0,
     level: user.level || 1,
     streakCount: user.streakCount || 0,
-    notifications: (user.notifications || []).slice(-10).reverse()
+    notifications: (user.notifications || []).slice(-10).reverse(),
+    friends: user.friends || [],
+    friendRequests: user.friendRequests || []
   };
 }
 
@@ -139,7 +142,7 @@ async function getCurrentUser(req, res) {
 
 async function updateProfile(req, res) {
   try {
-    const { username, profilePic } = req.body;
+    const { username, profilePic, bio } = req.body;
     const updates = {};
 
     if (typeof username === 'string' && username.trim()) {
@@ -153,6 +156,10 @@ async function updateProfile(req, res) {
 
     if (typeof profilePic === 'string') {
       updates.profilePic = profilePic.trim();
+    }
+
+    if (typeof bio === 'string') {
+      updates.bio = bio.trim().substring(0, 200); // Enforce max length
     }
 
     if (Object.keys(updates).length === 0) {

@@ -1,6 +1,20 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
-import { FaTrophy, FaMedal, FaStar, FaFire, FaCrown, FaLock } from 'react-icons/fa';
+import { 
+  FaTrophy, 
+  FaMedal, 
+  FaStar, 
+  FaFire, 
+  FaCrown, 
+  FaLock,
+  FaCamera,
+  FaEdit,
+  FaSave,
+  FaTimes,
+  FaUsers,
+  FaUserFriends
+} from 'react-icons/fa';
+import CalendarHeatmap from '../components/shared/CalendarHeatmap';
 
 const RARITY_COLORS = {
   Common: 'bg-gray-600 text-gray-100',
@@ -31,23 +45,46 @@ function getStoredUser() {
 }
 
 export default function ProfilePage() {
+  const [currentUser, setCurrentUser] = useState(getStoredUser());
   const [allBadges, setAllBadges] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedRarity, setSelectedRarity] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
-  
-  const currentUser = getStoredUser();
+  const [isEditingBio, setIsEditingBio] = useState(false);
+  const [bio, setBio] = useState('');
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [calendarData, setCalendarData] = useState([]);
+  const fileInputRef = useRef(null);
+  const apiUrl = import.meta.env.VITE_API_URL || '';
 
   useEffect(() => {
     fetchBadges();
+    fetchUserProfile();
+    generateCalendarData();
   }, []);
+
+  async function fetchUserProfile() {
+    try {
+      const response = await axios.get(`${apiUrl}/api/auth/user/me`, {
+        withCredentials: true,
+        headers: getAuthHeaders()
+      });
+
+      if (response.data?.user) {
+        setCurrentUser(response.data.user);
+        setBio(response.data.user.bio || '');
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+      }
+    } catch (err) {
+      console.error('Failed to fetch user profile:', err);
+    }
+  }
 
   async function fetchBadges() {
     setIsLoading(true);
     setError(null);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || '';
       const response = await axios.get(`${apiUrl}/api/badges`, {
         withCredentials: true,
         headers: getAuthHeaders()
@@ -60,6 +97,85 @@ export default function ProfilePage() {
       setIsLoading(false);
     }
   }
+
+  function generateCalendarData() {
+    const data = [];
+    const today = new Date();
+    const startDate = new Date(today);
+    startDate.setFullYear(startDate.getFullYear() - 1);
+
+    let currentDate = new Date(startDate);
+    while (currentDate <= today) {
+      data.push({
+        date: new Date(currentDate),
+        count: Math.floor(Math.random() * 6) // Replace with actual activity data
+      });
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    setCalendarData(data);
+  }
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 3 * 1024 * 1024) {
+      setError('Image must be less than 3MB');
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await axios.patch(
+        `${apiUrl}/api/auth/user/profile/image`,
+        formData,
+        {
+          withCredentials: true,
+          headers: {
+            ...getAuthHeaders(),
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+
+      if (response.data?.user) {
+        setCurrentUser(response.data.user);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        window.dispatchEvent(new Event('auth:user-updated'));
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to upload avatar');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
+  const handleSaveBio = async () => {
+    try {
+      const response = await axios.patch(
+        `${apiUrl}/api/auth/user/profile`,
+        { bio },
+        {
+          withCredentials: true,
+          headers: getAuthHeaders()
+        }
+      );
+
+      if (response.data?.user) {
+        setCurrentUser(response.data.user);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+      }
+      setIsEditingBio(false);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to update bio');
+    }
+  };
 
   const earnedBadges = allBadges.filter(b => b.earned);
   const lockedBadges = allBadges.filter(b => !b.earned);
@@ -82,26 +198,155 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-[#0f1419] text-white p-4 sm:p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
+        {/* Profile Header */}
         <div className="bg-[#1a2332] rounded-2xl p-6 border border-[#2a3a4a] shadow-lg mb-6">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center">
-                <FaCrown className="text-3xl text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold">{currentUser?.username || 'Learner'}'s Profile</h1>
-                <p className="text-gray-400 text-sm">Badges & Achievements</p>
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+            {/* Avatar */}
+            <div className="relative">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/jpg"
+                onChange={handleAvatarUpload}
+                className="hidden"
+              />
+              <div className="relative group">
+                {currentUser?.profilePic ? (
+                  <img 
+                    src={currentUser.profilePic} 
+                    alt={currentUser.username} 
+                    className="w-24 h-24 rounded-full border-4 border-cyan-500"
+                  />
+                ) : (
+                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-3xl font-bold">
+                    {currentUser?.username?.[0]?.toUpperCase() || 'U'}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingAvatar}
+                  className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                >
+                  {isUploadingAvatar ? (
+                    <div className="animate-spin w-6 h-6 border-2 border-white border-t-transparent rounded-full"></div>
+                  ) : (
+                    <FaCamera className="text-2xl text-white" />
+                  )}
+                </button>
               </div>
             </div>
-            <div className="bg-[#141b24] rounded-xl px-6 py-3 border border-[#1f2a38]">
-              <div className="text-xs text-gray-400 uppercase tracking-wide">Total Badges</div>
-              <div className="text-3xl font-bold text-cyan-400">{earnedBadges.length} / {allBadges.length}</div>
-              <div className="text-xs text-gray-500 mt-1">
-                {allBadges.length > 0 ? Math.round((earnedBadges.length / allBadges.length) * 100) : 0}% Complete
+
+            {/* User Info */}
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-3xl font-bold">{currentUser?.username || 'Learner'}</h1>
+                {currentUser?.league?.includes('Diamond') && (
+                  <FaCrown className="text-orange-400 text-2xl" />
+                )}
+              </div>
+              <div className="flex items-center gap-4 text-sm text-gray-400 mb-3">
+                <div className="flex items-center gap-2">
+                  <FaTrophy className="text-cyan-400" />
+                  <span>Level {currentUser?.level || 1}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <FaMedal className="text-yellow-400" />
+                  <span>{currentUser?.league || 'Bronze 1'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <FaStar className="text-orange-400" />
+                  <span>{currentUser?.totalXp || 0} XP</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <FaFire className="text-orange-500" />
+                  <span>{currentUser?.streakCount || 0} day streak</span>
+                </div>
+              </div>
+
+              {/* Bio */}
+              <div className="bg-[#141b24] rounded-lg p-4 border border-[#1f2a38]">
+                {isEditingBio ? (
+                  <div>
+                    <textarea
+                      value={bio}
+                      onChange={(e) => setBio(e.target.value)}
+                      placeholder="Write something about yourself..."
+                      className="w-full bg-[#0f1419] text-white rounded-lg p-3 border border-[#1f2a38] focus:border-cyan-500 focus:outline-none resize-none"
+                      rows="3"
+                      maxLength="200"
+                    />
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-xs text-gray-500">{bio.length}/200</span>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setBio(currentUser?.bio || '');
+                            setIsEditingBio(false);
+                          }}
+                          className="px-3 py-1 bg-gray-600 hover:bg-gray-700 rounded-lg text-sm font-semibold transition"
+                        >
+                          <FaTimes className="inline mr-1" /> Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSaveBio}
+                          className="px-3 py-1 bg-cyan-600 hover:bg-cyan-700 rounded-lg text-sm font-semibold transition"
+                        >
+                          <FaSave className="inline mr-1" /> Save
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-start justify-between">
+                    <p className="text-gray-300 flex-1">
+                      {bio || 'No bio yet. Click edit to add one.'}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingBio(true)}
+                      className="text-cyan-400 hover:text-cyan-300 ml-4"
+                    >
+                      <FaEdit />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div className="flex gap-4">
+              <div className="bg-[#141b24] rounded-xl px-6 py-3 border border-[#1f2a38] text-center">
+                <div className="text-2xl font-bold text-cyan-400">{earnedBadges.length}</div>
+                <div className="text-xs text-gray-400">Badges</div>
+              </div>
+              <div className="bg-[#141b24] rounded-xl px-6 py-3 border border-[#1f2a38] text-center">
+                <div className="text-2xl font-bold text-purple-400">0</div>
+                <div className="text-xs text-gray-400">Followers</div>
+              </div>
+              <div className="bg-[#141b24] rounded-xl px-6 py-3 border border-[#1f2a38] text-center">
+                <div className="text-2xl font-bold text-emerald-400">0</div>
+                <div className="text-xs text-gray-400">Following</div>
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-600/20 border border-red-600 rounded-lg p-4 mb-6">
+            <p className="text-red-400">{error}</p>
+          </div>
+        )}
+
+        {/* Activity Heatmap */}
+        <div className="bg-[#1a2332] rounded-2xl p-6 border border-[#2a3a4a] shadow-lg mb-6">
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <FaFire className="text-orange-400" /> Activity Overview
+          </h2>
+          <CalendarHeatmap data={calendarData} />
         </div>
 
         {/* Rarity Stats */}
@@ -136,7 +381,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Filters */}
+        {/* Badge Filters */}
         <div className="bg-[#1a2332] rounded-2xl p-4 border border-[#2a3a4a] shadow-lg mb-6">
           <div className="flex flex-wrap gap-4">
             <div>
@@ -182,28 +427,18 @@ export default function ProfilePage() {
 
         {/* Badges Grid */}
         <div className="bg-[#1a2332] rounded-2xl p-6 border border-[#2a3a4a] shadow-lg">
+          <h2 className="text-xl font-bold mb-4">Badges Collection</h2>
           {isLoading ? (
             <div className="text-center py-12">
               <div className="animate-spin w-12 h-12 border-4 border-cyan-400 border-t-transparent rounded-full mx-auto mb-4"></div>
               <p className="text-gray-400">Loading badges...</p>
-            </div>
-          ) : error ? (
-            <div className="text-center py-12">
-              <p className="text-red-400 mb-4">{error}</p>
-              <button
-                type="button"
-                onClick={fetchBadges}
-                className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 rounded-lg font-semibold transition"
-              >
-                Retry
-              </button>
             </div>
           ) : filteredBadges.length === 0 ? (
             <div className="text-center py-12 text-gray-400">
               No badges match your filters.
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {filteredBadges.map((badge) => (
                 <div
                   key={badge.id}
