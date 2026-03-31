@@ -2,6 +2,7 @@ const Badge = require('../models/badge.model');
 const User = require('../models/user.model');
 const UserProgress = require('../models/userProgress.model');
 const UserChallenge = require('../models/userChallenge.model');
+const { syncLevelAndLeague } = require('../utils/userStats');
 
 // Initialize default badges in the database
 async function ensureDefaultBadges() {
@@ -152,9 +153,8 @@ async function checkAndAwardBadges(userId) {
         // Add XP bonus if applicable
         if (badge.xpBonus > 0) {
           user.totalXp += badge.xpBonus;
-          // Recalculate level
-          const XP_PER_LEVEL = 500;
-          user.level = Math.max(1, Math.floor(user.totalXp / XP_PER_LEVEL) + 1);
+          // Recalculate level and league
+          syncLevelAndLeague(user);
         }
 
         // Add notification
@@ -212,8 +212,8 @@ async function awardBadgeToUser(userId, badgeId) {
     // Add XP bonus
     if (badge.xpBonus > 0) {
       user.totalXp += badge.xpBonus;
-      const XP_PER_LEVEL = 500;
-      user.level = Math.max(1, Math.floor(user.totalXp / XP_PER_LEVEL) + 1);
+      // Recalculate level and league
+      syncLevelAndLeague(user);
     }
 
     // Add notification

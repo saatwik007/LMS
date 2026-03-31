@@ -2,6 +2,7 @@ const cron = require('node-cron');
 const User = require('../models/user.model');
 const Badge = require('../models/badge.model');
 const { awardBadgeToUser } = require('../controllers/badge.controller');
+const { syncLevelAndLeagueById } = require('../utils/userStats');
 
 // Monthly reward distribution - runs on the 1st of every month at midnight
 function startMonthlyRewardJob() {
@@ -80,6 +81,9 @@ function startMonthlyRewardJob() {
             }
           }
         });
+
+        // Recalculate and persist level and league after XP change
+        await syncLevelAndLeagueById(User, user._id);
 
         console.log(`💰 Awarded ${bonus} XP bonus to ${user.username} (Rank #${i + 1})`);
       }
