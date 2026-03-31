@@ -7,6 +7,7 @@ const learningRoutes = require('./routes/learning.routes');
 const challengeRoutes = require('./routes/challenge.routes');
 const badgeRoutes = require('./routes/badge.routes');
 const communityRoutes = require('./routes/community.routes');
+const socialRoutes = require('./routes/social.routes');
 const cors = require('cors');
 const path = require('path');
 
@@ -25,6 +26,7 @@ app.use('/api/learning', learningRoutes);
 app.use('/api/challenges', challengeRoutes);
 app.use('/api/badges', badgeRoutes);
 app.use('/api/community', communityRoutes);
+app.use('/api/social', socialRoutes);
 
 
 module.exports = app;

@@ -158,12 +158,7 @@ function CourseMarketColumn() {
     { name: "React", icon: "⚛️", level: 15 },
   ]);
 
-  const [friends] = useState([
-    { name: "Alex Chen", status: "Online", xp: 2850, rank: 12 },
-    { name: "Sarah Dev", status: "Online", xp: 2640, rank: 15 },
-    { name: "Mike Johnson", status: "Away", xp: 2480, rank: 18 },
-    { name: "Emma Watson", status: "Offline", xp: 2210, rank: 24 },
-  ]);
+  const [friends, setFriends] = useState([]);
 
   const [leaderboard] = useState([
     { rank: 1, name: "VivekMandal", xp: 10000 , medal: "⭐", isUser: true },
@@ -333,6 +328,26 @@ function CourseMarketColumn() {
     }
   }, [apiUrl]);
 
+  const fetchFriends = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setFriends([]);
+      return;
+    }
+
+    try {
+      const response = await axios.get(`${apiUrl}/api/social/friends`, {
+        withCredentials: true,
+        headers: getAuthHeaders()
+      });
+      // Show only top 4 friends for dashboard widget
+      setFriends(response.data?.friends?.slice(0, 4) || []);
+    } catch (error) {
+      console.error('Failed to fetch friends:', error);
+      setFriends([]);
+    }
+  }, [apiUrl]);
+
   const handleEnrollAndStart = async (courseId) => {
     setIsEnrollingCourse(courseId);
     setOverviewError("");
@@ -361,7 +376,8 @@ function CourseMarketColumn() {
 
   useEffect(() => {
     fetchBadges();
-  }, [fetchBadges, userIdentifier]);
+    fetchFriends();
+  }, [fetchBadges, fetchFriends, userIdentifier]);
 
   const isFirstDashboardVisit = useMemo(() => {
     const firstVisitKey = `dashboard-first-visit:${userIdentifier}`;
@@ -783,33 +799,54 @@ function CourseMarketColumn() {
             </div>
 
             <div className="bg-[#1a2332] rounded-2xl p-6 border border-[#2a3a4a] shadow-lg">
-              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <FaUsers className="text-cyan-400" /> Friends
-              </h3>
-              <div className="space-y-3">
-                {friends.map((friend) => (
-                  <div key={friend.name} className="bg-[#141b24] rounded-lg p-3 border border-[#1f2a38]">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="font-bold text-sm">{friend.name}</div>
-                      <span
-                        className={`text-xs px-2 py-1 rounded-full font-semibold ${
-                          friend.status === "Online"
-                            ? "bg-emerald-600/30 text-emerald-300 border border-emerald-600/50"
-                            : friend.status === "Away"
-                            ? "bg-yellow-600/30 text-yellow-300 border border-yellow-600/50"
-                            : "bg-gray-700/30 text-gray-400 border border-gray-700/50"
-                        }`}
-                      >
-                        {friend.status}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-xs text-gray-500">
-                      <span>{friend.xp} XP</span>
-                      <span>Rank #{friend.rank}</span>
-                    </div>
-                  </div>
-                ))}
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <FaUsers className="text-cyan-400" /> Friends
+                </h3>
+                <button 
+                  onClick={() => navigate('/friends')}
+                  className="text-cyan-400 text-xs font-bold hover:underline" 
+                  type="button"
+                >
+                  View all
+                </button>
               </div>
+              {friends.length === 0 ? (
+                <div className="text-center py-8 text-gray-400">
+                  <FaUsers className="text-4xl mx-auto mb-3 opacity-50" />
+                  <p className="text-sm mb-2">No friends yet</p>
+                  <button
+                    onClick={() => navigate('/friends')}
+                    className="text-cyan-400 text-sm hover:underline"
+                  >
+                    Find friends
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {friends.map((friend) => (
+                    <div key={friend._id} className="bg-[#141b24] rounded-lg p-3 border border-[#1f2a38] hover:border-cyan-600/30 transition cursor-pointer" onClick={() => navigate('/friends')}>
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-sm font-bold flex-shrink-0">
+                          {friend.profilePic ? (
+                            <img src={friend.profilePic} alt={friend.username} className="w-full h-full rounded-full object-cover" />
+                          ) : (
+                            friend.username[0].toUpperCase()
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-bold text-sm truncate">{friend.username}</div>
+                          <div className="text-xs text-gray-400">{friend.league}</div>
+                        </div>
+                      </div>
+                      <div className="flex justify-between text-xs text-gray-500">
+                        <span>{friend.totalXp.toLocaleString()} XP</span>
+                        <span>Level {friend.level}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="bg-[#1a2332] rounded-2xl p-6 border border-[#2a3a4a] shadow-lg">

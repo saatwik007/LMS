@@ -10,6 +10,7 @@ import {
   FaTimes,
   FaTrophy,
   FaUser,
+  FaUserFriends,
   FaUsers
 } from 'react-icons/fa';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -20,8 +21,9 @@ const navItems = [
   { key: 'community', label: 'Community', icon: FaUsers, to: '/community', match: ['/community'] },
   { key: 'challenges', label: 'Challenges', icon: FaFlagCheckered, to: '/challenges', match: ['/challenges'] },
   { key: 'leaderboards', label: 'Leaderboards', icon: FaTrophy, to: '/leaderboard', match: ['/leaderboard'] },
+  { key: 'friends', label: 'Friends', icon: FaUserFriends, to: '/friends', match: ['/friends'] },
   { key: 'profile', label: 'Profile', icon: FaMedal, to: '/profile', match: ['/profile'] },
-  { key: 'progress', label: 'Progress', icon: FaChartLine, to: '/dashboard', match: [] },
+  { key: 'progress', label: 'Progress', icon: FaChartLine, to: '/progress', match: ['/progress'] },
   { key: 'more', label: 'More', icon: FaEllipsisH, to: '/dashboard', match: [] }
 ];
 

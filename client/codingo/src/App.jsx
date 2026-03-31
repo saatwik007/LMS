@@ -14,6 +14,8 @@ import LeaderboardPage from './pages/LeaderboardPage.jsx';
 import ChallengePage from './pages/ChallengePage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import CommunityPage from './pages/CommunityPage.jsx';
+import ProgressPage from './pages/ProgressPage.jsx';
+import FriendsPage from './pages/FriendsPage.jsx';
 import { useEffect, useState } from 'react';
 import LandingPage from './pages/LandingPage.jsx';
 import LandingHeader from './components/LandingPage/LandingHeader.jsx';
@@ -165,6 +167,22 @@ function AppShell() {
             element={(
               <ProtectedRoute>
                 <ProfilePage />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/progress"
+            element={(
+              <ProtectedRoute>
+                <ProgressPage />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/friends"
+            element={(
+              <ProtectedRoute>
+                <FriendsPage />
               </ProtectedRoute>
             )}
           />
