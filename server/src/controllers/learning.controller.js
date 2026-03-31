@@ -4,6 +4,7 @@ const UserProgress = require('../models/userProgress.model');
 const User = require('../models/user.model');
 const UserChallenge = require('../models/userChallenge.model');
 const Challenge = require('../models/challenge.model');
+const { checkAndAwardBadges } = require('./badge.controller');
 
 const XP_PER_LEVEL = 500;
 
@@ -531,6 +532,13 @@ async function updateCourseProgress(req, res) {
     } catch (challengeError) {
       // Don't fail the request if challenge sync fails
       console.error('Challenge sync error:', challengeError);
+    }
+
+    // Check and award badges based on new progress
+    try {
+      await checkAndAwardBadges(req.user.id);
+    } catch (badgeError) {
+      console.error('Badge check error:', badgeError);
     }
 
     return res.status(200).json({

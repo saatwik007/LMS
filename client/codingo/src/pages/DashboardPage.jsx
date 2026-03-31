@@ -192,7 +192,8 @@ function CourseMarketColumn() {
     { title: "Gained", detail: "+120 XP in Python Basics", time: "Yesterday" },
     { title: "Unlocked", detail: "Lesson 12: Objects", time: "Yesterday" },
   ]);
-  const [badges] = useState({ unlocked: 14, total: 30 });
+  const [earnedBadges, setEarnedBadges] = useState([]);
+  const [isLoadingBadges, setIsLoadingBadges] = useState(false);
 
   // const totalXP = 4850;
   // const currentLevel = 18;
@@ -310,6 +311,28 @@ function CourseMarketColumn() {
     }
   }, [apiUrl]);
 
+  const fetchBadges = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setEarnedBadges([]);
+      return;
+    }
+
+    setIsLoadingBadges(true);
+    try {
+      const response = await axios.get(`${apiUrl}/api/badges/earned`, {
+        withCredentials: true,
+        headers: getAuthHeaders()
+      });
+      setEarnedBadges(response.data?.badges || []);
+    } catch (error) {
+      console.error('Failed to fetch badges:', error);
+      setEarnedBadges([]);
+    } finally {
+      setIsLoadingBadges(false);
+    }
+  }, [apiUrl]);
+
   const handleEnrollAndStart = async (courseId) => {
     setIsEnrollingCourse(courseId);
     setOverviewError("");
@@ -335,6 +358,10 @@ function CourseMarketColumn() {
   useEffect(() => {
     fetchLearningOverview();
   }, [fetchLearningOverview, userIdentifier]);
+
+  useEffect(() => {
+    fetchBadges();
+  }, [fetchBadges, userIdentifier]);
 
   const isFirstDashboardVisit = useMemo(() => {
     const firstVisitKey = `dashboard-first-visit:${userIdentifier}`;
@@ -720,17 +747,39 @@ function CourseMarketColumn() {
                 <FaMedal className="text-orange-400" /> Recent Achievements
               </h3>
               <div className="space-y-3">
-                <div className="bg-[#141b24] rounded-lg p-3 text-center border border-[#1f2a38]">
-                  <div className="text-3xl mb-1">🎯</div>
-                  <div className="text-sm font-bold">Perfect Lesson</div>
-                  <div className="text-xs text-gray-500 mt-1">100% Accuracy</div>
-                </div>
-                <div className="bg-[#141b24] rounded-lg p-3 text-center opacity-50 border border-[#1f2a38]">
-                  <div className="text-3xl mb-1">💎</div>
-                  <div className="text-sm font-bold">Gem Collector</div>
-                  <div className="text-xs text-gray-500 mt-1">Collect 100 Gems</div>
-                </div>
+                {isLoadingBadges ? (
+                  <div className="text-center py-4 text-gray-400 text-sm">Loading badges...</div>
+                ) : earnedBadges.length === 0 ? (
+                  <div className="bg-[#141b24] rounded-lg p-3 text-center border border-[#1f2a38]">
+                    <div className="text-3xl mb-1">🎯</div>
+                    <div className="text-sm font-bold">Start Learning</div>
+                    <div className="text-xs text-gray-500 mt-1">Complete lessons to earn badges</div>
+                  </div>
+                ) : (
+                  earnedBadges.slice(0, 3).map((badge, index) => (
+                    <div key={badge.id || index} className="bg-[#141b24] rounded-lg p-3 text-center border border-[#1f2a38]">
+                      <div className="text-3xl mb-1">{badge.icon}</div>
+                      <div className="text-sm font-bold">{badge.name}</div>
+                      <div className="text-xs text-gray-500 mt-1">{badge.description}</div>
+                      <div className={`text-xs font-semibold mt-1 ${
+                        badge.rarity === 'Legendary' ? 'text-orange-400' :
+                        badge.rarity === 'Epic' ? 'text-purple-400' :
+                        badge.rarity === 'Rare' ? 'text-blue-400' :
+                        'text-gray-400'
+                      }`}>{badge.rarity}</div>
+                    </div>
+                  ))
+                )}
               </div>
+              {earnedBadges.length > 0 && (
+                <button 
+                  type="button"
+                  onClick={() => navigate('/profile')}
+                  className="mt-4 w-full py-2 bg-cyan-600 hover:bg-cyan-700 rounded-lg text-sm font-semibold transition"
+                >
+                  View All Badges ({earnedBadges.length})
+                </button>
+              )}
             </div>
 
             <div className="bg-[#1a2332] rounded-2xl p-6 border border-[#2a3a4a] shadow-lg">
