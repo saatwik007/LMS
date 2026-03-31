@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs/promises');
+const { checkAndAwardBadges } = require('./badge.controller');
 
 const PROFILE_PICS_DIR = path.join(__dirname, '..', '..', 'uploads', 'profile-pics');
 const MAX_PROCESSED_IMAGE_BYTES = 450 * 1024;
@@ -294,10 +295,20 @@ async function updateStreak(req, res) {
       { new: true }
     );
 
+    // Check and award streak-milestone badges after streak update
+    try {
+      await checkAndAwardBadges(req.user.id);
+    } catch (badgeError) {
+      console.error('Badge check error after streak update:', badgeError);
+    }
+
+    // Refresh user to capture any XP/level/league changes from badge bonuses
+    const refreshedUser = await userModel.findById(req.user.id);
+
     return res.status(200).json({
       message: 'Streak updated.',
-      streakCount: updatedUser.streakCount,
-      user: buildUserPayload(updatedUser)
+      streakCount: refreshedUser.streakCount,
+      user: buildUserPayload(refreshedUser)
     });
   } catch (error) {
     return res.status(500).json({ message: error.message });
