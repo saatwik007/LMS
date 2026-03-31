@@ -4,6 +4,7 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const authRoutes = require('./routes/auth.routes');
 const learningRoutes = require('./routes/learning.routes');
+const challengeRoutes = require('./routes/challenge.routes');
 const cors = require('cors');
 const path = require('path');
 
@@ -19,6 +20,7 @@ app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/learning', learningRoutes);
+app.use('/api/challenges', challengeRoutes);
 
 
 module.exports = app;

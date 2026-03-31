@@ -10,6 +10,8 @@ import WelcomePage from './pages/WelcomePage.jsx';
 import LevelsPage from './pages/LevelsPage';
 import LanguagePage from './pages/LanguagePage.jsx';
 import LearnPage from './pages/LearnPage.jsx';
+import LeaderboardPage from './pages/LeaderboardPage.jsx';
+import ChallengePage from './pages/ChallengePage.jsx';
 import { useEffect, useState } from 'react';
 import LandingPage from './pages/LandingPage.jsx';
 import LandingHeader from './components/LandingPage/LandingHeader.jsx';
@@ -137,6 +139,22 @@ function AppShell() {
             element={(
               <ProtectedRoute>
                 <LearnPage />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/leaderboard"
+            element={(
+              <ProtectedRoute>
+                <LeaderboardPage />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/challenges"
+            element={(
+              <ProtectedRoute>
+                <ChallengePage />
               </ProtectedRoute>
             )}
           />

@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 const Course = require('../models/courses.model');
 const UserProgress = require('../models/userProgress.model');
 const User = require('../models/user.model');
+const UserChallenge = require('../models/userChallenge.model');
+const Challenge = require('../models/challenge.model');
 
 const XP_PER_LEVEL = 500;
 
@@ -161,6 +163,33 @@ function computeLevel(totalXp) {
   return Math.max(1, Math.floor(totalXp / XP_PER_LEVEL) + 1);
 }
 
+function computeLeague(totalXp) {
+  // Diamond: 6000+
+  if (totalXp >= 15000) return 'Diamond 3';
+  if (totalXp >= 10000) return 'Diamond 2';
+  if (totalXp >= 6000) return 'Diamond 1';
+  
+  // Platinum: 3000-5999
+  if (totalXp >= 5000) return 'Platinum 3';
+  if (totalXp >= 4000) return 'Platinum 2';
+  if (totalXp >= 3000) return 'Platinum 1';
+  
+  // Gold: 1500-2999
+  if (totalXp >= 2500) return 'Gold 3';
+  if (totalXp >= 2000) return 'Gold 2';
+  if (totalXp >= 1500) return 'Gold 1';
+  
+  // Silver: 500-1499
+  if (totalXp >= 1167) return 'Silver 3';
+  if (totalXp >= 834) return 'Silver 2';
+  if (totalXp >= 500) return 'Silver 1';
+  
+  // Bronze: 0-499
+  if (totalXp >= 334) return 'Bronze 3';
+  if (totalXp >= 167) return 'Bronze 2';
+  return 'Bronze 1';
+}
+
 function getTagFromProgress(progressPercent) {
   if (progressPercent >= 95) return 'Almost There';
   if (progressPercent > 0) return 'In Progress';
@@ -191,6 +220,72 @@ function serializeCourse(progressDoc, courseDoc) {
   };
 }
 
+// Helper to sync user's challenge progress
+async function syncUserChallenges(userId) {
+  const now = new Date();
+  const activeChallenges = await Challenge.find({
+    isActive: true,
+    expiresAt: { $gt: now }
+  });
+
+  for (const challenge of activeChallenges) {
+    const periodStart = challenge.startsAt;
+    const periodEnd = challenge.expiresAt;
+
+    let currentProgress = 0;
+
+    switch (challenge.goalMetric) {
+      case 'xp_earned': {
+        const progressDocs = await UserProgress.find({
+          user: userId,
+          updatedAt: { $gte: periodStart, $lte: periodEnd }
+        });
+        currentProgress = progressDocs.reduce((sum, doc) => sum + (doc.totalPoints || 0), 0);
+        break;
+      }
+
+      case 'lessons_completed': {
+        const progressDocs = await UserProgress.find({
+          user: userId,
+          updatedAt: { $gte: periodStart, $lte: periodEnd }
+        });
+        progressDocs.forEach((doc) => {
+          const completed = (doc.lectureProgress || []).filter(
+            (lec) => lec.completed && lec.completedAt >= periodStart && lec.completedAt <= periodEnd
+          );
+          currentProgress += completed.length;
+        });
+        break;
+      }
+
+      case 'courses_enrolled': {
+        currentProgress = await UserProgress.countDocuments({
+          user: userId,
+          createdAt: { $gte: periodStart, $lte: periodEnd }
+        });
+        break;
+      }
+
+      default:
+        continue;
+    }
+
+    currentProgress = Math.min(currentProgress, challenge.goalValue);
+
+    await UserChallenge.findOneAndUpdate(
+      { user: userId, challenge: challenge._id },
+      {
+        $set: {
+          progress: currentProgress,
+          completed: currentProgress >= challenge.goalValue,
+          completedAt: currentProgress >= challenge.goalValue ? new Date() : null
+        }
+      },
+      { upsert: true }
+    );
+  }
+}
+
 async function ensureDefaultCourses() {
   const operations = DEFAULT_COURSES.map((course) => ({
     updateOne: {
@@ -211,8 +306,9 @@ async function recomputeAndPersistUserStats(userId) {
 
   const totalXp = aggregate[0]?.totalXp || 0;
   const level = computeLevel(totalXp);
+  const league = computeLeague(totalXp);
 
-  await User.findByIdAndUpdate(userId, { $set: { totalXp, level } });
+  await User.findByIdAndUpdate(userId, { $set: { totalXp, level, league } });
 
   const currentLevelMinXp = (level - 1) * XP_PER_LEVEL;
   const nextLevelXp = level * XP_PER_LEVEL;
@@ -223,6 +319,7 @@ async function recomputeAndPersistUserStats(userId) {
   return {
     totalXp,
     level,
+    league,
     xpToNextLevel: nextLevelXp,
     levelProgressPercent
   };
@@ -240,22 +337,41 @@ async function getUserRank(userId, totalXp) {
   };
 }
 
-async function getLeaderboard() {
-  const topUsers = await User.find({})
-    .select('username totalXp level profilePic streakCount')
+async function getLeaderboard(options = {}) {
+  const { league, page = 1, limit = 20 } = options;
+  
+  const filter = {};
+  if (league && league !== 'All') {
+    // Support filtering by tier: "Bronze" matches "Bronze 1", "Bronze 2", "Bronze 3"
+    filter.league = new RegExp(`^${league}`, 'i');
+  }
+
+  const skip = (page - 1) * limit;
+  const total = await User.countDocuments(filter);
+  const totalPages = Math.ceil(total / limit);
+
+  const users = await User.find(filter)
+    .select('username totalXp level profilePic streakCount league')
     .sort({ totalXp: -1, streakCount: -1, username: 1 })
-    .limit(10)
+    .skip(skip)
+    .limit(limit)
     .lean();
 
-  return topUsers.map((user, index) => ({
-    rank: index + 1,
-    userId: String(user._id),
-    name: user.username,
-    xp: user.totalXp || 0,
-    level: user.level || 1,
-    profilePic: user.profilePic || '',
-    streakCount: user.streakCount || 0
-  }));
+  return {
+    users: users.map((user, index) => ({
+      rank: skip + index + 1,
+      userId: String(user._id),
+      name: user.username,
+      xp: user.totalXp || 0,
+      level: user.level || 1,
+      profilePic: user.profilePic || '',
+      streakCount: user.streakCount || 0,
+      league: user.league || 'Bronze 1'
+    })),
+    total,
+    page,
+    totalPages
+  };
 }
 
 async function getCourseCatalog(req, res) {
@@ -409,6 +525,14 @@ async function updateCourseProgress(req, res) {
 
     const userStats = await recomputeAndPersistUserStats(req.user.id);
 
+    // Auto-sync challenge progress after lesson completion
+    try {
+      await syncUserChallenges(req.user.id);
+    } catch (challengeError) {
+      // Don't fail the request if challenge sync fails
+      console.error('Challenge sync error:', challengeError);
+    }
+
     return res.status(200).json({
       message: 'Progress updated.',
       userStats,
@@ -436,9 +560,9 @@ async function getMyLearningOverview(req, res) {
 
     const userStats = await recomputeAndPersistUserStats(req.user.id);
     const rankInfo = await getUserRank(req.user.id, userStats.totalXp);
-    const leaderboard = await getLeaderboard();
+    const leaderboardData = await getLeaderboard({ limit: 10 });
 
-    const currentUser = await User.findById(req.user.id).select('username email profilePic streakCount');
+    const currentUser = await User.findById(req.user.id).select('username email profilePic streakCount league');
 
     return res.status(200).json({
       user: {
@@ -446,18 +570,44 @@ async function getMyLearningOverview(req, res) {
         username: currentUser.username,
         email: currentUser.email,
         profilePic: currentUser.profilePic || '',
-        streakCount: currentUser.streakCount || 0
+        streakCount: currentUser.streakCount || 0,
+        league: currentUser.league || 'Bronze'
       },
       stats: {
         totalXp: userStats.totalXp,
         level: userStats.level,
+        league: userStats.league,
         xpToNextLevel: userStats.xpToNextLevel,
         levelProgressPercent: userStats.levelProgressPercent,
         rank: rankInfo.rank,
         totalUsers: rankInfo.totalUsers
       },
       enrolledCourses: courses,
-      leaderboard
+      leaderboard: leaderboardData.users
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+async function getLeaderboardHandler(req, res) {
+  try {
+    const league = req.query.league || 'All';
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 20));
+
+    const leaderboardData = await getLeaderboard({ league, page, limit });
+
+    const currentUser = await User.findById(req.user.id).select('totalXp league');
+    const rankInfo = await getUserRank(req.user.id, currentUser.totalXp || 0);
+
+    return res.status(200).json({
+      leaderboard: leaderboardData.users,
+      currentUserRank: rankInfo.rank,
+      currentUserLeague: currentUser.league || 'Bronze 1',
+      total: leaderboardData.total,
+      page: leaderboardData.page,
+      totalPages: leaderboardData.totalPages
     });
   } catch (error) {
     return res.status(500).json({ message: error.message });
@@ -468,5 +618,6 @@ module.exports = {
   getCourseCatalog,
   enrollInCourse,
   updateCourseProgress,
-  getMyLearningOverview
+  getMyLearningOverview,
+  getLeaderboardHandler
 };
