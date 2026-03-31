@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { getAllCourses } from '../components/LandingPage/LevelData.js';
 import Header from '../components/LandingPage/Header.jsx';
 import axios from "axios";
@@ -20,7 +19,6 @@ import {
   FaUsers
 } from "react-icons/fa";
 import ParticleCanvas from "../components/LandingPage/ParticleCanvas.jsx";
-import { courseCatalog } from "../data/courseCatalog.jsx";
 import { courseCatalog } from "../data/courseCatalog.jsx";
 
 export default function Dashboard() {
