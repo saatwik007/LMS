@@ -20,6 +20,7 @@ import {
 } from "react-icons/fa";
 import ParticleCanvas from "../components/LandingPage/ParticleCanvas.jsx";
 import { courseCatalog } from "../data/courseCatalog.jsx";
+import CalendarHeatmap from "../components/shared/CalendarHeatmap";
 
 export default function Dashboard() {
 // Create dynamic courses from LevelData
@@ -159,6 +160,7 @@ function CourseMarketColumn() {
   ]);
 
   const [friends, setFriends] = useState([]);
+  const [pendingRequestCount, setPendingRequestCount] = useState(0);
 
   const [leaderboard] = useState([
     { rank: 1, name: "VivekMandal", xp: 10000 , medal: "⭐", isUser: true },
@@ -189,6 +191,9 @@ function CourseMarketColumn() {
   ]);
   const [earnedBadges, setEarnedBadges] = useState([]);
   const [isLoadingBadges, setIsLoadingBadges] = useState(false);
+  const [rewardClaimed, setRewardClaimed] = useState(false);
+  const [isClaimingReward, setIsClaimingReward] = useState(false);
+  const [rewardBannerDismissed, setRewardBannerDismissed] = useState(false);
 
   // const totalXP = 4850;
   // const currentLevel = 18;
@@ -332,19 +337,33 @@ function CourseMarketColumn() {
     const token = localStorage.getItem("token");
     if (!token) {
       setFriends([]);
+      setPendingRequestCount(0);
       return;
     }
 
-    try {
-      const response = await axios.get(`${apiUrl}/api/social/friends`, {
+    const [friendsResult, requestsResult] = await Promise.allSettled([
+      axios.get(`${apiUrl}/api/social/friends`, {
         withCredentials: true,
         headers: getAuthHeaders()
-      });
-      // Show only top 4 friends for dashboard widget
-      setFriends(response.data?.friends?.slice(0, 4) || []);
-    } catch (error) {
-      console.error('Failed to fetch friends:', error);
+      }),
+      axios.get(`${apiUrl}/api/social/friend-requests`, {
+        withCredentials: true,
+        headers: getAuthHeaders()
+      })
+    ]);
+
+    if (friendsResult.status === 'fulfilled') {
+      setFriends(friendsResult.value.data?.friends?.slice(0, 4) || []);
+    } else {
+      console.error('Failed to fetch friends:', friendsResult.reason);
       setFriends([]);
+    }
+
+    if (requestsResult.status === 'fulfilled') {
+      setPendingRequestCount(requestsResult.value.data?.requests?.length || 0);
+    } else {
+      console.error('Failed to fetch friend requests:', requestsResult.reason);
+      setPendingRequestCount(0);
     }
   }, [apiUrl]);
 
@@ -367,6 +386,37 @@ function CourseMarketColumn() {
       setOverviewError(error.response?.data?.message || "Could not enroll in this course.");
     } finally {
       setIsEnrollingCourse("");
+    }
+  };
+
+  // Check if monthly reward already claimed
+  useEffect(() => {
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const rewards = currentUser?.rewards || [];
+    const alreadyClaimed = rewards.some(r => r.month === currentMonth && r.claimed);
+    setRewardClaimed(alreadyClaimed);
+  }, [currentUser]);
+
+  const handleClaimReward = async () => {
+    setIsClaimingReward(true);
+    try {
+      const res = await axios.post(
+        `${apiUrl}/api/auth/user/rewards/claim`,
+        {},
+        { withCredentials: true, headers: getAuthHeaders() }
+      );
+      if (res.data?.user) {
+        const merged = { ...(getStoredUser() || {}), ...res.data.user };
+        localStorage.setItem("user", JSON.stringify(merged));
+        setCurrentUser(merged);
+        window.dispatchEvent(new Event("auth:user-updated"));
+      }
+      setRewardClaimed(true);
+    } catch (error) {
+      console.error("Failed to claim reward:", error);
+    } finally {
+      setIsClaimingReward(false);
     }
   };
 
@@ -440,6 +490,65 @@ function CourseMarketColumn() {
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-2">{greeting}</h1>
           <p className="text-gray-400 text-sm sm:text-base">Please choose a course to start your adventure.</p>
         </header>
+
+        {/* ── MONTHLY REWARD BANNER ─────────────────────────────────────────── */}
+        {!rewardClaimed && !rewardBannerDismissed && (
+          <div className="mb-6 relative overflow-hidden rounded-2xl border border-amber-500/30 bg-linear-to-r from-amber-500/10 via-orange-500/10 to-rose-500/10 p-5 sm:p-6 shadow-lg">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-amber-400/5 rounded-full -translate-y-1/2 translate-x-1/3" />
+            <div className="absolute bottom-0 left-0 w-32 h-32 bg-orange-400/5 rounded-full translate-y-1/2 -translate-x-1/4" />
+            <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="text-4xl sm:text-5xl" style={{ animation: 'rewardPulse 2s ease-in-out infinite' }}>🎁</div>
+                <div>
+                  <h3 className="text-lg sm:text-xl font-bold text-amber-200">Monthly Reward Available!</h3>
+                  <p className="text-sm text-amber-200/60 mt-0.5">
+                    Claim your <span className="text-amber-400 font-bold">+50 XP</span> bonus reward for this month
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={handleClaimReward}
+                  disabled={isClaimingReward}
+                  className="px-6 py-2.5 rounded-xl font-bold text-sm bg-linear-to-r from-amber-400 to-orange-400 text-gray-950 hover:brightness-110 transition disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-amber-500/20"
+                >
+                  {isClaimingReward ? 'Claiming...' : '🎉 Claim Reward'}
+                </button>
+                <button
+                  onClick={() => setRewardBannerDismissed(true)}
+                  className="p-2 text-amber-200/40 hover:text-amber-200/70 transition"
+                  type="button"
+                >
+                  <FaTimes />
+                </button>
+              </div>
+            </div>
+            <style>{`
+              @keyframes rewardPulse {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.1) rotate(5deg); }
+              }
+            `}</style>
+          </div>
+        )}
+
+        {rewardClaimed && !rewardBannerDismissed && (
+          <div className="mb-6 relative overflow-hidden rounded-2xl border border-emerald-500/30 bg-linear-to-r from-emerald-500/10 to-cyan-500/10 p-4 sm:p-5 shadow-lg">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">✅</span>
+                <p className="text-sm text-emerald-300 font-semibold">Monthly reward claimed! +50 XP earned this month.</p>
+              </div>
+              <button
+                onClick={() => setRewardBannerDismissed(true)}
+                className="p-1.5 text-emerald-300/40 hover:text-emerald-300/70 transition shrink-0"
+                type="button"
+              >
+                <FaTimes />
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <section className="lg:col-span-2 space-y-6">
@@ -802,6 +911,11 @@ function CourseMarketColumn() {
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold flex items-center gap-2">
                   <FaUsers className="text-cyan-400" /> Friends
+                  {pendingRequestCount > 0 && (
+                    <span className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {pendingRequestCount}
+                    </span>
+                  )}
                 </h3>
                 <button 
                   onClick={() => navigate('/friends')}
@@ -895,117 +1009,4 @@ function CourseMarketColumn() {
 </div>
     </>
   );
-
-
-function CalendarHeatmap({ data }) {
-  const getMonthLabels = () => {
-    const months = [];
-    const today = new Date();
-    const startDate = new Date(today);
-    startDate.setFullYear(startDate.getFullYear() - 1);
-
-    let currentMonth = startDate.getMonth();
-    let currentDate = new Date(startDate);
-
-    while (currentDate <= today) {
-      const month = currentDate.getMonth();
-      if (month !== currentMonth) {
-        const weeksSinceStart = Math.floor((currentDate - startDate) / (7 * 24 * 60 * 60 * 1000));
-        months.push({
-          name: currentDate.toLocaleString("default", { month: "short" }),
-          offset: weeksSinceStart
-        });
-        currentMonth = month;
-      }
-      currentDate.setDate(currentDate.getDate() + 7);
-    }
-
-    return months;
-  };
-
-  const weeks = [];
-  let week = [];
-
-  const firstDay = data[0]?.date;
-  const startDayOfWeek = firstDay ? firstDay.getDay() : 0;
-
-  for (let i = 0; i < startDayOfWeek; i += 1) {
-    week.push(null);
-  }
-
-  data.forEach((day) => {
-    week.push(day);
-    if (week.length === 7) {
-      weeks.push(week);
-      week = [];
-    }
-  });
-
-  if (week.length > 0) {
-    while (week.length < 7) {
-      week.push(null);
-    }
-    weeks.push(week);
-  }
-
-  const getColor = (count) => {
-    if (count === 0) return "bg-[#0f1419] border-[#1f2a38]";
-    if (count === 1) return "bg-emerald-900/40 border-emerald-800/50";
-    if (count === 2) return "bg-emerald-700/50 border-emerald-600/60";
-    if (count === 3) return "bg-emerald-600/70 border-emerald-500/70";
-    if (count === 4) return "bg-emerald-500/80 border-emerald-400/80";
-    return "bg-emerald-400 border-emerald-300";
-  };
-
-  const monthLabels = getMonthLabels();
-  const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-  return (
-    <div className="overflow-x-auto">
-      <div className="inline-block min-w-full">
-        <div className="flex mb-2 pl-8">
-          {monthLabels.map((month, idx) => (
-            <div key={idx} className="text-xs text-gray-400 font-semibold" style={{ marginLeft: `${month.offset * 14}px` }}>
-              {month.name}
-            </div>
-          ))}
-        </div>
-
-        <div className="flex gap-1">
-          <div className="flex flex-col gap-1 pr-2">
-            {dayLabels.map((day, idx) => (
-              <div key={day} className={`text-xs text-gray-500 h-3 flex items-center ${idx % 2 === 0 ? "opacity-0" : ""}`}>
-                {day}
-              </div>
-            ))}
-          </div>
-
-          <div className="flex gap-1">
-            {weeks.map((weekItem, weekIdx) => (
-              <div key={weekIdx} className="flex flex-col gap-1">
-                {weekItem.map((day, dayIdx) => (
-                  <div
-                    key={dayIdx}
-                    className={`w-3 h-3 rounded-sm border ${day ? getColor(day.count) : "bg-transparent border-transparent"}`}
-                    title={day ? `${day.date.toLocaleDateString()}: ${day.count} submissions` : ""}
-                  />
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 mt-4 justify-end">
-          <span className="text-xs text-gray-400">Less</span>
-          <div className="flex gap-1">
-            {[0, 1, 2, 3, 4, 5].map((level) => (
-              <div key={level} className={`w-3 h-3 rounded-sm border ${getColor(level)}`} />
-            ))}
-          </div>
-          <span className="text-xs text-gray-400">More</span>
-        </div>
-      </div>
-    </div>
-  );
-}
 };

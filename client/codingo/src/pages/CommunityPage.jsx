@@ -268,8 +268,8 @@ function PostCard({ post, currentUserId, onLike, onComment, onDelete }) {
       {/* Post Header */}
       <div className="flex items-start justify-between mb-4">
         <div 
-          className="flex items-center gap-3 cursor-pointer hover:opacity-80"
-          onClick={() => navigate(`/profile`)}
+          className={`flex items-center gap-3 ${post.author.id ? 'cursor-pointer hover:opacity-80' : ''}`}
+          onClick={() => post.author.id && navigate(`/profile/${post.author.id}`)}
         >
           {post.author.profilePic ? (
             <img 

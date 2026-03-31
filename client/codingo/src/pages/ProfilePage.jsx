@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { 
   FaTrophy, 
@@ -45,7 +46,11 @@ function getStoredUser() {
 }
 
 export default function ProfilePage() {
-  const [currentUser, setCurrentUser] = useState(getStoredUser());
+  const { userId } = useParams();
+  const storedUser = getStoredUser();
+  const isOwnProfile = !userId || userId === storedUser?.id;
+
+  const [currentUser, setCurrentUser] = useState(isOwnProfile ? storedUser : null);
   const [allBadges, setAllBadges] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -53,31 +58,62 @@ export default function ProfilePage() {
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [isEditingBio, setIsEditingBio] = useState(false);
   const [bio, setBio] = useState('');
+  const [isEditingUsername, setIsEditingUsername] = useState(false);
+  const [editedUsername, setEditedUsername] = useState('');
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [calendarData, setCalendarData] = useState([]);
   const fileInputRef = useRef(null);
   const apiUrl = import.meta.env.VITE_API_URL || '';
 
   useEffect(() => {
-    fetchBadges();
+    if (isOwnProfile) {
+      fetchBadges();
+      fetchActivityData();
+    }
     fetchUserProfile();
-    fetchActivityData();
-  }, []);
+  }, [userId]);
 
   async function fetchUserProfile() {
     try {
-      const response = await axios.get(`${apiUrl}/api/auth/user/me`, {
+      const url = isOwnProfile
+        ? `${apiUrl}/api/auth/user/me`
+        : `${apiUrl}/api/auth/user/${userId}/public`;
+
+      const response = await axios.get(url, {
         withCredentials: true,
         headers: getAuthHeaders()
       });
 
       if (response.data?.user) {
-        setCurrentUser(response.data.user);
-        setBio(response.data.user.bio || '');
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+        const userData = response.data.user;
+        setCurrentUser(userData);
+        setBio(userData.bio || '');
+        setEditedUsername(userData.username || '');
+
+        if (isOwnProfile) {
+          localStorage.setItem('user', JSON.stringify(userData));
+        } else {
+          // Map public profile badges to the same format used by the badge grid
+          const publicBadges = (userData.badges || [])
+            .filter(b => b.badge)
+            .map(b => ({
+              id: String(b.badge._id || b.badge),
+              name: b.badge.name || 'Badge',
+              description: b.badge.description || '',
+              icon: b.badge.icon || '🏅',
+              rarity: b.badge.rarity || 'Common',
+              xpBonus: b.badge.xpBonus || 0,
+              earned: true,
+              earnedAt: b.earnedAt || null
+            }));
+          setAllBadges(publicBadges);
+          setIsLoading(false);
+        }
       }
     } catch (err) {
       console.error('Failed to fetch user profile:', err);
+      setError('Failed to load profile.');
+      setIsLoading(false);
     }
   }
 
@@ -194,6 +230,36 @@ export default function ProfilePage() {
     }
   };
 
+  const handleSaveUsername = async () => {
+    const trimmed = editedUsername.trim();
+    if (!trimmed || trimmed === currentUser?.username) {
+      setIsEditingUsername(false);
+      return;
+    }
+
+    try {
+      setError(null);
+      const response = await axios.patch(
+        `${apiUrl}/api/auth/user/profile`,
+        { username: trimmed },
+        {
+          withCredentials: true,
+          headers: getAuthHeaders()
+        }
+      );
+
+      if (response.data?.user) {
+        setCurrentUser(response.data.user);
+        setEditedUsername(response.data.user.username);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        window.dispatchEvent(new Event('auth:user-updated'));
+      }
+      setIsEditingUsername(false);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to update username');
+    }
+  };
+
   const earnedBadges = allBadges.filter(b => b.earned);
   const lockedBadges = allBadges.filter(b => !b.earned);
 
@@ -220,13 +286,15 @@ export default function ProfilePage() {
           <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
             {/* Avatar */}
             <div className="relative">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/jpg"
-                onChange={handleAvatarUpload}
-                className="hidden"
-              />
+              {isOwnProfile && (
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/jpg"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                />
+              )}
               <div className="relative group">
                 {currentUser?.profilePic ? (
                   <img 
@@ -239,25 +307,60 @@ export default function ProfilePage() {
                     {currentUser?.username?.[0]?.toUpperCase() || 'U'}
                   </div>
                 )}
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploadingAvatar}
-                  className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
-                >
-                  {isUploadingAvatar ? (
-                    <div className="animate-spin w-6 h-6 border-2 border-white border-t-transparent rounded-full"></div>
-                  ) : (
+                {isOwnProfile && (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingAvatar}
+                    className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                  >
+                    {isUploadingAvatar ? (
+                      <div className="animate-spin w-6 h-6 border-2 border-white border-t-transparent rounded-full"></div>
+                    ) : (
                     <FaCamera className="text-2xl text-white" />
                   )}
                 </button>
+                )}
               </div>
             </div>
 
             {/* User Info */}
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-3xl font-bold">{currentUser?.username || 'Learner'}</h1>
+                {isOwnProfile && isEditingUsername ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={editedUsername}
+                      onChange={(e) => setEditedUsername(e.target.value)}
+                      className="bg-[#0f1419] text-white text-2xl font-bold rounded-lg px-3 py-1 border border-[#1f2a38] focus:border-cyan-500 focus:outline-none"
+                      maxLength={30}
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleSaveUsername();
+                        if (e.key === 'Escape') {
+                          setEditedUsername(currentUser?.username || '');
+                          setIsEditingUsername(false);
+                        }
+                      }}
+                    />
+                    <button type="button" onClick={handleSaveUsername} className="text-cyan-400 hover:text-cyan-300">
+                      <FaSave />
+                    </button>
+                    <button type="button" onClick={() => { setEditedUsername(currentUser?.username || ''); setIsEditingUsername(false); }} className="text-gray-400 hover:text-gray-300">
+                      <FaTimes />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <h1 className="text-3xl font-bold">{currentUser?.username || 'Learner'}</h1>
+                    {isOwnProfile && (
+                      <button type="button" onClick={() => setIsEditingUsername(true)} className="text-cyan-400 hover:text-cyan-300">
+                        <FaEdit className="text-sm" />
+                      </button>
+                    )}
+                  </>
+                )}
                 {currentUser?.league?.includes('Diamond') && (
                   <FaCrown className="text-orange-400 text-2xl" />
                 )}
@@ -283,7 +386,7 @@ export default function ProfilePage() {
 
               {/* Bio */}
               <div className="bg-[#141b24] rounded-lg p-4 border border-[#1f2a38]">
-                {isEditingBio ? (
+                {isOwnProfile && isEditingBio ? (
                   <div>
                     <textarea
                       value={bio}
@@ -319,15 +422,17 @@ export default function ProfilePage() {
                 ) : (
                   <div className="flex items-start justify-between">
                     <p className="text-gray-300 flex-1">
-                      {bio || 'No bio yet. Click edit to add one.'}
+                      {bio || (isOwnProfile ? 'No bio yet. Click edit to add one.' : 'No bio yet.')}
                     </p>
-                    <button
-                      type="button"
-                      onClick={() => setIsEditingBio(true)}
-                      className="text-cyan-400 hover:text-cyan-300 ml-4"
-                    >
-                      <FaEdit />
-                    </button>
+                    {isOwnProfile && (
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingBio(true)}
+                        className="text-cyan-400 hover:text-cyan-300 ml-4"
+                      >
+                        <FaEdit />
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -340,12 +445,8 @@ export default function ProfilePage() {
                 <div className="text-xs text-gray-400">Badges</div>
               </div>
               <div className="bg-[#141b24] rounded-xl px-6 py-3 border border-[#1f2a38] text-center">
-                <div className="text-2xl font-bold text-purple-400">0</div>
-                <div className="text-xs text-gray-400">Followers</div>
-              </div>
-              <div className="bg-[#141b24] rounded-xl px-6 py-3 border border-[#1f2a38] text-center">
-                <div className="text-2xl font-bold text-emerald-400">0</div>
-                <div className="text-xs text-gray-400">Following</div>
+                <div className="text-2xl font-bold text-purple-400">{(currentUser?.friends || []).length}</div>
+                <div className="text-xs text-gray-400">Friends</div>
               </div>
             </div>
           </div>
@@ -359,12 +460,14 @@ export default function ProfilePage() {
         )}
 
         {/* Activity Heatmap */}
+        {isOwnProfile && (
         <div className="bg-[#1a2332] rounded-2xl p-6 border border-[#2a3a4a] shadow-lg mb-6">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
             <FaFire className="text-orange-400" /> Activity Overview
           </h2>
           <CalendarHeatmap data={calendarData} />
         </div>
+        )}
 
         {/* Rarity Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
