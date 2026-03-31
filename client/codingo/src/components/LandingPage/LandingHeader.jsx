@@ -2,7 +2,19 @@ import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { FiBell, FiChevronDown, FiEdit2, FiImage, FiLogOut, FiSearch, FiUser } from 'react-icons/fi';
 import { useLocation, useNavigate } from 'react-router-dom';
+// import { useEffect, useRef, useState } from 'react';
+// import axios from 'axios';
+// import { FiBell, FiChevronDown, FiEdit2, FiImage, FiLogOut, FiSearch, FiUser } from 'react-icons/fi';
+// import { useLocation, useNavigate } from 'react-router-dom';
 
+// function getStoredUser() {
+//   try {
+//     const raw = localStorage.getItem('user');
+//     return raw ? JSON.parse(raw) : null;
+//   } catch {
+//     return null;
+//   }
+  
 function getStoredUser() {
   try {
     const raw = localStorage.getItem('user');
@@ -14,6 +26,7 @@ function getStoredUser() {
 
 const LandingHeader = ({ onBack }) => {
   const location = useLocation();
+  // const location = useLocation();
   const navigate = useNavigate();
  
   const handleRegister = () => {
@@ -279,6 +292,7 @@ const LandingHeader = ({ onBack }) => {
         <div className="hidden sm:flex flex-1 justify-center px-2">
           <div className="relative w-full max-w-md">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+              <FiSearch className="w-4 h-4" />
               <FiSearch className="w-4 h-4" />
             </span>
             <input

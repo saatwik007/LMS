@@ -17,6 +17,7 @@ import LandingHeader from "../components/LandingPage/LandingHeader";
 export default function LandingPage() {
 
   const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   const handleSelectLanguage = (langId) => {
     navigate(`/language/${langId}`);
