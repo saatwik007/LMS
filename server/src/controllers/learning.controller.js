@@ -5,8 +5,7 @@ const User = require('../models/user.model');
 const UserChallenge = require('../models/userChallenge.model');
 const Challenge = require('../models/challenge.model');
 const { checkAndAwardBadges } = require('./badge.controller');
-
-const XP_PER_LEVEL = 500;
+const { XP_PER_LEVEL, computeLevel, computeLeague } = require('../utils/userStats');
 
 const DEFAULT_COURSES = [
   {
@@ -160,37 +159,6 @@ function toObjectId(id) {
   return new mongoose.Types.ObjectId(id);
 }
 
-function computeLevel(totalXp) {
-  return Math.max(1, Math.floor(totalXp / XP_PER_LEVEL) + 1);
-}
-
-function computeLeague(totalXp) {
-  // Diamond: 6000+
-  if (totalXp >= 15000) return 'Diamond 3';
-  if (totalXp >= 10000) return 'Diamond 2';
-  if (totalXp >= 6000) return 'Diamond 1';
-  
-  // Platinum: 3000-5999
-  if (totalXp >= 5000) return 'Platinum 3';
-  if (totalXp >= 4000) return 'Platinum 2';
-  if (totalXp >= 3000) return 'Platinum 1';
-  
-  // Gold: 1500-2999
-  if (totalXp >= 2500) return 'Gold 3';
-  if (totalXp >= 2000) return 'Gold 2';
-  if (totalXp >= 1500) return 'Gold 1';
-  
-  // Silver: 500-1499
-  if (totalXp >= 1167) return 'Silver 3';
-  if (totalXp >= 834) return 'Silver 2';
-  if (totalXp >= 500) return 'Silver 1';
-  
-  // Bronze: 0-499
-  if (totalXp >= 334) return 'Bronze 3';
-  if (totalXp >= 167) return 'Bronze 2';
-  return 'Bronze 1';
-}
-
 function getTagFromProgress(progressPercent) {
   if (progressPercent >= 95) return 'Almost There';
   if (progressPercent > 0) return 'In Progress';
@@ -341,10 +309,18 @@ async function getUserRank(userId, totalXp) {
 async function getLeaderboard(options = {}) {
   const { league, page = 1, limit = 20 } = options;
   
+  // Whitelist of allowed league tiers for filtering
+  const ALLOWED_LEAGUES = ['All', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
+  
   const filter = {};
   if (league && league !== 'All') {
+    // Validate league against whitelist
+    if (!ALLOWED_LEAGUES.includes(league)) {
+      throw new Error(`Invalid league tier. Allowed values: ${ALLOWED_LEAGUES.join(', ')}`);
+    }
     // Support filtering by tier: "Bronze" matches "Bronze 1", "Bronze 2", "Bronze 3"
-    filter.league = new RegExp(`^${league}`, 'i');
+    // Use exact prefix matching with escaped regex
+    filter.league = new RegExp(`^${league.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i');
   }
 
   const skip = (page - 1) * limit;
@@ -607,6 +583,12 @@ async function getLeaderboardHandler(req, res) {
     const leaderboardData = await getLeaderboard({ league, page, limit });
 
     const currentUser = await User.findById(req.user.id).select('totalXp league');
+    
+    // Explicit null guard - return controlled error if user record is missing
+    if (!currentUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
     const rankInfo = await getUserRank(req.user.id, currentUser.totalXp || 0);
 
     return res.status(200).json({
@@ -618,7 +600,9 @@ async function getLeaderboardHandler(req, res) {
       totalPages: leaderboardData.totalPages
     });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    // Return 400 for validation errors (invalid league), 500 for other errors
+    const statusCode = error.message.includes('Invalid league') ? 400 : 500;
+    return res.status(statusCode).json({ message: error.message });
   }
 }
 
