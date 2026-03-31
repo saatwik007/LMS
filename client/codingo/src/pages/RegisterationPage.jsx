@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import Header from "../components/LandingPage/Header.jsx";
 
 // Coding languages with icons (use your own SVGs or web devicon links)
 const codingLanguages = [

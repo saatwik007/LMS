@@ -1,4 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { getAllCourses } from '../components/LandingPage/LevelData.js';
+import Header from '../components/LandingPage/Header.jsx';
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import {
@@ -16,7 +18,21 @@ import {
   FaTimes,
   FaUsers
 } from "react-icons/fa";
+import ParticleCanvas from "../components/LandingPage/ParticleCanvas.jsx";
 import { courseCatalog } from "../data/courseCatalog.jsx";
+
+export default function Dashboard() {
+// Create dynamic courses from LevelData
+const [courses] = useState(() => {
+  return getAllCourses().map((course) => ({
+    id:          course.id,
+    title:       course.language,
+    progress:    0,
+    lessons:     `0/${course.totalChapters} lessons`,
+    tag:         "In Progress",
+    accentColor: course.accentColor,
+  }));
+}); 
 
 const featuredCourses = [
   {
@@ -61,35 +77,10 @@ const featuredCourses = [
   }
 ];
 
-const weeklyGoals = [
-  { title: "Complete 10 lessons", current: 7, total: 10 },
-  { title: "Earn 500 XP", current: 320, total: 500 },
-  { title: "Study 5 days", current: 3, total: 5 }
-];
-
-const upcomingLessons = [
-  { title: "Arrays and Loops", course: "JavaScript Fundamentals", time: "Today · 6:00 PM" },
-  { title: "Functions Deep Dive", course: "JavaScript Fundamentals", time: "Tomorrow · 7:30 PM" },
-  { title: "React State", course: "React Foundations", time: "Fri · 5:00 PM" }
-];
-
 const fallbackLeaderboard = [
   { rank: 1, name: "ProCoder123", xp: 5420, medal: "🥇" },
   { rank: 2, name: "DevQueen99", xp: 5180, medal: "🥈" },
   { rank: 3, name: "ByteMaster", xp: 5010, medal: "🥉" }
-];
-
-const friends = [
-  { name: "Alex Chen", status: "Online", xp: 2850, rank: 12 },
-  { name: "Sarah Dev", status: "Online", xp: 2640, rank: 15 },
-  { name: "Mike Johnson", status: "Away", xp: 2480, rank: 18 },
-  { name: "Emma Watson", status: "Offline", xp: 2210, rank: 24 }
-];
-
-const activityFeed = [
-  { title: "Completed", detail: "React Hooks Quiz", time: "Today" },
-  { title: "Gained", detail: "+120 XP in Python Basics", time: "Yesterday" },
-  { title: "Unlocked", detail: "Lesson 12: Objects", time: "Yesterday" }
 ];
 
 function getStoredUser() {
@@ -138,7 +129,6 @@ function CourseMarketColumn() {
   );
 }
 
-export default function DashboardPage() {
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL || "";
   const [currentUser, setCurrentUser] = useState(() => getStoredUser());
@@ -162,6 +152,61 @@ export default function DashboardPage() {
     leaderboard: []
   });
 
+  const [languages] = useState([
+    { name: "JavaScript", icon: "🚀", level: 12 },
+    { name: "Python", icon: "🐍", level: 8 },
+    { name: "React", icon: "⚛️", level: 15 },
+  ]);
+
+  const [friends] = useState([
+    { name: "Alex Chen", status: "Online", xp: 2850, rank: 12 },
+    { name: "Sarah Dev", status: "Online", xp: 2640, rank: 15 },
+    { name: "Mike Johnson", status: "Away", xp: 2480, rank: 18 },
+    { name: "Emma Watson", status: "Offline", xp: 2210, rank: 24 },
+  ]);
+
+  const [leaderboard] = useState([
+    { rank: 1, name: "VivekMandal", xp: 10000 , medal: "⭐", isUser: true },
+    { rank: 2, name: "SatwikWahi", xp: 5420, medal: "🥇" },
+    { rank: 3, name: "SatwikWahi2", xp: 5180, medal: "🥈" },
+    { rank: 4, name: "SatwikWahi3", xp: 5010, medal: "🥉" },
+    { rank: 5, name: "SatwikWahiAgain", xp: 4720, medal: "📍" },
+  ]);
+  const [notifications] = useState([
+    { title: "Streak secured", detail: "You saved your streak today", time: "1h ago" },
+    { title: "New lesson unlocked", detail: "React Effects is now available", time: "3h ago" },
+    { title: "Weekly goal", detail: "You are 2 lessons away", time: "Yesterday" },
+  ]);
+  const [weeklyGoals] = useState([
+    { title: "Complete 10 lessons", current: 7, total: 10 },
+    { title: "Earn 500 XP", current: 320, total: 500 },
+    { title: "Study 5 days", current: 3, total: 5 },
+  ]);
+  const [upcomingLessons] = useState([
+    { title: "Arrays and Loops", course: "JavaScript Fundamentals", time: "Today · 6:00 PM" },
+    { title: "Functions Deep Dive", course: "JavaScript Fundamentals", time: "Tomorrow · 7:30 PM" },
+    { title: "React State", course: "React Foundations", time: "Fri · 5:00 PM" },
+  ]);
+  const [activityFeed] = useState([
+    { title: "Completed", detail: "React Hooks Quiz", time: "Today" },
+    { title: "Gained", detail: "+120 XP in Python Basics", time: "Yesterday" },
+    { title: "Unlocked", detail: "Lesson 12: Objects", time: "Yesterday" },
+  ]);
+  const [badges] = useState({ unlocked: 14, total: 30 });
+
+  // const totalXP = 4850;
+  // const currentLevel = 18;
+  // const xpToNextLevel = 5000;
+  // const levelProgress = ((totalXP - 4500) / (5000 - 4500)) * 100;
+
+  const githubUsername = "your-username";
+
+  const formatDate = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
   const getAuthHeaders = () => {
     const token = localStorage.getItem("token");
     return token ? { Authorization: `Bearer ${token}` } : {};
@@ -335,6 +380,17 @@ export default function DashboardPage() {
   }, []);
 
   return (
+    <>
+    <ParticleCanvas />
+
+     {/* <div className="min-h-screen text-white pt-16 z-10 scroll-smooth flex font-sans bg-[#111113]">
+      <main className="flex-1 overflow-y-auto p-4 md:p-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <div className="lg:col-span-2 space-y-6">
+            <div className="bg-none rounded-2xl p-6 border-[#2a3a4a] shadow-lg">
+              <div className="flex flex-col sm:flex-row gap-3 mb-4 items-start sm:items-center">
+                <div className="flex-1 flex gap-2"> */}
+
     <div className="min-h-screen bg-[#0f1419] font-sans text-white">
       <main className="p-3 sm:p-4 md:p-8">
         <header className="mb-7">
@@ -409,40 +465,17 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
-                <label className="flex items-center gap-2 bg-[#141b24] border border-[#1f2a38] rounded-lg px-3 py-2 text-sm">
+                <div className="flex items-center gap-2 bg-[#141b24] border border-[#1f2a38] rounded-lg px-3 py-2 text-sm">
                   <FaSearch className="text-cyan-400" />
+
                   <input
-                    className="bg-transparent w-full outline-none text-xs text-gray-200"
-                    placeholder="Search courses"
+                    type="text"
+                    placeholder="Search courses..."
                     value={searchTerm}
-                    onChange={(event) => setSearchTerm(event.target.value)}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="flex-1 bg-[#0f1419] border border-[#2a3a4a] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500"
                   />
-                </label>
-                <label className="flex items-center gap-2 bg-[#141b24] border border-[#1f2a38] rounded-lg px-3 py-2 text-sm">
-                  <FaFilter className="text-cyan-400" />
-                  <select
-                    className="bg-transparent w-full outline-none text-xs text-gray-200"
-                    value={statusFilter}
-                    onChange={(event) => setStatusFilter(event.target.value)}
-                  >
-                    <option value="All">All statuses</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Practice">Practice</option>
-                    <option value="Almost There">Almost There</option>
-                  </select>
-                </label>
-                <label className="flex items-center gap-2 bg-[#141b24] border border-[#1f2a38] rounded-lg px-3 py-2 text-sm">
-                  <FaSortAmountDownAlt className="text-cyan-400" />
-                  <select
-                    className="bg-transparent w-full outline-none text-xs text-gray-200"
-                    value={sortBy}
-                    onChange={(event) => setSortBy(event.target.value)}
-                  >
-                    <option value="progress_desc">Progress: High to Low</option>
-                    <option value="progress_asc">Progress: Low to High</option>
-                    <option value="alpha">Title: A to Z</option>
-                  </select>
-                </label>
+                </div>
               </div>
 
               {filteredCourses.length === 0 ? (
@@ -452,9 +485,9 @@ export default function DashboardPage() {
                     : "No enrolled courses yet. Pick a course above to get started."}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid  grid-cols-1 md:grid-cols-2 gap-4">
                   {filteredCourses.map((course) => (
-                    <div key={course.id} className="bg-[#141b24] rounded-xl p-4 border border-[#1f2a38]">
+                    <div key={course.id} className=" rounded-xl bg-[#141b24] p-4 border border-[#1f2a38]">
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="text-lg font-bold">{course.title}</h3>
                         <span className="text-xs font-semibold text-cyan-300 bg-cyan-600/20 border border-cyan-600/50 px-2 py-1 rounded-full">
@@ -469,6 +502,15 @@ export default function DashboardPage() {
                         ></div>
                       </div>
                       <div className="mt-2 text-xs text-gray-400">{course.progress}% complete</div>
+                    <button
+                      className="mt-4 w-full bg-cyan-500 cursor-pointer hover:bg-cyan-600 text-white font-bold py-2 rounded-lg transition"
+                      onClick={() => {
+                        window.location.href = `/levels/${course.id}`;
+                      }}
+                      type="button"
+                    >
+                        Resume
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -620,6 +662,8 @@ export default function DashboardPage() {
               </div>
             </div>
           </section>
+          
+      
 
           <aside className="space-y-6">
             <CourseMarketColumn />
@@ -735,9 +779,8 @@ export default function DashboardPage() {
               </div>
             </div>
           </aside>
-        </div>
-      </main>
 
+      </div>
       {showCalendarModal && (
         <div
           className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
@@ -762,9 +805,11 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
-    </div>
+      </main>
+</div>
+    </>
   );
-}
+
 
 function CalendarHeatmap({ data }) {
   const getMonthLabels = () => {
@@ -877,3 +922,4 @@ function CalendarHeatmap({ data }) {
     </div>
   );
 }
+};
