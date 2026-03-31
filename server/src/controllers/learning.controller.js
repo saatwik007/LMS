@@ -613,10 +613,43 @@ async function getLeaderboardHandler(req, res) {
   }
 }
 
+async function getActivityHeatmap(req, res) {
+  try {
+    const now = new Date();
+    const oneYearAgo = new Date(now);
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    oneYearAgo.setHours(0, 0, 0, 0);
+
+    const progressDocs = await UserProgress.find({ user: req.user.id }).lean();
+
+    // Count completed lectures per day within the last 365 days
+    const dayCounts = {};
+
+    for (const doc of progressDocs) {
+      for (const lec of (doc.lectureProgress || [])) {
+        if (!lec.completed || !lec.completedAt) continue;
+        const completedAt = new Date(lec.completedAt);
+        if (completedAt < oneYearAgo || completedAt > now) continue;
+
+        const dateKey = completedAt.toISOString().slice(0, 10); // YYYY-MM-DD
+        dayCounts[dateKey] = (dayCounts[dateKey] || 0) + 1;
+      }
+    }
+
+    const activity = Object.entries(dayCounts).map(([date, count]) => ({ date, count }));
+    activity.sort((a, b) => a.date.localeCompare(b.date));
+
+    return res.status(200).json({ activity });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}
+
 module.exports = {
   getCourseCatalog,
   enrollInCourse,
   updateCourseProgress,
   getMyLearningOverview,
-  getLeaderboardHandler
+  getLeaderboardHandler,
+  getActivityHeatmap
 };

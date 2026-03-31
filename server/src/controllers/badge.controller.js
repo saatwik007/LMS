@@ -64,8 +64,12 @@ async function ensureDefaultBadges() {
 // Check and award badges to a user based on their current stats
 async function checkAndAwardBadges(userId) {
   try {
-    const user = await User.findById(userId).select('totalXp level league streakCount badges');
+    const user = await User.findById(userId).select('totalXp level league streakCount badges notifications');
     if (!user) return [];
+
+    // Defensive initialization for mutable arrays
+    if (!user.badges) user.badges = [];
+    if (!user.notifications) user.notifications = [];
 
     // Get all active badges
     const allBadges = await Badge.find({ isActive: true });

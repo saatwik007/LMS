@@ -61,7 +61,7 @@ export default function ProfilePage() {
   useEffect(() => {
     fetchBadges();
     fetchUserProfile();
-    generateCalendarData();
+    fetchActivityData();
   }, []);
 
   async function fetchUserProfile() {
@@ -98,22 +98,39 @@ export default function ProfilePage() {
     }
   }
 
-  function generateCalendarData() {
-    const data = [];
-    const today = new Date();
-    const startDate = new Date(today);
-    startDate.setFullYear(startDate.getFullYear() - 1);
-
-    let currentDate = new Date(startDate);
-    while (currentDate <= today) {
-      data.push({
-        date: new Date(currentDate),
-        count: Math.floor(Math.random() * 6) // Replace with actual activity data
+  async function fetchActivityData() {
+    try {
+      const response = await axios.get(`${apiUrl}/api/learning/me/activity`, {
+        withCredentials: true,
+        headers: getAuthHeaders()
       });
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
 
-    setCalendarData(data);
+      const activityMap = {};
+      for (const entry of (response.data?.activity || [])) {
+        activityMap[entry.date] = entry.count;
+      }
+
+      // Build full year of data, filling in zeros for days with no activity
+      const data = [];
+      const today = new Date();
+      const startDate = new Date(today);
+      startDate.setFullYear(startDate.getFullYear() - 1);
+
+      let currentDate = new Date(startDate);
+      while (currentDate <= today) {
+        const dateKey = currentDate.toISOString().slice(0, 10);
+        data.push({
+          date: new Date(currentDate),
+          count: activityMap[dateKey] || 0
+        });
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      setCalendarData(data);
+    } catch (err) {
+      console.error('Failed to fetch activity data:', err);
+      setCalendarData([]);
+    }
   }
 
   const handleAvatarUpload = async (e) => {
