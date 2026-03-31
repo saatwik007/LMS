@@ -7,6 +7,12 @@ const notificationSchema = new mongoose.Schema({
   isRead: { type: Boolean, default: false }
 }, { _id: true });
 
+const earnedBadgeSchema = new mongoose.Schema({
+  badge: { type: mongoose.Schema.Types.ObjectId, ref: 'Badge', required: true },
+  earnedAt: { type: Date, default: Date.now },
+  notified: { type: Boolean, default: false }
+}, { _id: true });
+
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true, minlength: 3 },
   email:    { type: String, required: true, unique: true },
@@ -20,7 +26,8 @@ const userSchema = new mongoose.Schema({
     index: true
   },
   streakCount: { type: Number, default: 0, min: 0 },
-  notifications: { type: [notificationSchema], default: [] }
+  notifications: { type: [notificationSchema], default: [] },
+  badges: { type: [earnedBadgeSchema], default: [] }
 },
 {
     timestamps: true

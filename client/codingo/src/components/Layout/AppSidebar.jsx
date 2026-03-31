@@ -5,6 +5,7 @@ import {
   FaEllipsisH,
   FaFlagCheckered,
   FaGraduationCap,
+  FaMedal,
   FaRegStar,
   FaTimes,
   FaTrophy,
@@ -18,9 +19,9 @@ const navItems = [
   { key: 'learn', label: 'Learn', icon: FaGraduationCap, to: '/learn', match: ['/learn', '/levels', '/language'] },
   { key: 'challenges', label: 'Challenges', icon: FaFlagCheckered, to: '/challenges', match: ['/challenges'] },
   { key: 'leaderboards', label: 'Leaderboards', icon: FaTrophy, to: '/leaderboard', match: ['/leaderboard'] },
+  { key: 'profile', label: 'Profile', icon: FaMedal, to: '/profile', match: ['/profile'] },
   { key: 'progress', label: 'Progress', icon: FaChartLine, to: '/dashboard', match: [] },
   { key: 'friends', label: 'Friends', icon: FaUsers, to: '/dashboard', match: [] },
-  { key: 'profile', label: 'Profile', icon: FaUser, to: '/dashboard', match: [] },
   { key: 'more', label: 'More', icon: FaEllipsisH, to: '/dashboard', match: [] }
 ];
 

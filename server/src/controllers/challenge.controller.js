@@ -2,6 +2,7 @@ const Challenge = require('../models/challenge.model');
 const UserChallenge = require('../models/userChallenge.model');
 const User = require('../models/user.model');
 const UserProgress = require('../models/userProgress.model');
+const { checkAndAwardBadges } = require('./badge.controller');
 
 // Helper function to compute league from XP
 function computeLeague(totalXp) {
@@ -355,6 +356,13 @@ async function claimReward(req, res) {
         }
       }
     });
+
+    // Check and award badges after XP update
+    try {
+      await checkAndAwardBadges(req.user.id);
+    } catch (badgeError) {
+      console.error('Badge check error:', badgeError);
+    }
 
     return res.status(200).json({
       message: 'Reward claimed successfully!',
