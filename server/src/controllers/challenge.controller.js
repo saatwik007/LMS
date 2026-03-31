@@ -180,11 +180,14 @@ async function calculateProgress(userId, challenge) {
 
   switch (challenge.goalMetric) {
     case 'xp_earned': {
-      const progressDocs = await UserProgress.find({
-        user: userId,
-        updatedAt: { $gte: periodStart, $lte: periodEnd }
+      const progressDocs = await UserProgress.find({ user: userId });
+      let totalXp = 0;
+      progressDocs.forEach((doc) => {
+        const periodLectures = (doc.lectureProgress || []).filter(
+          (lec) => lec.completed && lec.completedAt >= periodStart && lec.completedAt <= periodEnd
+        );
+        totalXp += periodLectures.reduce((sum, lec) => sum + (lec.points || 0), 0);
       });
-      const totalXp = progressDocs.reduce((sum, doc) => sum + (doc.totalPoints || 0), 0);
       return Math.min(totalXp, challenge.goalValue);
     }
 
