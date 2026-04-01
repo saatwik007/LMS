@@ -101,7 +101,7 @@ const res = await axios.post(`${apiUrl}/api/auth/user/login`, {
               className="absolute right-3 top-1/2 -translate-y-1/2 text-cyan-300 font-bold text-xs hover:text-cyan-200 transition"
               type="button"
               tabIndex={-1}
-              onClick={() => alert("Implement forgot password flow!")}
+              onClick={() => navigate('/forgot-password')}
             >
               FORGOT?
             </button>
@@ -122,7 +122,11 @@ const res = await axios.post(`${apiUrl}/api/auth/user/login`, {
         </div>
         {/* Social Logins */}
         <div className="flex gap-4 w-full">
-          <button className="flex-1 flex items-center gap-2 py-3 rounded-lg bg-[#141b24] border border-[#1f2a38] text-white font-bold text-sm justify-center hover:bg-[#22344c] transition">
+          <button
+            type="button"
+            onClick={() => { window.location.href = `${apiUrl}/api/auth/google`; }}
+            className="flex-1 flex items-center gap-2 py-3 rounded-lg bg-[#141b24] border border-[#1f2a38] text-white font-bold text-sm justify-center hover:bg-[#22344c] transition"
+          >
             <svg className="w-6 h-6 mr-2" viewBox="0 0 24 24" fill="none"><path d="M21.805 10.023H12.18v3.996h5.488c-.236 1.209-1.386 3.563-5.488 3.563-3.299 0-5.995-2.75-5.995-6.145 0-3.395 2.696-6.145 5.995-6.145 1.88 0 3.142.803 3.862 1.496l2.646-2.582C18.109 3.52 15.733 2.25 12.18 2.25c-5.378 0-9.752 4.374-9.752 9.75 0 5.376 4.374 9.75 9.752 9.75 5.632 0 9.366-3.962 9.366-9.537 0-.641-.069-1.13-.159-1.59z" fill="#fff"/></svg>
             GOOGLE
           </button>

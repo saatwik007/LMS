@@ -7,8 +7,17 @@ function getRegistry() {
     'java': javaCourse,
     'html': htmlCourse,
     'css': cssCourse,
+    'dsa': dsaCourse,
+    'sql': sqlCourse,
   };
 }
+
+// Fallback totalChapters to match backend DEFAULT_COURSES.totalLectures
+const BACKEND_TOTAL_CHAPTERS = {
+  python: 19, javascript: 18, java: 18, claude: 15, aws: 16, cpp: 21,
+  azure: 16, gcp: 16, ml: 20, dl: 22, nlp: 19, data: 17, sql: 15,
+  spark: 21, docker: 15, k8s: 20, security: 15, dsa: 24, html: 22, css: 24
+};
 
 export function getCourseData(courseId) {
   const registry = getRegistry();
@@ -20,7 +29,7 @@ export function getCourseData(courseId) {
       language: courseId ?? 'Unknown',
       accentColor: '#6366f1',
       accentLight: '#818cf8',
-      totalChapters: 0,
+      totalChapters: BACKEND_TOTAL_CHAPTERS[normalizedId] || 0,
       chapters: [],
     };
   }
@@ -169,6 +178,25 @@ console.log("Welcome to " + name + "!");`,
             },
           ],
         },
+        {
+          id: 5,
+          title: "Code Challenge",
+          subtitle: "Write your first function",
+          xp: 50,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.4)",
+          codeChallenge: {
+            prompt: "Write a function called greet that takes a name and returns a greeting string.",
+            description: "The function should accept one parameter (name) and return the string \"Hello, <name>!\" — for example, greet(\"Alice\") should return \"Hello, Alice!\".",
+            starterCode: `function greet(name) {\n  // write your code here\n}`,
+            hint: "Use string concatenation or template literals: \"Hello, \" + name + \"!\" or `Hello, ${name}!`",
+            testCases: [
+              { call: 'greet("Alice")', expected: "Hello, Alice!", label: "greet(\"Alice\")" },
+              { call: 'greet("World")', expected: "Hello, World!", label: "greet(\"World\")" },
+              { call: 'greet("Codingo")', expected: "Hello, Codingo!", label: "greet(\"Codingo\")" },
+            ],
+          },
+        },
       ],
     },
 
@@ -301,6 +329,25 @@ var c = 3;`,
             },
           ],
         },
+        {
+          id: 5,
+          title: "Code Challenge",
+          subtitle: "Work with variables",
+          xp: 50,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.4)",
+          codeChallenge: {
+            prompt: "Write a function called swapCase that takes a string and swaps casing.",
+            description: "Given a string, return a new string where every uppercase letter becomes lowercase, and every lowercase letter becomes uppercase. For example: swapCase(\"Hello\") → \"hELLO\"",
+            starterCode: `function swapCase(str) {\n  // write your code here\n}`,
+            hint: "Loop through each character. Use char === char.toUpperCase() to detect uppercase. Build a result string.",
+            testCases: [
+              { call: 'swapCase("Hello")', expected: "hELLO", label: 'swapCase("Hello")' },
+              { call: 'swapCase("JavaScript")', expected: "jAVAsCRIPT", label: 'swapCase("JavaScript")' },
+              { call: 'swapCase("abc")', expected: "ABC", label: 'swapCase("abc")' },
+            ],
+          },
+        },
       ],
     },
 
@@ -432,6 +479,26 @@ console.log(result);`,
               body: "0 is falsy, so || moves to the right side and returns 'default'. This is the OR short-circuit in action.",
             },
           ],
+        },
+        {
+          id: 5,
+          title: "Code Challenge",
+          subtitle: "Math meets logic",
+          xp: 50,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.4)",
+          codeChallenge: {
+            prompt: "Write a function called calculator that takes two numbers and an operator.",
+            description: "Given a, b, and op (one of '+', '-', '*', '/'), return the result. For division by zero return \"Error\".",
+            starterCode: `function calculator(a, b, op) {\n  // write your code here\n}`,
+            hint: "Use if/else or a switch statement to check the operator. Don't forget to handle b === 0 for division!",
+            testCases: [
+              { call: 'calculator(3, 4, "+")', expected: 7, label: 'calculator(3, 4, "+")' },
+              { call: 'calculator(10, 3, "-")', expected: 7, label: 'calculator(10, 3, "-")' },
+              { call: 'calculator(6, 5, "*")', expected: 30, label: 'calculator(6, 5, "*")' },
+              { call: 'calculator(10, 0, "/")', expected: "Error", label: 'calculator(10, 0, "/")' },
+            ],
+          },
         },
       ],
     },
@@ -597,6 +664,27 @@ console.log(b ?? "fallback-b");`,
             },
           ],
         },
+        {
+          id: 5,
+          title: "Code Challenge",
+          subtitle: "Build a grade checker",
+          xp: 50,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.4)",
+          codeChallenge: {
+            prompt: "Write a function called getGrade that returns a letter grade for a score.",
+            description: "Given a number score (0–100), return: 'A' for 90+, 'B' for 80–89, 'C' for 70–79, 'D' for 60–69, 'F' for below 60.",
+            starterCode: `function getGrade(score) {\n  // write your code here\n}`,
+            hint: "Use if/else if chains: if(score >= 90) return 'A'; else if(score >= 80) return 'B'; ...",
+            testCases: [
+              { call: 'getGrade(95)', expected: "A", label: 'getGrade(95)' },
+              { call: 'getGrade(82)', expected: "B", label: 'getGrade(82)' },
+              { call: 'getGrade(73)', expected: "C", label: 'getGrade(73)' },
+              { call: 'getGrade(65)', expected: "D", label: 'getGrade(65)' },
+              { call: 'getGrade(42)', expected: "F", label: 'getGrade(42)' },
+            ],
+          },
+        },
       ],
     },
 
@@ -746,6 +834,25 @@ console.log(total);`,
               body: "total starts at 0. Each iteration adds n to it: 0+1+2+3+4+5 = 15.",
             },
           ],
+        },
+        {
+          id: 5,
+          title: "Code Challenge",
+          subtitle: "Loop mastery",
+          xp: 50,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.4)",
+          codeChallenge: {
+            prompt: "Write a function called fizzBuzz that returns an array from 1 to n.",
+            description: "For multiples of 3 push \"Fizz\", for multiples of 5 push \"Buzz\", for multiples of both push \"FizzBuzz\", otherwise push the number itself.",
+            starterCode: `function fizzBuzz(n) {\n  const result = [];\n  // write your loop here\n  return result;\n}`,
+            hint: "Use a for loop from 1 to n. Check i%15===0 first (FizzBuzz), then i%3===0 (Fizz), then i%5===0 (Buzz), else push i.",
+            testCases: [
+              { call: 'fizzBuzz(5)', expected: [1, 2, "Fizz", 4, "Buzz"], label: 'fizzBuzz(5)' },
+              { call: 'fizzBuzz(15).slice(-1)[0]', expected: "FizzBuzz", label: 'fizzBuzz(15) last element' },
+              { call: 'fizzBuzz(3)', expected: [1, 2, "Fizz"], label: 'fizzBuzz(3)' },
+            ],
+          },
         },
       ],
     },
@@ -4382,7 +4489,7 @@ obj = null;  // remove the only reference to obj`,
 
 export const pythonCourse = {
   language: "Python",
-  totalChapters: 20,
+  totalChapters: 25,
   accentColor: "#3b82f6",
   accentLight: "#60a5fa",
   chapters: [
@@ -12631,6 +12738,5456 @@ export const cssCourse = {
       tip: "CSS has never been more powerful. Native nesting, container queries, scroll animations, and cascade layers mean you need Sass less than ever. Learn the platform.",
     },
 
+  ],
+};
+
+export const dsaCourse = {
+  language: "DSA",
+  accentColor: "#8B5CF6",
+  accentLight: "#A78BFA",
+  totalChapters: 24,
+  chapters: [
+    {
+      no: 1,
+      name: "Arrays: The Foundation",
+      difficulty: "Beginner",
+      duration: "12 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "What is an Array?",
+          subtitle: "Contiguous memory & indexing",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "Arrays in Memory",
+              body: "An array stores elements in contiguous memory locations, giving O(1) access by index. This makes reading any element instant, but inserting or deleting in the middle requires shifting elements.",
+              code: `// Creating arrays in JavaScript
+const nums = [10, 20, 30, 40, 50];
+
+// O(1) access by index
+console.log(nums[0]); // 10
+console.log(nums[3]); // 40
+
+// Length property
+console.log(nums.length); // 5`,
+              codeNote: "Array indexing starts at 0 in JavaScript.",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "Common Array Operations",
+          subtitle: "Push, pop, shift, splice",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "Mutating an Array",
+              body: "JavaScript arrays are dynamic. push/pop operate at the end in O(1), while shift/unshift operate at the front in O(n) because every element must be re-indexed.",
+              code: `const arr = [1, 2, 3];
+
+arr.push(4);       // [1, 2, 3, 4]  — O(1)
+arr.pop();         // [1, 2, 3]     — O(1)
+
+arr.unshift(0);    // [0, 1, 2, 3]  — O(n)
+arr.shift();       // [1, 2, 3]     — O(n)
+
+// Remove 1 element at index 1
+arr.splice(1, 1);  // [1, 3]        — O(n)`,
+              codeNote: "Prefer push/pop over shift/unshift for performance.",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "Iterating & Patterns",
+          subtitle: "Loops, map, filter, reduce",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "Traversal Techniques",
+              body: "You can iterate with for-loops for index control, or use higher-order methods like map, filter, and reduce for cleaner functional code. Choosing the right tool depends on whether you need the index.",
+              code: `const nums = [1, 2, 3, 4, 5];
+
+// Classic for-loop
+for (let i = 0; i < nums.length; i++) {
+  console.log(nums[i]);
+}
+
+// Functional methods
+const doubled = nums.map(n => n * 2);       // [2,4,6,8,10]
+const evens   = nums.filter(n => n % 2 === 0); // [2,4]
+const sum     = nums.reduce((a, b) => a + b, 0); // 15`,
+              codeNote: "reduce is extremely versatile — it can replicate map and filter.",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "What is the time complexity of accessing an element by index in an array?",
+              code: null,
+              options: ["O(1)", "O(n)", "O(log n)", "O(n²)"],
+              correct: 0,
+              body: "Arrays use contiguous memory, so the address is calculated directly from the base address + offset, giving constant time access.",
+            },
+            {
+              id: "c2",
+              question: "Which array method adds an element to the END and runs in O(1)?",
+              code: null,
+              options: ["unshift()", "push()", "splice()", "shift()"],
+              correct: 1,
+              body: "push() appends to the end without shifting elements, making it O(1) amortized.",
+            },
+            {
+              id: "c3",
+              question: "What does [1,2,3].reduce((a, b) => a + b, 0) return?",
+              code: null,
+              options: ["[1,2,3]", "3", "6", "undefined"],
+              correct: 2,
+              body: "reduce accumulates: 0+1=1, 1+2=3, 3+3=6. The initial value is 0.",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      no: 2,
+      name: "Strings",
+      difficulty: "Beginner",
+      duration: "12 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "String Basics",
+          subtitle: "Immutability & character access",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "Strings are Immutable",
+              body: "In JavaScript, strings cannot be changed in place. Every operation that appears to modify a string actually creates a new one. You can access individual characters by index just like arrays.",
+              code: `const s = "hello";
+
+// Character access — O(1)
+console.log(s[0]);       // "h"
+console.log(s.charAt(4)); // "o"
+
+// Strings are immutable
+s[0] = "H"; // silently fails
+console.log(s); // still "hello"
+
+// Create a new string instead
+const upper = s[0].toUpperCase() + s.slice(1);
+console.log(upper); // "Hello"`,
+              codeNote: "Always remember: string methods return NEW strings.",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "Common String Methods",
+          subtitle: "split, join, slice, includes",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "Essential Manipulation",
+              body: "split converts a string to an array, join reverses it, and slice extracts substrings. These three methods solve the majority of string manipulation problems in interviews.",
+              code: `const str = "data structures and algorithms";
+
+// Split into words
+const words = str.split(" ");
+// ["data", "structures", "and", "algorithms"]
+
+// Join back
+const joined = words.join("-");
+// "data-structures-and-algorithms"
+
+// Slice (start, end) — end is exclusive
+console.log(str.slice(0, 4));  // "data"
+console.log(str.slice(-10));   // "algorithms"
+
+// Search
+console.log(str.includes("and")); // true
+console.log(str.indexOf("and"));  // 16`,
+              codeNote: "slice with negative indices counts from the end.",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "Interview Patterns",
+          subtitle: "Reverse, anagram, palindrome",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "Classic String Problems",
+              body: "Reversing a string, checking for palindromes, and detecting anagrams are the top three beginner string problems. All can be solved by converting to an array or using character frequency counts.",
+              code: `// Reverse a string
+function reverse(s) {
+  return s.split("").reverse().join("");
+}
+console.log(reverse("hello")); // "olleh"
+
+// Check palindrome
+function isPalindrome(s) {
+  const cleaned = s.toLowerCase().replace(/[^a-z0-9]/g, "");
+  return cleaned === reverse(cleaned);
+}
+console.log(isPalindrome("racecar")); // true
+
+// Check anagram
+function isAnagram(a, b) {
+  const sort = s => s.toLowerCase().split("").sort().join("");
+  return sort(a) === sort(b);
+}
+console.log(isAnagram("listen", "silent")); // true`,
+              codeNote: "Sorting-based anagram check is O(n log n); frequency map is O(n).",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "What happens when you do str[0] = 'X' on a JavaScript string?",
+              code: null,
+              options: ["The string changes", "It throws an error", "Nothing — strings are immutable", "It changes only in strict mode"],
+              correct: 2,
+              body: "Strings are immutable in JavaScript. Assigning to an index silently fails (or throws in strict mode).",
+            },
+            {
+              id: "c2",
+              question: "What does 'hello'.split('').reverse().join('') return?",
+              code: null,
+              options: ["'hello'", "'olleh'", "['o','l','l','e','h']", "undefined"],
+              correct: 1,
+              body: "split('') creates ['h','e','l','l','o'], reverse() flips it, and join('') produces 'olleh'.",
+            },
+            {
+              id: "c3",
+              question: "Two strings are anagrams if they have:",
+              code: null,
+              options: ["The same length", "The same first character", "The same character frequencies", "The same substring"],
+              correct: 2,
+              body: "Anagrams are rearrangements of the same letters, so they must have identical character frequency counts.",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      no: 3,
+      name: "Linked Lists",
+      difficulty: "Beginner",
+      duration: "12 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "What is a Linked List?",
+          subtitle: "Nodes and pointers",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "Nodes Connected by Pointers",
+              body: "A linked list is a chain of nodes where each node holds a value and a reference (pointer) to the next node. Unlike arrays, elements are not stored contiguously, so there is no O(1) index access.",
+              code: `// Define a Node
+class ListNode {
+  constructor(val, next = null) {
+    this.val = val;
+    this.next = next;
+  }
+}
+
+// Build a list: 1 -> 2 -> 3
+const head = new ListNode(1);
+head.next = new ListNode(2);
+head.next.next = new ListNode(3);
+
+// Traverse
+let current = head;
+while (current) {
+  console.log(current.val); // 1, 2, 3
+  current = current.next;
+}`,
+              codeNote: "Always check for null before accessing .next.",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "Insertion & Deletion",
+          subtitle: "Add and remove nodes",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "Modifying the List",
+              body: "Inserting at the head is O(1) — just point the new node to the old head. Deleting a node requires updating the previous node's pointer to skip over the target node.",
+              code: `class ListNode {
+  constructor(val, next = null) {
+    this.val = val;
+    this.next = next;
+  }
+}
+
+// Insert at head — O(1)
+function insertAtHead(head, val) {
+  return new ListNode(val, head);
+}
+
+// Delete a node by value — O(n)
+function deleteNode(head, val) {
+  const dummy = new ListNode(0, head);
+  let prev = dummy;
+  let curr = head;
+  while (curr) {
+    if (curr.val === val) {
+      prev.next = curr.next;
+      break;
+    }
+    prev = curr;
+    curr = curr.next;
+  }
+  return dummy.next;
+}`,
+              codeNote: "A dummy head node simplifies edge cases when deleting the first node.",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "Reversing a Linked List",
+          subtitle: "The classic interview question",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "Iterative Reversal",
+              body: "Reversing a linked list is one of the most asked interview questions. Use three pointers: prev, curr, and next. At each step, flip the current node's pointer to point backward.",
+              code: `function reverseList(head) {
+  let prev = null;
+  let curr = head;
+
+  while (curr) {
+    const next = curr.next; // save next
+    curr.next = prev;       // reverse pointer
+    prev = curr;            // advance prev
+    curr = next;            // advance curr
+  }
+  return prev; // new head
+}
+
+// Example: 1->2->3 becomes 3->2->1`,
+              codeNote: "This runs in O(n) time and O(1) space.",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "What is the time complexity of accessing the nth element in a singly linked list?",
+              code: null,
+              options: ["O(1)", "O(n)", "O(log n)", "O(n²)"],
+              correct: 1,
+              body: "You must traverse from the head node-by-node, so access is O(n) — unlike arrays which offer O(1) index access.",
+            },
+            {
+              id: "c2",
+              question: "What is the time complexity of inserting at the HEAD of a linked list?",
+              code: null,
+              options: ["O(n)", "O(1)", "O(log n)", "O(n log n)"],
+              correct: 1,
+              body: "You simply create a new node and point it to the current head — no traversal needed.",
+            },
+            {
+              id: "c3",
+              question: "When reversing a linked list iteratively, how many pointers do you need?",
+              code: null,
+              options: ["1", "2", "3", "4"],
+              correct: 2,
+              body: "You need three pointers: prev (starts null), curr (starts at head), and next (temporary to save curr.next before overwriting).",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      no: 4,
+      name: "Stacks",
+      difficulty: "Beginner",
+      duration: "12 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "What is a Stack?",
+          subtitle: "LIFO — Last In, First Out",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "The LIFO Principle",
+              body: "A stack is a collection where the last element added is the first one removed. Think of a stack of plates — you always take from the top. JavaScript arrays can act as stacks using push and pop.",
+              code: `// Stack using a JavaScript array
+const stack = [];
+
+stack.push(10);  // [10]
+stack.push(20);  // [10, 20]
+stack.push(30);  // [10, 20, 30]
+
+console.log(stack.pop());  // 30 (last in, first out)
+console.log(stack.pop());  // 20
+
+// Peek at the top without removing
+console.log(stack[stack.length - 1]); // 10
+
+console.log(stack.length === 0); // false (not empty)`,
+              codeNote: "push() and pop() both run in O(1) time.",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "Implementing a Stack Class",
+          subtitle: "Encapsulate stack behavior",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "Class-Based Stack",
+              body: "Wrapping an array in a class gives you a clean interface with push, pop, peek, and isEmpty methods. This prevents accidental use of non-stack operations like shift or index access.",
+              code: `class Stack {
+  constructor() {
+    this.items = [];
+  }
+  push(val) {
+    this.items.push(val);
+  }
+  pop() {
+    if (this.isEmpty()) return undefined;
+    return this.items.pop();
+  }
+  peek() {
+    return this.items[this.items.length - 1];
+  }
+  isEmpty() {
+    return this.items.length === 0;
+  }
+  size() {
+    return this.items.length;
+  }
+}
+
+const s = new Stack();
+s.push(5);
+s.push(10);
+console.log(s.peek()); // 10
+console.log(s.pop());  // 10`,
+              codeNote: "All operations are O(1).",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "Valid Parentheses",
+          subtitle: "Classic stack use case",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "Bracket Matching",
+              body: "The valid parentheses problem is the most famous stack question. Push every opening bracket, and when you see a closing bracket, pop and check it matches. If the stack is empty at the end, the string is valid.",
+              code: `function isValid(s) {
+  const stack = [];
+  const map = { ')': '(', ']': '[', '}': '{' };
+
+  for (const ch of s) {
+    if (ch === '(' || ch === '[' || ch === '{') {
+      stack.push(ch);
+    } else {
+      if (stack.pop() !== map[ch]) return false;
+    }
+  }
+  return stack.length === 0;
+}
+
+console.log(isValid("({[]})")); // true
+console.log(isValid("(]"));     // false
+console.log(isValid(""));       // true`,
+              codeNote: "This runs in O(n) time and O(n) space.",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "What does LIFO stand for?",
+              code: null,
+              options: ["Last In First Out", "Least In First Out", "Last Index For Output", "Linear In-order First Out"],
+              correct: 0,
+              body: "LIFO means Last In, First Out — the most recently added element is removed first.",
+            },
+            {
+              id: "c2",
+              question: "Which two array methods simulate a stack in JavaScript?",
+              code: null,
+              options: ["shift() and unshift()", "push() and pop()", "splice() and slice()", "map() and filter()"],
+              correct: 1,
+              body: "push() adds to the top (end) and pop() removes from the top — both in O(1).",
+            },
+            {
+              id: "c3",
+              question: "In the valid parentheses problem, what do you push onto the stack?",
+              code: null,
+              options: ["Closing brackets", "Opening brackets", "All characters", "The index of each bracket"],
+              correct: 1,
+              body: "You push opening brackets and pop when you encounter a closing bracket to check for a match.",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      no: 5,
+      name: "Queues",
+      difficulty: "Beginner",
+      duration: "12 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "What is a Queue?",
+          subtitle: "FIFO — First In, First Out",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "The FIFO Principle",
+              body: "A queue processes elements in the order they arrive — first in, first out, like a line at a store. Elements are added at the back (enqueue) and removed from the front (dequeue).",
+              code: `// Simple queue with an array
+const queue = [];
+
+queue.push("A");  // enqueue
+queue.push("B");
+queue.push("C");
+
+console.log(queue.shift()); // "A" — dequeue (first in)
+console.log(queue.shift()); // "B"
+console.log(queue);         // ["C"]`,
+              codeNote: "shift() is O(n) on arrays — for performance, use a linked list or index-based queue.",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "Efficient Queue Implementation",
+          subtitle: "Avoid O(n) dequeue with indices",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "Index-Based Queue",
+              body: "Using shift() on a regular array is O(n). A more efficient approach uses a head pointer and an object or array, giving O(1) enqueue and dequeue. This is critical for performance-sensitive code.",
+              code: `class Queue {
+  constructor() {
+    this.items = {};
+    this.head = 0;
+    this.tail = 0;
+  }
+  enqueue(val) {
+    this.items[this.tail] = val;
+    this.tail++;
+  }
+  dequeue() {
+    if (this.isEmpty()) return undefined;
+    const val = this.items[this.head];
+    delete this.items[this.head];
+    this.head++;
+    return val;
+  }
+  peek() {
+    return this.items[this.head];
+  }
+  isEmpty() {
+    return this.tail === this.head;
+  }
+  size() {
+    return this.tail - this.head;
+  }
+}
+
+const q = new Queue();
+q.enqueue(1);
+q.enqueue(2);
+console.log(q.dequeue()); // 1
+console.log(q.peek());    // 2`,
+              codeNote: "All operations are O(1) — no element shifting needed.",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "Queue Use Cases",
+          subtitle: "BFS, task scheduling, buffers",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "Where Queues Shine",
+              body: "Queues power Breadth-First Search (BFS), task scheduling, print spoolers, and message buffers. In BFS, you enqueue neighbors and dequeue the next node to visit level by level.",
+              code: `// BFS on a simple graph using a queue
+function bfs(graph, start) {
+  const visited = new Set();
+  const queue = [start];
+  visited.add(start);
+
+  while (queue.length > 0) {
+    const node = queue.shift();
+    console.log("Visited:", node);
+
+    for (const neighbor of graph[node]) {
+      if (!visited.has(neighbor)) {
+        visited.add(neighbor);
+        queue.push(neighbor);
+      }
+    }
+  }
+}
+
+const graph = { A: ["B","C"], B: ["D"], C: ["D"], D: [] };
+bfs(graph, "A"); // A, B, C, D`,
+              codeNote: "BFS guarantees shortest-path in unweighted graphs.",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "What does FIFO stand for?",
+              code: null,
+              options: ["First In First Out", "Fast In Fast Out", "First Index First Output", "Final In Final Out"],
+              correct: 0,
+              body: "FIFO means First In, First Out — the element that was added first is removed first, like a real-world line.",
+            },
+            {
+              id: "c2",
+              question: "Why is array.shift() a poor choice for a high-performance queue?",
+              code: null,
+              options: ["It returns undefined", "It is O(n) because it re-indexes all elements", "It only works on strings", "It mutates the original array"],
+              correct: 1,
+              body: "shift() removes the first element and must shift every remaining element left, making it O(n).",
+            },
+            {
+              id: "c3",
+              question: "Which algorithm relies heavily on a queue?",
+              code: null,
+              options: ["Depth-First Search", "Binary Search", "Breadth-First Search", "Quick Sort"],
+              correct: 2,
+              body: "BFS uses a queue to explore nodes level by level, processing the earliest-discovered node first.",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      no: 6,
+      name: "Hash Maps",
+      difficulty: "Beginner",
+      duration: "12 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "What is a Hash Map?",
+          subtitle: "Key-value pairs & O(1) lookup",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "Key-Value Storage",
+              body: "A hash map (or hash table) stores data as key-value pairs and provides O(1) average-time lookup, insertion, and deletion. In JavaScript, both plain objects and the Map class serve this purpose.",
+              code: `// Using a Map
+const map = new Map();
+map.set("name", "Alice");
+map.set("age", 25);
+
+console.log(map.get("name")); // "Alice"
+console.log(map.has("age"));  // true
+console.log(map.size);        // 2
+
+map.delete("age");
+console.log(map.size);        // 1
+
+// Using a plain object
+const obj = {};
+obj["color"] = "blue";
+console.log(obj["color"]); // "blue"`,
+              codeNote: "Map preserves insertion order and allows any type as a key.",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "Collisions & Counting",
+          subtitle: "Hash collisions & frequency maps",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "Handling Collisions & Counting Patterns",
+              body: "Hash collisions occur when two keys map to the same bucket — resolved by chaining or open addressing. The most common interview pattern is building a frequency map to count occurrences of elements.",
+              code: `// Frequency counter pattern
+function charFrequency(str) {
+  const freq = {};
+  for (const ch of str) {
+    freq[ch] = (freq[ch] || 0) + 1;
+  }
+  return freq;
+}
+console.log(charFrequency("banana"));
+// { b: 1, a: 3, n: 2 }
+
+// Find the first non-repeating character
+function firstUnique(s) {
+  const freq = charFrequency(s);
+  for (const ch of s) {
+    if (freq[ch] === 1) return ch;
+  }
+  return null;
+}
+console.log(firstUnique("aabbc")); // "c"`,
+              codeNote: "The frequency counter pattern solves countless interview problems.",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "Two Sum with a Hash Map",
+          subtitle: "The classic O(n) solution",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "Two Sum in One Pass",
+              body: "The Two Sum problem asks you to find two numbers that add up to a target. A hash map lets you check if the complement (target - current) exists in O(1), reducing the brute-force O(n²) to O(n).",
+              code: `function twoSum(nums, target) {
+  const map = new Map();
+
+  for (let i = 0; i < nums.length; i++) {
+    const complement = target - nums[i];
+
+    if (map.has(complement)) {
+      return [map.get(complement), i];
+    }
+    map.set(nums[i], i);
+  }
+  return [];
+}
+
+console.log(twoSum([2, 7, 11, 15], 9));
+// [0, 1] — because 2 + 7 = 9`,
+              codeNote: "Store value→index; look up the complement each iteration.",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "What is the average time complexity of a hash map lookup?",
+              code: null,
+              options: ["O(n)", "O(1)", "O(log n)", "O(n²)"],
+              correct: 1,
+              body: "Hash maps compute the bucket from the key's hash in constant time, giving O(1) average lookup.",
+            },
+            {
+              id: "c2",
+              question: "What is a hash collision?",
+              code: null,
+              options: ["Two values that are equal", "Two keys that map to the same bucket", "A missing key error", "A stack overflow in the hash function"],
+              correct: 1,
+              body: "A collision happens when different keys produce the same hash bucket index. It's resolved by chaining or probing.",
+            },
+            {
+              id: "c3",
+              question: "How does the hash map improve Two Sum from O(n²) to O(n)?",
+              code: null,
+              options: ["By sorting the array first", "By using two nested loops", "By checking for the complement in O(1) per element", "By using binary search"],
+              correct: 2,
+              body: "Instead of checking every pair, you store seen values and check if target - current exists in the map in O(1).",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      no: 7,
+      name: "Two Pointers",
+      difficulty: "Beginner",
+      duration: "12 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "The Two Pointer Technique",
+          subtitle: "Shrink the search space",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "What Are Two Pointers?",
+              body: "Two pointers is a technique where you use two indices that move toward each other (or in the same direction) to solve problems in O(n) instead of O(n²). It works best on sorted arrays or sequences.",
+              code: `// Two Sum on a SORTED array using two pointers
+function twoSumSorted(nums, target) {
+  let left = 0;
+  let right = nums.length - 1;
+
+  while (left < right) {
+    const sum = nums[left] + nums[right];
+
+    if (sum === target) return [left, right];
+    if (sum < target) left++;
+    else right--;
+  }
+  return [];
+}
+
+console.log(twoSumSorted([1, 3, 5, 7, 11], 12));
+// [0, 4] — because 1 + 11 = 12`,
+              codeNote: "Two pointers on sorted data avoids the need for a hash map.",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "Palindrome Check",
+          subtitle: "Compare from both ends",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "Palindrome with Two Pointers",
+              body: "Place one pointer at the start and one at the end. Move them inward, comparing characters. If all pairs match, the string is a palindrome. Skip non-alphanumeric characters for real interview questions.",
+              code: `function isPalindrome(s) {
+  s = s.toLowerCase().replace(/[^a-z0-9]/g, "");
+  let left = 0;
+  let right = s.length - 1;
+
+  while (left < right) {
+    if (s[left] !== s[right]) return false;
+    left++;
+    right--;
+  }
+  return true;
+}
+
+console.log(isPalindrome("A man, a plan, a canal: Panama"));
+// true
+
+console.log(isPalindrome("hello"));
+// false`,
+              codeNote: "Runs in O(n) time and O(1) space (ignoring the cleaned string).",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "Remove Duplicates In-Place",
+          subtitle: "Fast and slow pointers",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "Slow & Fast Pointer Variant",
+              body: "A slow pointer tracks the position to write, while a fast pointer scans ahead. When the fast pointer finds a new value, write it at the slow pointer's position. This removes duplicates in-place in O(n).",
+              code: `function removeDuplicates(nums) {
+  if (nums.length === 0) return 0;
+
+  let slow = 0;
+
+  for (let fast = 1; fast < nums.length; fast++) {
+    if (nums[fast] !== nums[slow]) {
+      slow++;
+      nums[slow] = nums[fast];
+    }
+  }
+  return slow + 1; // length of unique portion
+}
+
+const arr = [1, 1, 2, 2, 3, 4, 4];
+const len = removeDuplicates(arr);
+console.log(arr.slice(0, len)); // [1, 2, 3, 4]`,
+              codeNote: "The slow pointer only advances when a new unique value is found.",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "What is the main advantage of the two-pointer technique?",
+              code: null,
+              options: ["It uses less memory", "It reduces O(n²) to O(n)", "It sorts the array", "It works on unsorted data"],
+              correct: 1,
+              body: "By moving two pointers strategically, you eliminate the need for a nested loop, reducing time from O(n²) to O(n).",
+            },
+            {
+              id: "c2",
+              question: "For the two-pointer 'two sum' approach, the array must be:",
+              code: null,
+              options: ["Empty", "Sorted", "Contain only positive numbers", "Of even length"],
+              correct: 1,
+              body: "The shrinking window logic (move left if sum is too small, move right if too large) only works when the array is sorted.",
+            },
+            {
+              id: "c3",
+              question: "In the remove-duplicates problem, what does the slow pointer represent?",
+              code: null,
+              options: ["The current maximum", "The last position of a unique element", "The middle of the array", "The count of duplicates"],
+              correct: 1,
+              body: "The slow pointer marks where the next unique value should be placed, building the de-duplicated portion in-place.",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      no: 8,
+      name: "Sliding Window",
+      difficulty: "Beginner",
+      duration: "12 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "Fixed-Size Window",
+          subtitle: "Max sum subarray of size k",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "What is Sliding Window?",
+              body: "The sliding window technique maintains a window of elements as you iterate, adding one element to the right and removing one from the left. For fixed-size windows, this turns an O(n×k) brute-force into O(n).",
+              code: `// Maximum sum of a subarray of size k
+function maxSubarraySum(arr, k) {
+  if (arr.length < k) return null;
+
+  let windowSum = 0;
+  // Build the first window
+  for (let i = 0; i < k; i++) {
+    windowSum += arr[i];
+  }
+
+  let maxSum = windowSum;
+
+  // Slide the window
+  for (let i = k; i < arr.length; i++) {
+    windowSum += arr[i] - arr[i - k]; // add right, remove left
+    maxSum = Math.max(maxSum, windowSum);
+  }
+  return maxSum;
+}
+
+console.log(maxSubarraySum([2, 1, 5, 1, 3, 2], 3)); // 9 (5+1+3)`,
+              codeNote: "Add the new element, subtract the outgoing one — O(n) total.",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "Variable-Size Window",
+          subtitle: "Expand and shrink dynamically",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "Dynamic Window Size",
+              body: "When the window size isn't fixed, expand the right pointer to grow the window and shrink the left pointer when a condition is violated. This pattern solves problems like smallest subarray with a given sum.",
+              code: `// Smallest subarray with sum >= target
+function minSubarrayLen(target, nums) {
+  let left = 0;
+  let sum = 0;
+  let minLen = Infinity;
+
+  for (let right = 0; right < nums.length; right++) {
+    sum += nums[right];
+
+    while (sum >= target) {
+      minLen = Math.min(minLen, right - left + 1);
+      sum -= nums[left];
+      left++;
+    }
+  }
+  return minLen === Infinity ? 0 : minLen;
+}
+
+console.log(minSubarrayLen(7, [2, 3, 1, 2, 4, 3])); // 2 (4+3)`,
+              codeNote: "The left pointer only moves forward, so total work is still O(n).",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "Longest Substring Without Repeats",
+          subtitle: "Window + hash set",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "Combining Window with a Set",
+              body: "To find the longest substring without repeating characters, expand the window right, and if a duplicate is found, shrink from the left until the duplicate is removed. A Set tracks the current window's characters.",
+              code: `function lengthOfLongestSubstring(s) {
+  const set = new Set();
+  let left = 0;
+  let maxLen = 0;
+
+  for (let right = 0; right < s.length; right++) {
+    while (set.has(s[right])) {
+      set.delete(s[left]);
+      left++;
+    }
+    set.add(s[right]);
+    maxLen = Math.max(maxLen, right - left + 1);
+  }
+  return maxLen;
+}
+
+console.log(lengthOfLongestSubstring("abcabcbb")); // 3 ("abc")
+console.log(lengthOfLongestSubstring("bbbbb"));    // 1 ("b")
+console.log(lengthOfLongestSubstring("pwwkew"));   // 3 ("wke")`,
+              codeNote: "Each character is added and removed from the set at most once — O(n).",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "What does the sliding window technique avoid that a brute-force approach does?",
+              code: null,
+              options: ["Using extra memory", "Recomputing the entire window from scratch each time", "Sorting the array", "Using recursion"],
+              correct: 1,
+              body: "Instead of recalculating the sum (or state) of the whole window, you incrementally add/remove one element — saving O(k) work per slide.",
+            },
+            {
+              id: "c2",
+              question: "In a variable-size sliding window, when do you shrink the window?",
+              code: null,
+              options: ["Every iteration", "When the window is empty", "When a condition is violated or exceeded", "Only at the end"],
+              correct: 2,
+              body: "You shrink from the left when the current window violates the problem's constraint (e.g., sum exceeds target, or a duplicate appears).",
+            },
+            {
+              id: "c3",
+              question: "What data structure helps track characters in the 'longest substring without repeats' problem?",
+              code: null,
+              options: ["Stack", "Queue", "Set", "Linked List"],
+              correct: 2,
+              body: "A Set provides O(1) has/add/delete, making it ideal for tracking which characters are currently in the window.",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      no: 9,
+      name: "Binary Search",
+      difficulty: "Intermediate",
+      duration: "14 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "Binary Search Concept",
+          subtitle: "Divide and conquer on sorted data",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "What is Binary Search?",
+              body: "Binary search is an efficient algorithm that finds a target in a sorted array by repeatedly halving the search space. It runs in O(log n) time, making it far faster than linear search for large datasets.",
+              code: `// Binary search on a sorted array
+function binarySearch(arr, target) {
+  let left = 0;
+  let right = arr.length - 1;
+
+  while (left <= right) {
+    const mid = Math.floor((left + right) / 2);
+    if (arr[mid] === target) return mid;
+    else if (arr[mid] < target) left = mid + 1;
+    else right = mid - 1;
+  }
+  return -1; // not found
+}
+
+console.log(binarySearch([1, 3, 5, 7, 9, 11], 7)); // 3`,
+              codeNote: "The key invariant: the target always lies within [left, right].",
+            },
+            {
+              heading: "Why Sorted Order Matters",
+              body: "Binary search only works on sorted arrays because the comparison at the midpoint tells us which half to discard. If the array is unsorted, the midpoint comparison gives no useful information about where the target might be.",
+              code: `// This will NOT work correctly
+const unsorted = [5, 2, 8, 1, 9];
+// binarySearch(unsorted, 8) → might return -1 (wrong!)
+
+// Always sort first, or use a structure that maintains order
+const sorted = [1, 2, 5, 8, 9];
+console.log(binarySearch(sorted, 8)); // 3 ✓`,
+              codeNote: "Sort the array first if it isn't already sorted.",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "Sorted Array Search",
+          subtitle: "Implementing and tracing binary search",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "Tracing Through an Example",
+              body: "Let's trace binary search step by step on a sorted array. Each iteration cuts the search space in half, so even an array of 1 million elements takes at most 20 comparisons.",
+              code: `// Trace: find 23 in [2, 5, 8, 12, 16, 23, 38, 56, 72, 91]
+// Step 1: left=0, right=9, mid=4 → arr[4]=16 < 23 → left=5
+// Step 2: left=5, right=9, mid=7 → arr[7]=56 > 23 → right=6
+// Step 3: left=5, right=6, mid=5 → arr[5]=23 === 23 → found at index 5
+
+const arr = [2, 5, 8, 12, 16, 23, 38, 56, 72, 91];
+console.log(binarySearch(arr, 23)); // 5`,
+              codeNote: "Only 3 steps to find the element in a 10-element array.",
+            },
+            {
+              heading: "Iterative vs Recursive",
+              body: "Binary search can be written iteratively with a while loop or recursively. The iterative version avoids call stack overhead and is generally preferred in practice.",
+              code: `// Recursive binary search
+function binarySearchRecursive(arr, target, left = 0, right = arr.length - 1) {
+  if (left > right) return -1;
+  const mid = Math.floor((left + right) / 2);
+  if (arr[mid] === target) return mid;
+  if (arr[mid] < target) {
+    return binarySearchRecursive(arr, target, mid + 1, right);
+  }
+  return binarySearchRecursive(arr, target, left, mid - 1);
+}
+
+console.log(binarySearchRecursive([1, 3, 5, 7, 9], 5)); // 2`,
+              codeNote: "Recursive version uses O(log n) stack space.",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "Edge Cases & Variations",
+          subtitle: "Boundaries, duplicates, and lower/upper bound",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "Finding Lower and Upper Bounds",
+              body: "When duplicates exist, you may need the first or last occurrence. Lower bound finds the first index where arr[i] >= target, and upper bound finds the first index where arr[i] > target.",
+              code: `// Find the first occurrence (lower bound)
+function lowerBound(arr, target) {
+  let left = 0, right = arr.length;
+  while (left < right) {
+    const mid = Math.floor((left + right) / 2);
+    if (arr[mid] < target) left = mid + 1;
+    else right = mid;
+  }
+  return left;
+}
+
+const arr = [1, 2, 2, 2, 3, 4];
+console.log(lowerBound(arr, 2)); // 1 (first occurrence of 2)`,
+              codeNote: "Note: right starts at arr.length, not arr.length - 1.",
+            },
+            {
+              heading: "Binary Search on Answer Space",
+              body: "Binary search isn't limited to arrays — you can search any monotonic function. If you can frame a problem as 'find the smallest x where condition(x) is true', binary search applies.",
+              code: `// Find the integer square root of n
+function intSqrt(n) {
+  let left = 0, right = n;
+  while (left <= right) {
+    const mid = Math.floor((left + right) / 2);
+    if (mid * mid <= n) left = mid + 1;
+    else right = mid - 1;
+  }
+  return right; // largest mid where mid*mid <= n
+}
+
+console.log(intSqrt(26)); // 5 (5*5=25 ≤ 26)`,
+              codeNote: "Searching the answer space — not an array, but a range of values.",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "What is the time complexity of binary search?",
+              code: null,
+              options: ["O(n)", "O(log n)", "O(n log n)", "O(1)"],
+              correct: 1,
+              body: "Binary search halves the search space each step, giving O(log n) time complexity.",
+            },
+            {
+              id: "c2",
+              question: "What happens if you run binary search on an unsorted array?",
+              code: null,
+              options: ["It works but slower", "It may return incorrect results", "It throws an error", "It sorts the array first"],
+              correct: 1,
+              body: "Binary search relies on sorted order to decide which half to discard. On unsorted data it may skip the target entirely.",
+            },
+            {
+              id: "c3",
+              question: "In a standard binary search, when left > right, what does that mean?",
+              code: null,
+              options: ["Target is at index 0", "The array is empty", "Target was not found", "Target is at the last index"],
+              correct: 2,
+              body: "When left exceeds right, the search space is empty, meaning the target does not exist in the array.",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      no: 10,
+      name: "Recursion",
+      difficulty: "Intermediate",
+      duration: "15 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "Understanding Recursion",
+          subtitle: "Functions that call themselves",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "What is Recursion?",
+              body: "Recursion is when a function calls itself to solve a smaller instance of the same problem. Every recursive function needs a base case to stop the recursion and a recursive case that moves toward it.",
+              code: `// A simple recursive countdown
+function countdown(n) {
+  if (n <= 0) {        // base case
+    console.log("Done!");
+    return;
+  }
+  console.log(n);
+  countdown(n - 1);   // recursive case
+}
+
+countdown(5); // 5, 4, 3, 2, 1, Done!`,
+              codeNote: "Without the base case, the function would call itself forever.",
+            },
+            {
+              heading: "Base Case is Critical",
+              body: "The base case is the condition that stops recursion. Without it, you get infinite recursion which crashes with a stack overflow error. Always define your base case first when writing recursive functions.",
+              code: `// Classic example: factorial
+function factorial(n) {
+  if (n <= 1) return 1;       // base case
+  return n * factorial(n - 1); // recursive case
+}
+
+console.log(factorial(5)); // 120 (5 * 4 * 3 * 2 * 1)
+console.log(factorial(0)); // 1`,
+              codeNote: "factorial(5) = 5 × factorial(4) = 5 × 4 × 3 × 2 × 1 = 120.",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "The Call Stack",
+          subtitle: "How recursion executes under the hood",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "Visualizing the Call Stack",
+              body: "Each recursive call adds a new frame to the call stack. When the base case is reached, frames are popped off one by one, returning results back up the chain.",
+              code: `// Trace factorial(4):
+// CALL STACK (growing):
+//   factorial(4) → waits for factorial(3)
+//     factorial(3) → waits for factorial(2)
+//       factorial(2) → waits for factorial(1)
+//         factorial(1) → returns 1  (base case)
+//       factorial(2) → returns 2 * 1 = 2
+//     factorial(3) → returns 3 * 2 = 6
+//   factorial(4) → returns 4 * 6 = 24
+
+console.log(factorial(4)); // 24`,
+              codeNote: "Each indentation level represents a frame on the call stack.",
+            },
+            {
+              heading: "Stack Overflow Danger",
+              body: "Every recursive call uses stack memory. Too deep a recursion (typically >10,000 calls) causes a stack overflow. JavaScript has a limited call stack, so be mindful of recursion depth.",
+              code: `// This will crash — no base case!
+function infinite(n) {
+  return infinite(n + 1); // never stops
+}
+// infinite(1); // RangeError: Maximum call stack size exceeded
+
+// Safe recursion with proper depth
+function sum(n) {
+  if (n <= 0) return 0;
+  return n + sum(n - 1);
+}
+console.log(sum(100)); // 5050`,
+              codeNote: "JavaScript's call stack limit is typically around 10,000–15,000 frames.",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "Recursive Patterns",
+          subtitle: "Common patterns and thinking recursively",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "Fibonacci and Multiple Recursive Calls",
+              body: "Some problems make multiple recursive calls per invocation, creating a tree of calls. Fibonacci is the classic example — each call branches into two. This naive approach is O(2^n) and can be optimized with memoization.",
+              code: `// Naive Fibonacci — O(2^n)
+function fib(n) {
+  if (n <= 1) return n;
+  return fib(n - 1) + fib(n - 2);
+}
+
+// Optimized with memoization — O(n)
+function fibMemo(n, memo = {}) {
+  if (n <= 1) return n;
+  if (memo[n]) return memo[n];
+  memo[n] = fibMemo(n - 1, memo) + fibMemo(n - 2, memo);
+  return memo[n];
+}
+
+console.log(fibMemo(40)); // 102334155 (instant)`,
+              codeNote: "Memoization caches results to avoid redundant calculations.",
+            },
+            {
+              heading: "Recursion on Arrays and Strings",
+              body: "Many array and string problems can be solved recursively by processing one element and recursing on the rest. This 'divide and conquer' mindset is fundamental to algorithms like merge sort.",
+              code: `// Reverse a string recursively
+function reverseStr(s) {
+  if (s.length <= 1) return s;
+  return reverseStr(s.slice(1)) + s[0];
+}
+console.log(reverseStr("hello")); // "olleh"
+
+// Sum an array recursively
+function arrSum(arr) {
+  if (arr.length === 0) return 0;
+  return arr[0] + arrSum(arr.slice(1));
+}
+console.log(arrSum([1, 2, 3, 4])); // 10`,
+              codeNote: "Process the first element, recurse on the rest.",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "What happens if a recursive function has no base case?",
+              code: null,
+              options: ["It returns undefined", "It runs forever until stack overflow", "It returns 0", "It automatically stops after 100 calls"],
+              correct: 1,
+              body: "Without a base case, the function calls itself indefinitely until the call stack overflows and throws a RangeError.",
+            },
+            {
+              id: "c2",
+              question: "What is the time complexity of naive recursive Fibonacci?",
+              code: null,
+              options: ["O(n)", "O(n²)", "O(2^n)", "O(log n)"],
+              correct: 2,
+              body: "Each call branches into two more calls, creating an exponential tree of size O(2^n).",
+            },
+            {
+              id: "c3",
+              question: "How does memoization improve recursive Fibonacci?",
+              code: null,
+              options: ["It removes the base case", "It caches previously computed results", "It converts recursion to a loop", "It reduces space to O(1)"],
+              correct: 1,
+              body: "Memoization stores results of subproblems so each Fibonacci number is computed only once, reducing time from O(2^n) to O(n).",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      no: 11,
+      name: "Sorting Algorithms",
+      difficulty: "Intermediate",
+      duration: "16 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "Bubble Sort",
+          subtitle: "The simplest sorting algorithm",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "How Bubble Sort Works",
+              body: "Bubble sort repeatedly steps through the array, comparing adjacent elements and swapping them if they are in the wrong order. The largest unsorted element 'bubbles' to the end each pass. It runs in O(n²) time.",
+              code: `function bubbleSort(arr) {
+  const n = arr.length;
+  for (let i = 0; i < n - 1; i++) {
+    for (let j = 0; j < n - 1 - i; j++) {
+      if (arr[j] > arr[j + 1]) {
+        [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]]; // swap
+      }
+    }
+  }
+  return arr;
+}
+
+console.log(bubbleSort([64, 34, 25, 12, 22, 11, 90]));
+// [11, 12, 22, 25, 34, 64, 90]`,
+              codeNote: "Each pass guarantees the next largest element is in place.",
+            },
+            {
+              heading: "Optimized Bubble Sort",
+              body: "If no swaps occur during a pass, the array is already sorted. We can add an early exit flag to skip unnecessary passes, improving best-case performance to O(n).",
+              code: `function bubbleSortOptimized(arr) {
+  const n = arr.length;
+  for (let i = 0; i < n - 1; i++) {
+    let swapped = false;
+    for (let j = 0; j < n - 1 - i; j++) {
+      if (arr[j] > arr[j + 1]) {
+        [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
+        swapped = true;
+      }
+    }
+    if (!swapped) break; // array is sorted
+  }
+  return arr;
+}
+
+console.log(bubbleSortOptimized([1, 2, 3, 4, 5])); // exits after 1 pass`,
+              codeNote: "The swapped flag lets us exit early if the array is already sorted.",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "Selection Sort",
+          subtitle: "Find the minimum and place it",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "How Selection Sort Works",
+              body: "Selection sort divides the array into sorted and unsorted portions. In each pass, it finds the minimum element from the unsorted portion and swaps it into position. It always runs in O(n²) time regardless of input.",
+              code: `function selectionSort(arr) {
+  const n = arr.length;
+  for (let i = 0; i < n - 1; i++) {
+    let minIdx = i;
+    for (let j = i + 1; j < n; j++) {
+      if (arr[j] < arr[minIdx]) {
+        minIdx = j;
+      }
+    }
+    if (minIdx !== i) {
+      [arr[i], arr[minIdx]] = [arr[minIdx], arr[i]];
+    }
+  }
+  return arr;
+}
+
+console.log(selectionSort([29, 10, 14, 37, 13]));
+// [10, 13, 14, 29, 37]`,
+              codeNote: "Selection sort makes at most n-1 swaps, fewer than bubble sort.",
+            },
+            {
+              heading: "Selection Sort Characteristics",
+              body: "Selection sort performs fewer swaps than bubble sort (at most n-1) but always does O(n²) comparisons. It's not stable — equal elements might change their relative order after sorting.",
+              code: `// Comparison of sorting characteristics:
+// Bubble Sort:  O(n²) avg, O(n) best (optimized), stable
+// Selection Sort: O(n²) always, not stable, fewer swaps
+
+// Selection sort doesn't benefit from partially sorted input
+const nearlySorted = [1, 2, 3, 5, 4];
+// Bubble sort (optimized): ~1 pass
+// Selection sort: still does all n-1 passes
+console.log(selectionSort([...nearlySorted])); // [1, 2, 3, 4, 5]`,
+              codeNote: "Selection sort always does O(n²) comparisons regardless of input order.",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "Merge Sort Concepts",
+          subtitle: "Divide, conquer, and merge",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "Divide and Conquer with Merge Sort",
+              body: "Merge sort splits the array in half recursively until each piece has one element, then merges them back in sorted order. It guarantees O(n log n) time in all cases, making it much faster than O(n²) sorts for large data.",
+              code: `function mergeSort(arr) {
+  if (arr.length <= 1) return arr;
+
+  const mid = Math.floor(arr.length / 2);
+  const left = mergeSort(arr.slice(0, mid));
+  const right = mergeSort(arr.slice(mid));
+
+  return merge(left, right);
+}
+
+function merge(left, right) {
+  const result = [];
+  let i = 0, j = 0;
+  while (i < left.length && j < right.length) {
+    if (left[i] <= right[j]) result.push(left[i++]);
+    else result.push(right[j++]);
+  }
+  return result.concat(left.slice(i)).concat(right.slice(j));
+}
+
+console.log(mergeSort([38, 27, 43, 3, 9, 82, 10]));
+// [3, 9, 10, 27, 38, 43, 82]`,
+              codeNote: "Merge sort is stable and always O(n log n), but uses O(n) extra space.",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "Which sorting algorithm always performs O(n²) comparisons, even on sorted input?",
+              code: null,
+              options: ["Bubble Sort (optimized)", "Merge Sort", "Selection Sort", "Insertion Sort"],
+              correct: 2,
+              body: "Selection sort always scans the unsorted portion to find the minimum, regardless of whether the input is already sorted.",
+            },
+            {
+              id: "c2",
+              question: "What is the time complexity of merge sort?",
+              code: null,
+              options: ["O(n)", "O(n²)", "O(n log n)", "O(log n)"],
+              correct: 2,
+              body: "Merge sort divides the array in half (log n levels) and merges at each level (n work), giving O(n log n) in all cases.",
+            },
+            {
+              id: "c3",
+              question: "What optimization can make bubble sort exit early?",
+              code: null,
+              options: ["Using a min heap", "Tracking if any swaps occurred in a pass", "Sorting only the first half", "Using recursion instead of loops"],
+              correct: 1,
+              body: "If a full pass completes with no swaps, the array is already sorted, so we can stop early.",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      no: 12,
+      name: "Searching Algorithms",
+      difficulty: "Intermediate",
+      duration: "14 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "Linear Search",
+          subtitle: "The brute-force approach",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "How Linear Search Works",
+              body: "Linear search checks every element from start to end until it finds the target or exhausts the array. It works on both sorted and unsorted data but runs in O(n) time in the worst case.",
+              code: `function linearSearch(arr, target) {
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i] === target) return i;
+  }
+  return -1;
+}
+
+console.log(linearSearch([4, 2, 7, 1, 9], 7)); // 2
+console.log(linearSearch([4, 2, 7, 1, 9], 5)); // -1`,
+              codeNote: "Simple and works on any array, but slow for large datasets.",
+            },
+            {
+              heading: "When to Use Linear Search",
+              body: "Use linear search when the data is unsorted, the array is small, or you're searching only once. For repeated searches on sorted data, binary search is far more efficient.",
+              code: `// Linear search on objects — find by property
+const users = [
+  { id: 1, name: "Alice" },
+  { id: 2, name: "Bob" },
+  { id: 3, name: "Charlie" },
+];
+
+function findUser(users, name) {
+  for (let i = 0; i < users.length; i++) {
+    if (users[i].name === name) return users[i];
+  }
+  return null;
+}
+
+console.log(findUser(users, "Bob")); // { id: 2, name: "Bob" }`,
+              codeNote: "Linear search is flexible — it can match on any property or condition.",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "Binary Search Applications",
+          subtitle: "Real-world uses of binary search",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "Finding Insertion Position",
+              body: "Binary search can find where to insert an element to keep an array sorted. This is the basis for operations like bisect in Python and is used internally by databases for index lookups.",
+              code: `// Find the correct insertion index
+function searchInsert(arr, target) {
+  let left = 0, right = arr.length;
+  while (left < right) {
+    const mid = Math.floor((left + right) / 2);
+    if (arr[mid] < target) left = mid + 1;
+    else right = mid;
+  }
+  return left;
+}
+
+const sorted = [1, 3, 5, 6];
+console.log(searchInsert(sorted, 5)); // 2 (already exists)
+console.log(searchInsert(sorted, 2)); // 1 (insert between 1 and 3)
+console.log(searchInsert(sorted, 7)); // 4 (insert at end)`,
+              codeNote: "This is the classic LeetCode 'Search Insert Position' problem.",
+            },
+            {
+              heading: "Finding Peak Element",
+              body: "A peak element is greater than its neighbors. Binary search can find a peak in O(log n) by comparing the midpoint to its neighbor and moving toward the higher side.",
+              code: `function findPeakElement(arr) {
+  let left = 0, right = arr.length - 1;
+  while (left < right) {
+    const mid = Math.floor((left + right) / 2);
+    if (arr[mid] < arr[mid + 1]) {
+      left = mid + 1; // peak is to the right
+    } else {
+      right = mid;    // peak is at mid or to the left
+    }
+  }
+  return left; // left === right, both point to a peak
+}
+
+console.log(findPeakElement([1, 3, 20, 4, 1, 0])); // 2 (value 20)`,
+              codeNote: "We always move toward the higher neighbor, guaranteeing we find a peak.",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "Search in Rotated Array",
+          subtitle: "Binary search on modified sorted data",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "Rotated Sorted Array",
+              body: "A rotated sorted array is a sorted array that has been shifted. For example [4,5,6,7,0,1,2] was originally [0,1,2,4,5,6,7]. We can still use binary search by determining which half is sorted at each step.",
+              code: `function searchRotated(arr, target) {
+  let left = 0, right = arr.length - 1;
+
+  while (left <= right) {
+    const mid = Math.floor((left + right) / 2);
+    if (arr[mid] === target) return mid;
+
+    // Left half is sorted
+    if (arr[left] <= arr[mid]) {
+      if (target >= arr[left] && target < arr[mid]) {
+        right = mid - 1;
+      } else {
+        left = mid + 1;
+      }
+    }
+    // Right half is sorted
+    else {
+      if (target > arr[mid] && target <= arr[right]) {
+        left = mid + 1;
+      } else {
+        right = mid - 1;
+      }
+    }
+  }
+  return -1;
+}
+
+console.log(searchRotated([4, 5, 6, 7, 0, 1, 2], 0)); // 4`,
+              codeNote: "At least one half is always sorted — use that to decide which half to search.",
+            },
+            {
+              heading: "Finding the Rotation Point",
+              body: "You can also use binary search to find the minimum element in a rotated sorted array, which tells you the rotation point. The minimum is where the sorted order breaks.",
+              code: `function findMin(arr) {
+  let left = 0, right = arr.length - 1;
+  while (left < right) {
+    const mid = Math.floor((left + right) / 2);
+    if (arr[mid] > arr[right]) {
+      left = mid + 1; // min is in right half
+    } else {
+      right = mid;    // min is at mid or in left half
+    }
+  }
+  return arr[left];
+}
+
+console.log(findMin([4, 5, 6, 7, 0, 1, 2])); // 0
+console.log(findMin([3, 1, 2])); // 1`,
+              codeNote: "Compare mid to right — if mid > right, the rotation point is in the right half.",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "What is the time complexity of linear search?",
+              code: null,
+              options: ["O(1)", "O(log n)", "O(n)", "O(n²)"],
+              correct: 2,
+              body: "Linear search checks each element one by one, so in the worst case it examines all n elements — O(n).",
+            },
+            {
+              id: "c2",
+              question: "In a rotated sorted array [4,5,6,7,0,1,2], which half is sorted when mid points to index 3 (value 7)?",
+              code: null,
+              options: ["Right half only", "Neither half", "Left half [4,5,6,7]", "Both halves"],
+              correct: 2,
+              body: "Since arr[left]=4 <= arr[mid]=7, the left half [4,5,6,7] is sorted. The rotation break is in the right half.",
+            },
+            {
+              id: "c3",
+              question: "Why can binary search find a peak element in O(log n)?",
+              code: null,
+              options: ["Because the array is sorted", "Because it always moves toward the higher neighbor", "Because peak is always in the middle", "Because it uses recursion"],
+              correct: 1,
+              body: "By always moving toward the higher neighbor, binary search guarantees it will converge on a peak, eliminating half the array each step.",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      no: 13,
+      name: "Trees",
+      difficulty: "Intermediate",
+      duration: "16 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "Binary Tree Concepts",
+          subtitle: "Nodes, edges, and tree structure",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "What is a Binary Tree?",
+              body: "A binary tree is a hierarchical data structure where each node has at most two children called left and right. The topmost node is called the root, and nodes with no children are called leaves.",
+              code: `// Defining a tree node in JavaScript
+class TreeNode {
+  constructor(val) {
+    this.val = val;
+    this.left = null;
+    this.right = null;
+  }
+}
+
+// Building a simple tree:
+//       1
+//      / \\
+//     2   3
+//    / \\
+//   4   5
+const root = new TreeNode(1);
+root.left = new TreeNode(2);
+root.right = new TreeNode(3);
+root.left.left = new TreeNode(4);
+root.left.right = new TreeNode(5);`,
+              codeNote: "Each node stores a value and pointers to its left and right children.",
+            },
+            {
+              heading: "Tree Terminology",
+              body: "The depth of a node is the number of edges from the root to that node. The height of a tree is the longest path from root to a leaf. A tree with n nodes has exactly n-1 edges.",
+              code: `// Tree properties
+//       1        ← depth 0 (root), height of tree = 2
+//      / \\
+//     2   3      ← depth 1
+//    / \\
+//   4   5        ← depth 2 (leaves)
+
+// Counting nodes and height
+function getHeight(node) {
+  if (node === null) return -1;
+  return 1 + Math.max(getHeight(node.left), getHeight(node.right));
+}
+
+console.log(getHeight(root)); // 2`,
+              codeNote: "Height is defined as edges, so a single node has height 0.",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "Inorder & Preorder Traversal",
+          subtitle: "Visiting every node systematically",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "Inorder Traversal (Left, Root, Right)",
+              body: "Inorder traversal visits the left subtree first, then the current node, then the right subtree. For a binary search tree, this visits nodes in ascending sorted order.",
+              code: `// Inorder: Left → Root → Right
+function inorder(node, result = []) {
+  if (node === null) return result;
+  inorder(node.left, result);
+  result.push(node.val);
+  inorder(node.right, result);
+  return result;
+}
+
+//       1
+//      / \\
+//     2   3
+//    / \\
+//   4   5
+console.log(inorder(root)); // [4, 2, 5, 1, 3]`,
+              codeNote: "Inorder on a BST gives sorted output — a very useful property.",
+            },
+            {
+              heading: "Preorder Traversal (Root, Left, Right)",
+              body: "Preorder traversal visits the current node first, then the left subtree, then the right subtree. It's useful for creating a copy of the tree or for serializing tree structures.",
+              code: `// Preorder: Root → Left → Right
+function preorder(node, result = []) {
+  if (node === null) return result;
+  result.push(node.val);
+  preorder(node.left, result);
+  preorder(node.right, result);
+  return result;
+}
+
+console.log(preorder(root)); // [1, 2, 4, 5, 3]`,
+              codeNote: "Preorder visits the root before its children — think 'process first, recurse later.'",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "Postorder & Level-Order",
+          subtitle: "More traversal patterns",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "Postorder Traversal (Left, Right, Root)",
+              body: "Postorder traversal visits both children before the current node. It's useful for deletion operations and evaluating expression trees, where you need children processed before the parent.",
+              code: `// Postorder: Left → Right → Root
+function postorder(node, result = []) {
+  if (node === null) return result;
+  postorder(node.left, result);
+  postorder(node.right, result);
+  result.push(node.val);
+  return result;
+}
+
+console.log(postorder(root)); // [4, 5, 2, 3, 1]`,
+              codeNote: "Postorder processes children first — useful for bottom-up operations.",
+            },
+            {
+              heading: "Level-Order Traversal (BFS)",
+              body: "Level-order traversal visits nodes level by level from top to bottom, left to right. It uses a queue and is essentially BFS on a tree. This is great for finding the shortest path from root to any node.",
+              code: `// Level-order using a queue
+function levelOrder(root) {
+  if (!root) return [];
+  const result = [];
+  const queue = [root];
+
+  while (queue.length > 0) {
+    const node = queue.shift();
+    result.push(node.val);
+    if (node.left) queue.push(node.left);
+    if (node.right) queue.push(node.right);
+  }
+  return result;
+}
+
+console.log(levelOrder(root)); // [1, 2, 3, 4, 5]`,
+              codeNote: "Level-order is the only traversal that uses a queue instead of recursion.",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "What is the inorder traversal of this tree?\n       1\n      / \\\n     2   3\n    / \\\n   4   5",
+              code: null,
+              options: ["[1, 2, 4, 5, 3]", "[4, 2, 5, 1, 3]", "[4, 5, 2, 3, 1]", "[1, 2, 3, 4, 5]"],
+              correct: 1,
+              body: "Inorder visits Left, Root, Right: go left to 4, back to 2, right to 5, back to 1, right to 3 → [4, 2, 5, 1, 3].",
+            },
+            {
+              id: "c2",
+              question: "Which traversal uses a queue data structure?",
+              code: null,
+              options: ["Inorder", "Preorder", "Postorder", "Level-order"],
+              correct: 3,
+              body: "Level-order traversal (BFS) uses a queue to visit nodes level by level from top to bottom.",
+            },
+            {
+              id: "c3",
+              question: "What is the height of a tree with only a root node?",
+              code: null,
+              options: ["-1", "0", "1", "2"],
+              correct: 1,
+              body: "Height is the longest path (in edges) from root to a leaf. A single node has no edges, so its height is 0.",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      no: 14,
+      name: "Binary Search Trees",
+      difficulty: "Intermediate",
+      duration: "16 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "BST Property",
+          subtitle: "The ordering rule that powers efficient search",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "What Makes a BST?",
+              body: "A binary search tree (BST) is a binary tree where for every node, all values in the left subtree are smaller and all values in the right subtree are larger. This property enables O(log n) search, insert, and delete on balanced trees.",
+              code: `// Valid BST:
+//        8
+//       / \\
+//      3   10
+//     / \\    \\
+//    1   6   14
+
+// Validate if a tree is a BST
+function isValidBST(node, min = -Infinity, max = Infinity) {
+  if (node === null) return true;
+  if (node.val <= min || node.val >= max) return false;
+  return (
+    isValidBST(node.left, min, node.val) &&
+    isValidBST(node.right, node.val, max)
+  );
+}`,
+              codeNote: "Each node must fit within a valid range based on its ancestors.",
+            },
+            {
+              heading: "Searching in a BST",
+              body: "To search in a BST, compare the target with the current node. If smaller, go left; if larger, go right. This halves the search space at each step, just like binary search on an array.",
+              code: `function searchBST(node, target) {
+  if (node === null) return null;
+  if (target === node.val) return node;
+  if (target < node.val) return searchBST(node.left, target);
+  return searchBST(node.right, target);
+}
+
+// Building the BST:
+//        8
+//       / \\
+//      3   10
+const bst = new TreeNode(8);
+bst.left = new TreeNode(3);
+bst.right = new TreeNode(10);
+bst.left.left = new TreeNode(1);
+bst.left.right = new TreeNode(6);
+
+console.log(searchBST(bst, 6)); // TreeNode { val: 6, ... }
+console.log(searchBST(bst, 7)); // null`,
+              codeNote: "Average case O(log n), worst case O(n) if the tree is skewed like a linked list.",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "BST Insert",
+          subtitle: "Adding elements while maintaining order",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "Inserting into a BST",
+              body: "To insert a value, traverse the tree like a search. When you reach a null position, that's where the new node belongs. The BST property is automatically maintained since we always place the node in the correct subtree.",
+              code: `function insertBST(node, val) {
+  if (node === null) return new TreeNode(val);
+  if (val < node.val) {
+    node.left = insertBST(node.left, val);
+  } else {
+    node.right = insertBST(node.right, val);
+  }
+  return node;
+}
+
+// Insert 5, 2, 8, 1, 4 into an empty BST
+let tree = null;
+[5, 2, 8, 1, 4].forEach(val => {
+  tree = insertBST(tree, val);
+});
+// Result:    5
+//           / \\
+//          2   8
+//         / \\
+//        1   4`,
+              codeNote: "Insertion order determines the tree shape. Sorted input creates a skewed tree.",
+            },
+            {
+              heading: "Insertion Order Matters",
+              body: "The same set of values can create different tree shapes depending on insertion order. Inserting sorted data creates a degenerate (linked-list-like) tree with O(n) operations. Balanced trees solve this problem.",
+              code: `// Inserting [1, 2, 3, 4, 5] gives a skewed tree:
+// 1
+//  \\
+//   2
+//    \\
+//     3  → O(n) search!
+//      \\
+//       4
+//        \\
+//         5
+
+// Inserting [3, 1, 5, 2, 4] gives a balanced tree:
+//     3
+//    / \\
+//   1   5   → O(log n) search!
+//    \\ /
+//    2 4`,
+              codeNote: "Self-balancing BSTs (AVL, Red-Black) fix the skew problem automatically.",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "BST Delete",
+          subtitle: "Removing nodes while keeping BST property",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "Three Cases for Deletion",
+              body: "Deleting from a BST has three cases: (1) the node is a leaf — just remove it, (2) the node has one child — replace it with that child, (3) the node has two children — replace it with its inorder successor (smallest value in the right subtree).",
+              code: `function deleteBST(node, val) {
+  if (node === null) return null;
+
+  if (val < node.val) {
+    node.left = deleteBST(node.left, val);
+  } else if (val > node.val) {
+    node.right = deleteBST(node.right, val);
+  } else {
+    // Case 1 & 2: no child or one child
+    if (node.left === null) return node.right;
+    if (node.right === null) return node.left;
+
+    // Case 3: two children — find inorder successor
+    let successor = node.right;
+    while (successor.left !== null) {
+      successor = successor.left;
+    }
+    node.val = successor.val;
+    node.right = deleteBST(node.right, successor.val);
+  }
+  return node;
+}`,
+              codeNote: "The inorder successor is the smallest node in the right subtree.",
+            },
+            {
+              heading: "Deletion Example Walkthrough",
+              body: "Let's delete node 3 from a BST where 3 has two children. We find the inorder successor (the smallest value in 3's right subtree), copy its value to 3's position, then delete the successor from the right subtree.",
+              code: `//  Delete 3 from:      Result:
+//       5                  5
+//      / \\                / \\
+//     3   7     →        4   7
+//    / \\                /
+//   2   4              2
+//
+// Step 1: Node 3 has two children
+// Step 2: Inorder successor = 4 (smallest in right subtree)
+// Step 3: Copy 4 to node 3's position
+// Step 4: Delete the original 4 node (leaf, easy)`,
+              codeNote: "The inorder successor always has at most one child, simplifying its removal.",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "In a BST, which traversal produces sorted output?",
+              code: null,
+              options: ["Preorder", "Postorder", "Inorder", "Level-order"],
+              correct: 2,
+              body: "Inorder traversal (Left, Root, Right) of a BST visits nodes in ascending order because left children are always smaller than the root.",
+            },
+            {
+              id: "c2",
+              question: "When deleting a BST node with two children, what replaces it?",
+              code: null,
+              options: ["The left child", "The right child", "The inorder successor", "The parent node"],
+              correct: 2,
+              body: "The inorder successor (smallest node in the right subtree) replaces the deleted node, maintaining the BST property.",
+            },
+            {
+              id: "c3",
+              question: "What tree shape results from inserting sorted data [1,2,3,4,5] into a BST?",
+              code: null,
+              options: ["Balanced tree", "Complete tree", "Skewed tree (like a linked list)", "Full binary tree"],
+              correct: 2,
+              body: "Sorted insertions always go to the right, creating a degenerate right-skewed tree where operations degrade to O(n).",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      no: 15,
+      name: "Heaps",
+      difficulty: "Intermediate",
+      duration: "16 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "Min Heap & Max Heap",
+          subtitle: "Complete binary trees with an ordering rule",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "What is a Heap?",
+              body: "A heap is a complete binary tree stored as an array. In a min heap, every parent is smaller than its children, so the smallest element is always at the root. In a max heap, every parent is larger, so the largest element is at the root.",
+              code: `// Min Heap as an array:
+// Index: [0,  1,  2,  3,  4,  5]
+// Value: [1,  3,  5,  7,  9,  8]
+//
+// Tree view:
+//         1
+//        / \\
+//       3   5
+//      / \\ /
+//     7  9 8
+//
+// Parent of index i: Math.floor((i - 1) / 2)
+// Left child of i:  2 * i + 1
+// Right child of i: 2 * i + 2
+
+const parent = (i) => Math.floor((i - 1) / 2);
+const leftChild = (i) => 2 * i + 1;
+const rightChild = (i) => 2 * i + 2;`,
+              codeNote: "Heaps use array indices to represent the tree — no pointers needed.",
+            },
+            {
+              heading: "Min Heap vs Max Heap",
+              body: "A min heap gives O(1) access to the smallest element, while a max heap gives O(1) access to the largest. Both support O(log n) insert and delete. Choose based on whether you need quick access to the minimum or maximum.",
+              code: `// Min Heap: parent <= children (root is smallest)
+// [1, 3, 5, 7, 9, 8]
+//    1 ≤ 3 ✓, 1 ≤ 5 ✓, 3 ≤ 7 ✓, 3 ≤ 9 ✓, 5 ≤ 8 ✓
+
+// Max Heap: parent >= children (root is largest)
+// [9, 7, 8, 3, 5, 1]
+//    9 ≥ 7 ✓, 9 ≥ 8 ✓, 7 ≥ 3 ✓, 7 ≥ 5 ✓, 8 ≥ 1 ✓
+
+// Common uses:
+// Min heap → find minimum, Dijkstra's algorithm
+// Max heap → find maximum, heap sort, scheduling`,
+              codeNote: "The heap property only applies between parent and children — siblings have no order.",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "Heap Operations",
+          subtitle: "Insert, extract, and heapify",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "Insert (Bubble Up)",
+              body: "To insert into a min heap, add the element at the end of the array, then 'bubble up' by swapping with its parent while the parent is larger. This restores the heap property in O(log n) time.",
+              code: `class MinHeap {
+  constructor() {
+    this.heap = [];
+  }
+
+  insert(val) {
+    this.heap.push(val);
+    this._bubbleUp(this.heap.length - 1);
+  }
+
+  _bubbleUp(i) {
+    while (i > 0) {
+      const p = Math.floor((i - 1) / 2);
+      if (this.heap[p] <= this.heap[i]) break;
+      [this.heap[p], this.heap[i]] = [this.heap[i], this.heap[p]];
+      i = p;
+    }
+  }
+}
+
+const h = new MinHeap();
+[5, 3, 8, 1, 2].forEach(v => h.insert(v));
+console.log(h.heap); // [1, 2, 8, 5, 3]`,
+              codeNote: "Bubble up swaps the new element upward until the heap property holds.",
+            },
+            {
+              heading: "Extract Min (Bubble Down)",
+              body: "To remove the minimum, replace the root with the last element, then 'bubble down' by swapping with the smaller child until the heap property is restored. This also takes O(log n).",
+              code: `// Add to MinHeap class:
+extractMin() {
+  if (this.heap.length === 0) return null;
+  const min = this.heap[0];
+  const last = this.heap.pop();
+  if (this.heap.length > 0) {
+    this.heap[0] = last;
+    this._bubbleDown(0);
+  }
+  return min;
+}
+
+_bubbleDown(i) {
+  const n = this.heap.length;
+  while (true) {
+    let smallest = i;
+    const l = 2 * i + 1, r = 2 * i + 2;
+    if (l < n && this.heap[l] < this.heap[smallest]) smallest = l;
+    if (r < n && this.heap[r] < this.heap[smallest]) smallest = r;
+    if (smallest === i) break;
+    [this.heap[i], this.heap[smallest]] = [this.heap[smallest], this.heap[i]];
+    i = smallest;
+  }
+}`,
+              codeNote: "Bubble down always swaps with the smaller child to maintain min-heap order.",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "Priority Queue",
+          subtitle: "Heaps power efficient priority queues",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "Priority Queue with a Heap",
+              body: "A priority queue serves elements by priority, not insertion order. A min heap is the ideal backing structure — enqueue is insert (O(log n)) and dequeue is extract-min (O(log n)). Arrays would need O(n) for one of these operations.",
+              code: `// Priority Queue using our MinHeap
+class PriorityQueue {
+  constructor() {
+    this.heap = new MinHeap();
+  }
+
+  enqueue(val, priority) {
+    this.heap.insert({ val, priority });
+  }
+
+  dequeue() {
+    return this.heap.extractMin();
+  }
+
+  peek() {
+    return this.heap.heap[0] || null;
+  }
+}
+
+// Usage: task scheduling
+const pq = new PriorityQueue();
+pq.enqueue("Low priority task", 10);
+pq.enqueue("Urgent task", 1);
+pq.enqueue("Medium task", 5);
+// dequeue() returns urgent task first`,
+              codeNote: "Modify the MinHeap comparisons to use .priority for this to work.",
+            },
+            {
+              heading: "Heap Sort",
+              body: "Heap sort builds a max heap from the array, then repeatedly extracts the maximum to build the sorted result. It runs in O(n log n) time and sorts in-place with O(1) extra space.",
+              code: `function heapSort(arr) {
+  const n = arr.length;
+
+  // Build max heap
+  for (let i = Math.floor(n / 2) - 1; i >= 0; i--) {
+    heapify(arr, n, i);
+  }
+
+  // Extract elements one by one
+  for (let i = n - 1; i > 0; i--) {
+    [arr[0], arr[i]] = [arr[i], arr[0]]; // move max to end
+    heapify(arr, i, 0);
+  }
+  return arr;
+}
+
+function heapify(arr, n, i) {
+  let largest = i;
+  const l = 2 * i + 1, r = 2 * i + 2;
+  if (l < n && arr[l] > arr[largest]) largest = l;
+  if (r < n && arr[r] > arr[largest]) largest = r;
+  if (largest !== i) {
+    [arr[i], arr[largest]] = [arr[largest], arr[i]];
+    heapify(arr, n, largest);
+  }
+}
+
+console.log(heapSort([4, 10, 3, 5, 1])); // [1, 3, 4, 5, 10]`,
+              codeNote: "Heap sort is O(n log n) with O(1) extra space — better space than merge sort.",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "In a min heap, where is the smallest element?",
+              code: null,
+              options: ["Last element", "A random leaf", "The root (index 0)", "The deepest left node"],
+              correct: 2,
+              body: "In a min heap, every parent is smaller than its children, so the minimum value is always at the root (index 0 in the array).",
+            },
+            {
+              id: "c2",
+              question: "What is the time complexity of inserting into a heap?",
+              code: null,
+              options: ["O(1)", "O(log n)", "O(n)", "O(n log n)"],
+              correct: 1,
+              body: "Insertion adds the element at the end and bubbles it up. The maximum number of swaps is the tree height, which is O(log n).",
+            },
+            {
+              id: "c3",
+              question: "For an element at index i in a heap array, what is the index of its left child?",
+              code: null,
+              options: ["i + 1", "2 * i", "2 * i + 1", "i / 2"],
+              correct: 2,
+              body: "In a zero-indexed heap array, the left child of index i is at 2*i + 1 and the right child is at 2*i + 2.",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      no: 16,
+      name: "Graphs Intro",
+      difficulty: "Intermediate",
+      duration: "15 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "Graph Terminology",
+          subtitle: "Vertices, edges, and graph types",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "What is a Graph?",
+              body: "A graph is a collection of vertices (nodes) connected by edges. Unlike trees, graphs can have cycles, multiple paths between nodes, and no hierarchy. They model relationships like social networks, maps, and dependencies.",
+              code: `// Graph terminology:
+// Vertex (node): A point in the graph (e.g., a city)
+// Edge: A connection between two vertices (e.g., a road)
+// Directed: Edges have a direction (A → B ≠ B → A)
+// Undirected: Edges are bidirectional (A — B)
+// Weighted: Edges have costs (distances, times)
+// Cycle: A path that starts and ends at the same vertex
+
+// Example: Social network (undirected)
+// Alice — Bob — Charlie
+//   \\       /
+//    Dave ---
+
+// Example: Web links (directed)
+// PageA → PageB → PageC
+//           ↑       |
+//           +-------+`,
+              codeNote: "Trees are a special case of graphs — connected, acyclic, and undirected.",
+            },
+            {
+              heading: "Degrees and Connectivity",
+              body: "The degree of a vertex is the number of edges connected to it. In directed graphs, we distinguish in-degree (incoming edges) and out-degree (outgoing edges). A graph is connected if there's a path between every pair of vertices.",
+              code: `// Degree examples:
+//     A --- B --- C
+//     |         /
+//     D ------
+//
+// Degree of A: 2 (connected to B and D)
+// Degree of B: 2 (connected to A and C)
+// Degree of C: 2 (connected to B and D)
+// Degree of D: 2 (connected to A and C)
+
+// Directed graph degrees:
+// A → B → C
+// ↑       |
+// +-------+
+//
+// A: in-degree 1 (from C), out-degree 1 (to B)
+// B: in-degree 1 (from A), out-degree 1 (to C)
+// C: in-degree 1 (from B), out-degree 1 (to A)`,
+              codeNote: "Sum of all degrees = 2 × number of edges (each edge contributes to two vertices).",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "Adjacency List",
+          subtitle: "The most common graph representation",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "Representing Graphs with Adjacency Lists",
+              body: "An adjacency list stores each vertex as a key, with its value being an array of neighbors. This is memory-efficient for sparse graphs and makes it easy to iterate over a node's neighbors.",
+              code: `// Undirected graph adjacency list
+//   0 --- 1
+//   |     |
+//   3 --- 2
+
+const graph = {
+  0: [1, 3],
+  1: [0, 2],
+  2: [1, 3],
+  3: [0, 2],
+};
+
+// Using Map for flexibility
+const graphMap = new Map();
+graphMap.set("Alice", ["Bob", "Dave"]);
+graphMap.set("Bob", ["Alice", "Charlie"]);
+graphMap.set("Charlie", ["Bob"]);
+graphMap.set("Dave", ["Alice"]);
+
+console.log(graphMap.get("Alice")); // ["Bob", "Dave"]`,
+              codeNote: "Space complexity: O(V + E) where V = vertices, E = edges.",
+            },
+            {
+              heading: "Building a Graph from Edges",
+              body: "Often you'll receive edges as pairs and need to build the adjacency list. For undirected graphs, add the edge in both directions. For directed graphs, add it only in the given direction.",
+              code: `// Build adjacency list from edge list
+function buildGraph(edges, directed = false) {
+  const graph = {};
+  for (const [u, v] of edges) {
+    if (!graph[u]) graph[u] = [];
+    if (!graph[v]) graph[v] = [];
+    graph[u].push(v);
+    if (!directed) graph[v].push(u);
+  }
+  return graph;
+}
+
+const edges = [[0, 1], [0, 3], [1, 2], [2, 3]];
+console.log(buildGraph(edges));
+// { 0: [1, 3], 1: [0, 2], 2: [1, 3], 3: [0, 2] }
+
+const directed = [[0, 1], [1, 2], [2, 0]];
+console.log(buildGraph(directed, true));
+// { 0: [1], 1: [2], 2: [0] }`,
+              codeNote: "For undirected graphs, each edge is stored twice — once per vertex.",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "Adjacency Matrix",
+          subtitle: "Grid-based graph representation",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "Adjacency Matrix Representation",
+              body: "An adjacency matrix is a 2D array where matrix[i][j] = 1 means there's an edge from vertex i to j. It uses O(V²) space, which is efficient for dense graphs but wasteful for sparse ones. Checking if an edge exists is O(1).",
+              code: `// Adjacency matrix for:
+//   0 --- 1
+//   |     |
+//   3 --- 2
+
+const matrix = [
+  //0  1  2  3
+  [0, 1, 0, 1], // vertex 0
+  [1, 0, 1, 0], // vertex 1
+  [0, 1, 0, 1], // vertex 2
+  [1, 0, 1, 0], // vertex 3
+];
+
+// Check if edge exists: O(1)
+console.log(matrix[0][1]); // 1 (edge 0-1 exists)
+console.log(matrix[0][2]); // 0 (no edge 0-2)
+
+// Get all neighbors of vertex 1
+const neighbors = matrix[1]
+  .map((val, idx) => (val === 1 ? idx : -1))
+  .filter(idx => idx !== -1);
+console.log(neighbors); // [0, 2]`,
+              codeNote: "For undirected graphs, the matrix is symmetric: matrix[i][j] === matrix[j][i].",
+            },
+            {
+              heading: "Adjacency List vs Matrix",
+              body: "Use adjacency lists for sparse graphs (few edges relative to vertices) and adjacency matrices for dense graphs. Most real-world graphs are sparse, so adjacency lists are the default choice in practice.",
+              code: `// Comparison:
+//                  Adjacency List    Adjacency Matrix
+// Space:           O(V + E)          O(V²)
+// Check edge:      O(degree(v))      O(1)
+// Get neighbors:   O(degree(v))      O(V)
+// Add edge:        O(1)              O(1)
+// Add vertex:      O(1)              O(V²) rebuild
+
+// Rule of thumb:
+// Sparse graph (E << V²) → Adjacency List ✓
+// Dense graph (E ≈ V²)  → Adjacency Matrix ✓
+// Need quick edge check → Adjacency Matrix ✓
+// Need to iterate neighbors → Adjacency List ✓`,
+              codeNote: "Social networks with millions of users but ~hundreds of friends each → adjacency list.",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "What is the space complexity of an adjacency list?",
+              code: null,
+              options: ["O(V)", "O(E)", "O(V + E)", "O(V²)"],
+              correct: 2,
+              body: "An adjacency list stores each vertex once and each edge once (or twice for undirected), giving O(V + E) space.",
+            },
+            {
+              id: "c2",
+              question: "In an undirected graph, if you add edge (A, B), how many entries are added to the adjacency list?",
+              code: null,
+              options: ["One: A → B", "Two: A → B and B → A", "Three", "Depends on the graph size"],
+              correct: 1,
+              body: "In an undirected graph, an edge between A and B means A can reach B and B can reach A, so both adjacency lists get an entry.",
+            },
+            {
+              id: "c3",
+              question: "When is an adjacency matrix preferred over an adjacency list?",
+              code: null,
+              options: ["When the graph is sparse", "When the graph is dense", "When nodes have string labels", "When the graph is a tree"],
+              correct: 1,
+              body: "An adjacency matrix is efficient for dense graphs where most vertex pairs are connected, since the O(V²) space is fully utilized and edge lookups are O(1).",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      no: 17,
+      name: "BFS (Breadth-First Search)",
+      difficulty: "Advanced",
+      duration: "15 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "Queue-Based Traversal",
+          subtitle: "Exploring graphs level by level",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "What Is BFS?",
+              body: "Breadth-First Search explores a graph layer by layer, visiting all neighbors of the current node before moving deeper. It uses a queue (FIFO) to track which node to visit next.",
+              code: `function bfs(graph, start) {
+  const visited = new Set();
+  const queue = [start];
+  visited.add(start);
+
+  while (queue.length > 0) {
+    const node = queue.shift();
+    console.log(node);
+
+    for (const neighbor of graph[node]) {
+      if (!visited.has(neighbor)) {
+        visited.add(neighbor);
+        queue.push(neighbor);
+      }
+    }
+  }
+}`,
+              codeNote: "We mark nodes visited when they enter the queue, not when they are processed, to avoid duplicates.",
+            },
+            {
+              heading: "Level-Order Traversal",
+              body: "BFS naturally produces a level-order traversal. By tracking the queue size at each iteration, you can group nodes by their distance from the source.",
+              code: `function bfsLevelOrder(graph, start) {
+  const visited = new Set([start]);
+  const queue = [start];
+  let level = 0;
+
+  while (queue.length > 0) {
+    const size = queue.length;
+    const currentLevel = [];
+    for (let i = 0; i < size; i++) {
+      const node = queue.shift();
+      currentLevel.push(node);
+      for (const neighbor of graph[node]) {
+        if (!visited.has(neighbor)) {
+          visited.add(neighbor);
+          queue.push(neighbor);
+        }
+      }
+    }
+    console.log(\`Level \${level}:\`, currentLevel);
+    level++;
+  }
+}`,
+              codeNote: "Snapshot queue.length before the inner loop so you process exactly one level per outer iteration.",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "Shortest Path (Unweighted)",
+          subtitle: "Finding the fewest hops between nodes",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "BFS for Shortest Path",
+              body: "In an unweighted graph every edge has cost 1, so BFS guarantees the shortest path. The first time BFS reaches a node, it has found the minimum number of edges from the source.",
+              code: `function shortestPath(graph, start, end) {
+  const visited = new Set([start]);
+  const queue = [[start, [start]]];
+
+  while (queue.length > 0) {
+    const [node, path] = queue.shift();
+    if (node === end) return path;
+
+    for (const neighbor of graph[node]) {
+      if (!visited.has(neighbor)) {
+        visited.add(neighbor);
+        queue.push([neighbor, [...path, neighbor]]);
+      }
+    }
+  }
+  return null; // no path found
+}`,
+              codeNote: "We carry the path along in the queue so we can reconstruct it when the destination is found.",
+            },
+            {
+              heading: "Distance Map",
+              body: "Instead of tracking full paths, you can store distances in a Map for every reachable node. This is more memory-efficient when you only need hop counts.",
+              code: `function bfsDistances(graph, start) {
+  const dist = new Map([[start, 0]]);
+  const queue = [start];
+
+  while (queue.length > 0) {
+    const node = queue.shift();
+    for (const neighbor of graph[node]) {
+      if (!dist.has(neighbor)) {
+        dist.set(neighbor, dist.get(node) + 1);
+        queue.push(neighbor);
+      }
+    }
+  }
+  return dist;
+}`,
+              codeNote: "dist.has(neighbor) doubles as the visited check, keeping the code concise.",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "BFS on Grids",
+          subtitle: "Applying BFS to 2D problems",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "Grid BFS Pattern",
+              body: "Many interview problems model a grid as a graph. Each cell is a node and its 4-directional neighbors are edges. BFS finds the shortest path through a maze or the nearest target.",
+              code: `function gridBFS(grid, startRow, startCol) {
+  const rows = grid.length;
+  const cols = grid[0].length;
+  const dirs = [[0,1],[0,-1],[1,0],[-1,0]];
+  const visited = Array.from({ length: rows }, () => Array(cols).fill(false));
+  const queue = [[startRow, startCol, 0]];
+  visited[startRow][startCol] = true;
+
+  while (queue.length > 0) {
+    const [r, c, dist] = queue.shift();
+    if (grid[r][c] === "goal") return dist;
+
+    for (const [dr, dc] of dirs) {
+      const nr = r + dr;
+      const nc = c + dc;
+      if (nr >= 0 && nr < rows && nc >= 0 && nc < cols
+          && !visited[nr][nc] && grid[nr][nc] !== "wall") {
+        visited[nr][nc] = true;
+        queue.push([nr, nc, dist + 1]);
+      }
+    }
+  }
+  return -1;
+}`,
+              codeNote: "Always bounds-check nr/nc before accessing the grid to avoid index-out-of-range errors.",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "What data structure does BFS use to determine the next node to visit?",
+              code: null,
+              options: ["Stack", "Queue", "Priority Queue", "Hash Map"],
+              correct: 1,
+              body: "BFS uses a queue (FIFO) so that nodes are explored in the order they were discovered, ensuring level-by-level traversal.",
+            },
+            {
+              id: "c2",
+              question: "Why does BFS guarantee the shortest path in an unweighted graph?",
+              code: null,
+              options: [
+                "It always picks the smallest edge",
+                "It visits nodes in order of increasing distance",
+                "It uses dynamic programming",
+                "It backtracks when it finds a dead end",
+              ],
+              correct: 1,
+              body: "Because every edge has the same cost, processing nodes level by level means the first time a node is reached is via the fewest edges.",
+            },
+            {
+              id: "c3",
+              question: "What is the time complexity of BFS on a graph with V vertices and E edges?",
+              code: null,
+              options: ["O(V)", "O(E)", "O(V + E)", "O(V × E)"],
+              correct: 2,
+              body: "BFS visits every vertex once and examines every edge once, so the total work is O(V + E).",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      no: 18,
+      name: "DFS (Depth-First Search)",
+      difficulty: "Advanced",
+      duration: "15 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "Recursive & Iterative DFS",
+          subtitle: "Stack-based deep exploration",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "Recursive DFS",
+              body: "Depth-First Search dives as deep as possible along each branch before backtracking. The call stack naturally provides the LIFO behavior needed.",
+              code: `function dfsRecursive(graph, node, visited = new Set()) {
+  visited.add(node);
+  console.log(node);
+
+  for (const neighbor of graph[node]) {
+    if (!visited.has(neighbor)) {
+      dfsRecursive(graph, neighbor, visited);
+    }
+  }
+}`,
+              codeNote: "Pass the visited set by reference so all recursive calls share it.",
+            },
+            {
+              heading: "Iterative DFS",
+              body: "You can avoid potential stack overflow by using an explicit stack. The iterative version processes nodes in a slightly different order than the recursive one, but both are valid DFS traversals.",
+              code: `function dfsIterative(graph, start) {
+  const visited = new Set();
+  const stack = [start];
+
+  while (stack.length > 0) {
+    const node = stack.pop();
+    if (visited.has(node)) continue;
+    visited.add(node);
+    console.log(node);
+
+    for (const neighbor of graph[node]) {
+      if (!visited.has(neighbor)) {
+        stack.push(neighbor);
+      }
+    }
+  }
+}`,
+              codeNote: "We check visited after popping because a node may be pushed multiple times before it is processed.",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "Cycle Detection",
+          subtitle: "Finding loops in directed graphs",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "Three-Color Technique",
+              body: "To detect cycles in a directed graph, mark each node as WHITE (unvisited), GRAY (in current path), or BLACK (fully processed). A back edge to a GRAY node means a cycle exists.",
+              code: `function hasCycle(graph) {
+  const WHITE = 0, GRAY = 1, BLACK = 2;
+  const color = {};
+  for (const node of Object.keys(graph)) color[node] = WHITE;
+
+  function dfs(node) {
+    color[node] = GRAY;
+    for (const neighbor of graph[node]) {
+      if (color[neighbor] === GRAY) return true;  // cycle!
+      if (color[neighbor] === WHITE && dfs(neighbor)) return true;
+    }
+    color[node] = BLACK;
+    return false;
+  }
+
+  for (const node of Object.keys(graph)) {
+    if (color[node] === WHITE && dfs(node)) return true;
+  }
+  return false;
+}`,
+              codeNote: "GRAY nodes are ancestors on the current DFS path. A GRAY-to-GRAY edge is a back edge, confirming a cycle.",
+            },
+            {
+              heading: "Topological Sort Overview",
+              body: "A topological ordering of a DAG lists every node before all nodes it points to. DFS-based topological sort appends a node to the result after all its descendants are processed, then reverses at the end.",
+              code: `function topologicalSort(graph) {
+  const visited = new Set();
+  const result = [];
+
+  function dfs(node) {
+    visited.add(node);
+    for (const neighbor of graph[node]) {
+      if (!visited.has(neighbor)) dfs(neighbor);
+    }
+    result.push(node); // post-order
+  }
+
+  for (const node of Object.keys(graph)) {
+    if (!visited.has(node)) dfs(node);
+  }
+  return result.reverse();
+}`,
+              codeNote: "This only works on DAGs. If the graph has a cycle, topological ordering is impossible.",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "Connected Components",
+          subtitle: "Counting islands with DFS",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "Counting Components",
+              body: "In an undirected graph, each DFS from an unvisited node explores one connected component. The number of times you start a new DFS equals the number of components.",
+              code: `function countComponents(n, edges) {
+  const graph = Array.from({ length: n }, () => []);
+  for (const [u, v] of edges) {
+    graph[u].push(v);
+    graph[v].push(u);
+  }
+
+  const visited = new Set();
+  let components = 0;
+
+  for (let i = 0; i < n; i++) {
+    if (!visited.has(i)) {
+      components++;
+      // DFS flood-fill
+      const stack = [i];
+      while (stack.length > 0) {
+        const node = stack.pop();
+        if (visited.has(node)) continue;
+        visited.add(node);
+        for (const nb of graph[node]) stack.push(nb);
+      }
+    }
+  }
+  return components;
+}`,
+              codeNote: "This is the same idea behind the classic 'Number of Islands' grid problem.",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "What data structure does DFS implicitly or explicitly use?",
+              code: null,
+              options: ["Queue", "Stack", "Priority Queue", "Deque"],
+              correct: 1,
+              body: "DFS relies on LIFO ordering. The recursive version uses the call stack; the iterative version uses an explicit stack.",
+            },
+            {
+              id: "c2",
+              question: "In the three-color cycle detection, what does encountering a GRAY neighbor indicate?",
+              code: null,
+              options: [
+                "The neighbor is fully processed",
+                "The neighbor is unvisited",
+                "There is a cycle",
+                "The graph is a tree",
+              ],
+              correct: 2,
+              body: "A GRAY node is an ancestor in the current DFS path. Reaching it again means we have found a back edge, which proves a cycle exists.",
+            },
+            {
+              id: "c3",
+              question: "Topological sort is valid only for which kind of graph?",
+              code: null,
+              options: [
+                "Undirected graphs",
+                "Directed Acyclic Graphs (DAGs)",
+                "Weighted graphs",
+                "Complete graphs",
+              ],
+              correct: 1,
+              body: "A topological ordering requires that every node comes before all nodes it points to, which is only possible when there are no cycles — i.e., a DAG.",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      no: 19,
+      name: "Dynamic Programming Intro",
+      difficulty: "Advanced",
+      duration: "15 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "Overlapping Subproblems",
+          subtitle: "Why DP beats brute force",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "The Core Idea",
+              body: "Dynamic programming optimizes problems where the same subproblems are solved repeatedly. Instead of recomputing them, we store results and reuse them. This turns exponential solutions into polynomial ones.",
+              code: `// Naive Fibonacci — O(2^n)
+function fibNaive(n) {
+  if (n <= 1) return n;
+  return fibNaive(n - 1) + fibNaive(n - 2);
+}
+
+// fib(5) calls fib(3) twice, fib(2) three times, etc.
+// The recursion tree explodes exponentially.`,
+              codeNote: "Draw the recursion tree for fib(5) — you'll see duplicate subtrees everywhere.",
+            },
+            {
+              heading: "Memoization (Top-Down)",
+              body: "Memoization adds a cache to the recursive solution. Before computing a subproblem, check if the answer is already stored. This is the easiest way to convert a recursive solution into a DP one.",
+              code: `function fibMemo(n, memo = {}) {
+  if (n <= 1) return n;
+  if (memo[n] !== undefined) return memo[n];
+  memo[n] = fibMemo(n - 1, memo) + fibMemo(n - 2, memo);
+  return memo[n];
+}
+
+console.log(fibMemo(50)); // instant, O(n) time`,
+              codeNote: "Each subproblem is computed exactly once, bringing the time complexity down to O(n).",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "Tabulation (Bottom-Up)",
+          subtitle: "Building answers iteratively",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "Bottom-Up Fibonacci",
+              body: "Tabulation fills a table starting from the base cases and works upward. It avoids recursion overhead entirely and makes the computation order explicit.",
+              code: `function fibTab(n) {
+  if (n <= 1) return n;
+  const dp = new Array(n + 1);
+  dp[0] = 0;
+  dp[1] = 1;
+  for (let i = 2; i <= n; i++) {
+    dp[i] = dp[i - 1] + dp[i - 2];
+  }
+  return dp[n];
+}`,
+              codeNote: "Tabulation is often preferred in interviews because it's easier to analyze space and avoids stack overflow.",
+            },
+            {
+              heading: "Space Optimization",
+              body: "When the current state only depends on a fixed number of previous states, you can reduce space from O(n) to O(1) by keeping only the needed variables.",
+              code: `function fibOptimized(n) {
+  if (n <= 1) return n;
+  let prev2 = 0, prev1 = 1;
+  for (let i = 2; i <= n; i++) {
+    const curr = prev1 + prev2;
+    prev2 = prev1;
+    prev1 = curr;
+  }
+  return prev1;
+}`,
+              codeNote: "This O(1) space trick applies to many 1D DP problems, not just Fibonacci.",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "Climbing Stairs",
+          subtitle: "A classic DP warm-up",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "Problem & Recurrence",
+              body: "You can climb 1 or 2 steps at a time. The number of ways to reach step n is ways(n-1) + ways(n-2), identical to Fibonacci. Recognizing this recurrence is the key DP skill.",
+              code: `function climbStairs(n) {
+  if (n <= 2) return n;
+  let prev2 = 1, prev1 = 2;
+  for (let i = 3; i <= n; i++) {
+    const curr = prev1 + prev2;
+    prev2 = prev1;
+    prev1 = curr;
+  }
+  return prev1;
+}
+
+console.log(climbStairs(5)); // 8 ways`,
+              codeNote: "Many DP problems reduce to Fibonacci-like recurrences once you identify the state transition.",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "What are the two key properties a problem must have for DP to apply?",
+              code: null,
+              options: [
+                "Greedy choice and sorted input",
+                "Overlapping subproblems and optimal substructure",
+                "Divide-and-conquer and backtracking",
+                "Constant time operations and logarithmic depth",
+              ],
+              correct: 1,
+              body: "DP requires overlapping subproblems (same sub-computations recur) and optimal substructure (optimal solution builds from optimal sub-solutions).",
+            },
+            {
+              id: "c2",
+              question: "What is the time complexity of memoized Fibonacci for fib(n)?",
+              code: null,
+              options: ["O(2^n)", "O(n log n)", "O(n)", "O(n²)"],
+              correct: 2,
+              body: "Each of the n subproblems is solved exactly once and cached, so the total work is O(n).",
+            },
+            {
+              id: "c3",
+              question: "Which DP approach fills a table from base cases upward without recursion?",
+              code: null,
+              options: ["Memoization", "Tabulation", "Greedy", "Divide and conquer"],
+              correct: 1,
+              body: "Tabulation (bottom-up DP) iteratively fills a table starting from known base cases, avoiding recursion entirely.",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      no: 20,
+      name: "DP Patterns",
+      difficulty: "Advanced",
+      duration: "15 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "0/1 Knapsack",
+          subtitle: "Pick or skip each item",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "Problem Setup",
+              body: "Given items with weights and values and a knapsack capacity, maximize total value without exceeding the weight limit. Each item can be taken at most once.",
+              code: `function knapsack(weights, values, capacity) {
+  const n = weights.length;
+  const dp = Array.from({ length: n + 1 }, () =>
+    new Array(capacity + 1).fill(0)
+  );
+
+  for (let i = 1; i <= n; i++) {
+    for (let w = 0; w <= capacity; w++) {
+      dp[i][w] = dp[i - 1][w]; // skip item i
+      if (weights[i - 1] <= w) {
+        dp[i][w] = Math.max(
+          dp[i][w],
+          dp[i - 1][w - weights[i - 1]] + values[i - 1]
+        );
+      }
+    }
+  }
+  return dp[n][capacity];
+}`,
+              codeNote: "dp[i][w] = best value using items 1..i with capacity w. We either skip or take item i.",
+            },
+            {
+              heading: "Space-Optimized Knapsack",
+              body: "Since each row only depends on the previous row, we can use a single 1D array. Iterate capacity in reverse to avoid using an item twice in the same row.",
+              code: `function knapsack1D(weights, values, capacity) {
+  const dp = new Array(capacity + 1).fill(0);
+  for (let i = 0; i < weights.length; i++) {
+    for (let w = capacity; w >= weights[i]; w--) {
+      dp[w] = Math.max(dp[w], dp[w - weights[i]] + values[i]);
+    }
+  }
+  return dp[capacity];
+}`,
+              codeNote: "Reverse iteration is the key trick — it ensures each item is considered at most once per row.",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "Coin Change",
+          subtitle: "Minimum coins to make a target",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "Unbounded Knapsack Variant",
+              body: "Given coin denominations and a target amount, find the minimum number of coins needed. Each coin can be used unlimited times, making this an unbounded knapsack variant.",
+              code: `function coinChange(coins, amount) {
+  const dp = new Array(amount + 1).fill(Infinity);
+  dp[0] = 0;
+
+  for (let a = 1; a <= amount; a++) {
+    for (const coin of coins) {
+      if (coin <= a && dp[a - coin] + 1 < dp[a]) {
+        dp[a] = dp[a - coin] + 1;
+      }
+    }
+  }
+  return dp[amount] === Infinity ? -1 : dp[amount];
+}
+
+console.log(coinChange([1, 5, 10, 25], 30)); // 2 (25+5)`,
+              codeNote: "dp[a] = minimum coins to make amount a. We try every coin and pick the best.",
+            },
+            {
+              heading: "LCS Introduction",
+              body: "The Longest Common Subsequence problem finds the longest sequence common to two strings (not necessarily contiguous). It's a foundational 2D DP problem used in diff tools and bioinformatics.",
+              code: `function lcs(s1, s2) {
+  const m = s1.length, n = s2.length;
+  const dp = Array.from({ length: m + 1 }, () =>
+    new Array(n + 1).fill(0)
+  );
+
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (s1[i - 1] === s2[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1] + 1;
+      } else {
+        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+      }
+    }
+  }
+  return dp[m][n];
+}
+
+console.log(lcs("abcde", "ace")); // 3 ("ace")`,
+              codeNote: "If characters match, extend the diagonal. Otherwise take the best of skipping one character from either string.",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "Recognizing DP Patterns",
+          subtitle: "When to reach for DP",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "Pattern Recognition Tips",
+              body: "DP problems often ask for min/max/count of ways. Look for choices at each step that lead to overlapping subproblems. Common signals: 'minimum cost', 'number of ways', 'is it possible', or a constraint that limits brute-force.",
+              code: `// Common DP categories:
+// 1. Linear DP      — climb stairs, house robber, max subarray
+// 2. Knapsack       — subset sum, coin change, 0/1 knapsack
+// 3. String DP      — LCS, edit distance, palindrome
+// 4. Grid DP        — unique paths, min path sum
+// 5. Interval DP    — matrix chain, burst balloons
+// 6. Tree DP        — max path sum, diameter
+
+// Approach:
+// 1. Define state (what info do you need?)
+// 2. Write recurrence (how does state relate to sub-states?)
+// 3. Identify base cases
+// 4. Decide top-down (memo) or bottom-up (table)
+// 5. Optimize space if possible`,
+              codeNote: "Start with brute-force recursion, add memoization, then convert to tabulation if needed.",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "In the 0/1 knapsack, why do we iterate capacity in reverse for the 1D optimization?",
+              code: null,
+              options: [
+                "To sort items by weight",
+                "To prevent using the same item twice",
+                "To maximize profit",
+                "To reduce time complexity",
+              ],
+              correct: 1,
+              body: "Iterating in reverse ensures that when we compute dp[w], dp[w - weight[i]] still holds the value from the previous row (without item i), preventing double-counting.",
+            },
+            {
+              id: "c2",
+              question: "What does dp[a] represent in the coin change algorithm?",
+              code: null,
+              options: [
+                "The maximum coins for amount a",
+                "The minimum coins for amount a",
+                "The number of ways to make amount a",
+                "Whether amount a is reachable",
+              ],
+              correct: 1,
+              body: "dp[a] stores the fewest coins needed to make exactly amount a. We initialize with Infinity and update whenever a coin yields a better solution.",
+            },
+            {
+              id: "c3",
+              question: "In LCS, when s1[i-1] !== s2[j-1], what do we do?",
+              code: null,
+              options: [
+                "dp[i][j] = 0",
+                "dp[i][j] = dp[i-1][j-1]",
+                "dp[i][j] = max(dp[i-1][j], dp[i][j-1])",
+                "dp[i][j] = dp[i-1][j] + dp[i][j-1]",
+              ],
+              correct: 2,
+              body: "When characters don't match, we take the longer subsequence from either skipping a character in s1 or s2: max(dp[i-1][j], dp[i][j-1]).",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      no: 21,
+      name: "Greedy Algorithms",
+      difficulty: "Advanced",
+      duration: "15 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "Greedy Strategy",
+          subtitle: "Locally optimal choices",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "What Makes an Algorithm Greedy?",
+              body: "A greedy algorithm makes the locally best choice at each step, hoping it leads to a global optimum. It works when the problem has the greedy-choice property and optimal substructure.",
+              code: `// Activity Selection Problem
+// Given activities with start and end times,
+// select the maximum number of non-overlapping activities.
+
+function activitySelection(activities) {
+  // Sort by end time (greedy choice: pick earliest finish)
+  activities.sort((a, b) => a.end - b.end);
+
+  const selected = [activities[0]];
+  let lastEnd = activities[0].end;
+
+  for (let i = 1; i < activities.length; i++) {
+    if (activities[i].start >= lastEnd) {
+      selected.push(activities[i]);
+      lastEnd = activities[i].end;
+    }
+  }
+  return selected;
+}`,
+              codeNote: "Sorting by end time is the key greedy insight — it leaves the most room for future activities.",
+            },
+            {
+              heading: "Why Greedy Works Here",
+              body: "For activity selection, choosing the activity that finishes earliest never blocks a better solution. This greedy-choice property can be proven by exchange argument: swapping any other choice with the greedy one is never worse.",
+              code: `// Example
+const activities = [
+  { name: "A", start: 0, end: 3 },
+  { name: "B", start: 1, end: 4 },
+  { name: "C", start: 3, end: 5 },
+  { name: "D", start: 4, end: 7 },
+  { name: "E", start: 5, end: 9 },
+  { name: "F", start: 8, end: 10 },
+];
+
+const result = activitySelection(activities);
+console.log(result.map(a => a.name)); // ["A","C","F"]`,
+              codeNote: "Three non-overlapping activities is the maximum possible — greedy found it in O(n log n).",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "Fractional Knapsack",
+          subtitle: "Greedy on continuous items",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "Fractional vs 0/1 Knapsack",
+              body: "Unlike 0/1 knapsack, the fractional variant allows taking fractions of items. This makes greedy optimal: sort by value-per-weight ratio and take as much as possible of the best items first.",
+              code: `function fractionalKnapsack(items, capacity) {
+  // Sort by value/weight ratio descending
+  items.sort((a, b) => (b.value / b.weight) - (a.value / a.weight));
+
+  let totalValue = 0;
+  let remaining = capacity;
+
+  for (const item of items) {
+    if (remaining <= 0) break;
+    const take = Math.min(item.weight, remaining);
+    totalValue += take * (item.value / item.weight);
+    remaining -= take;
+  }
+  return totalValue;
+}`,
+              codeNote: "Greedy works here because we can take fractions. For 0/1 knapsack (whole items only), DP is needed.",
+            },
+            {
+              heading: "Greedy vs DP",
+              body: "Greedy is simpler and faster but only works when locally optimal choices guarantee a global optimum. DP is more general — it explores all sub-choices. If you can't prove the greedy-choice property, use DP.",
+              code: `// When to use Greedy vs DP:
+//
+// GREEDY works when:
+//  - Problem has greedy-choice property
+//  - Making locally best choice doesn't hurt future
+//  - Examples: activity selection, Huffman coding,
+//    fractional knapsack, minimum spanning tree
+//
+// DP is needed when:
+//  - Choices affect future options
+//  - Need to compare multiple subproblem solutions
+//  - Examples: 0/1 knapsack, longest common subsequence,
+//    edit distance, matrix chain multiplication`,
+              codeNote: "If greedy gives a wrong answer on a small test case, switch to DP.",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "Interval Scheduling",
+          subtitle: "A common greedy template",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "Minimum Meeting Rooms",
+              body: "Given a list of meeting intervals, find the minimum number of rooms required. This classic problem uses a greedy approach: sort events by time, track overlaps with a counter or min-heap.",
+              code: `function minMeetingRooms(intervals) {
+  const events = [];
+  for (const [start, end] of intervals) {
+    events.push([start, 1]);  // meeting starts
+    events.push([end, -1]);   // meeting ends
+  }
+  events.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+
+  let rooms = 0, maxRooms = 0;
+  for (const [, type] of events) {
+    rooms += type;
+    maxRooms = Math.max(maxRooms, rooms);
+  }
+  return maxRooms;
+}
+
+console.log(minMeetingRooms([[0,30],[5,10],[15,20]])); // 2`,
+              codeNote: "Sort by time, break ties by ending before starting, then sweep through events.",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "In activity selection, what is the greedy criterion for choosing activities?",
+              code: null,
+              options: [
+                "Pick the longest activity",
+                "Pick the activity that starts earliest",
+                "Pick the activity that ends earliest",
+                "Pick the activity with the highest priority",
+              ],
+              correct: 2,
+              body: "Selecting the activity that finishes earliest leaves the maximum remaining time for other activities, which is provably optimal.",
+            },
+            {
+              id: "c2",
+              question: "Why does greedy work for fractional knapsack but NOT for 0/1 knapsack?",
+              code: null,
+              options: [
+                "0/1 knapsack has fewer items",
+                "Fractional knapsack allows partial items, so ratio-greedy is optimal",
+                "Greedy always works for knapsack variants",
+                "0/1 knapsack has no optimal substructure",
+              ],
+              correct: 1,
+              body: "Taking fractions means you can always fill the knapsack perfectly using the best ratio items. With whole items, a greedily chosen large item might block a better combination.",
+            },
+            {
+              id: "c3",
+              question: "What is the time complexity of the activity selection algorithm?",
+              code: null,
+              options: ["O(n)", "O(n log n)", "O(n²)", "O(2^n)"],
+              correct: 1,
+              body: "Sorting takes O(n log n) and the single scan is O(n), so overall it's O(n log n).",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      no: 22,
+      name: "Backtracking",
+      difficulty: "Advanced",
+      duration: "15 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "Backtracking Framework",
+          subtitle: "Explore, choose, undo",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "The Backtracking Template",
+              body: "Backtracking builds solutions incrementally, abandoning a path as soon as it violates a constraint. It's a refined brute-force that prunes dead-end branches early.",
+              code: `// General backtracking template
+function backtrack(state, choices, results) {
+  if (isGoal(state)) {
+    results.push([...state]);
+    return;
+  }
+
+  for (const choice of choices) {
+    if (!isValid(state, choice)) continue; // prune
+    state.push(choice);       // choose
+    backtrack(state, choices, results); // explore
+    state.pop();              // un-choose (backtrack)
+  }
+}`,
+              codeNote: "The 'un-choose' step is what distinguishes backtracking from plain recursion.",
+            },
+            {
+              heading: "Generating All Subsets",
+              body: "A subset problem includes or excludes each element. Backtracking explores both branches at every index, generating all 2^n subsets.",
+              code: `function subsets(nums) {
+  const result = [];
+  function bt(index, current) {
+    if (index === nums.length) {
+      result.push([...current]);
+      return;
+    }
+    // Include nums[index]
+    current.push(nums[index]);
+    bt(index + 1, current);
+    current.pop();
+    // Exclude nums[index]
+    bt(index + 1, current);
+  }
+  bt(0, []);
+  return result;
+}
+
+console.log(subsets([1, 2, 3]));
+// [1,2,3],[1,2],[1,3],[1],[2,3],[2],[3],[]`,
+              codeNote: "Each element has two choices (in or out), giving exactly 2^n subsets — no duplicates, no misses.",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "Permutations",
+          subtitle: "All orderings of elements",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "Generating Permutations",
+              body: "To generate all permutations, at each position choose any unused element. A boolean array or set tracks which elements are available.",
+              code: `function permutations(nums) {
+  const result = [];
+  const used = new Array(nums.length).fill(false);
+
+  function bt(current) {
+    if (current.length === nums.length) {
+      result.push([...current]);
+      return;
+    }
+    for (let i = 0; i < nums.length; i++) {
+      if (used[i]) continue;
+      used[i] = true;
+      current.push(nums[i]);
+      bt(current);
+      current.pop();
+      used[i] = false;
+    }
+  }
+
+  bt([]);
+  return result;
+}
+
+console.log(permutations([1, 2, 3]).length); // 6`,
+              codeNote: "There are n! permutations of n elements. Each backtrack call fixes one position.",
+            },
+            {
+              heading: "N-Queens Overview",
+              body: "Place N queens on an N×N board so none attack each other. Backtracking places queens row by row, pruning invalid columns and diagonals immediately.",
+              code: `function solveNQueens(n) {
+  const results = [];
+  const cols = new Set();
+  const diag1 = new Set(); // row - col
+  const diag2 = new Set(); // row + col
+
+  function bt(row, board) {
+    if (row === n) {
+      results.push(board.map(r => r.join("")));
+      return;
+    }
+    for (let col = 0; col < n; col++) {
+      if (cols.has(col) || diag1.has(row - col) || diag2.has(row + col)) continue;
+      cols.add(col); diag1.add(row - col); diag2.add(row + col);
+      board[row][col] = "Q";
+      bt(row + 1, board);
+      board[row][col] = ".";
+      cols.delete(col); diag1.delete(row - col); diag2.delete(row + col);
+    }
+  }
+
+  const board = Array.from({ length: n }, () => Array(n).fill("."));
+  bt(0, board);
+  return results;
+}`,
+              codeNote: "Sets for columns and both diagonals give O(1) conflict checks, making pruning very efficient.",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "Pruning Strategies",
+          subtitle: "Cutting branches early",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "Effective Pruning",
+              body: "Good pruning can reduce exponential search spaces dramatically. Common strategies include sorting input to skip duplicates, constraint propagation, and bounding (checking if a partial solution can still lead to a valid one).",
+              code: `// Combination Sum with pruning
+// Find all unique combos of candidates that sum to target.
+function combinationSum(candidates, target) {
+  candidates.sort((a, b) => a - b); // sort for pruning
+  const result = [];
+
+  function bt(start, remaining, combo) {
+    if (remaining === 0) { result.push([...combo]); return; }
+    for (let i = start; i < candidates.length; i++) {
+      if (candidates[i] > remaining) break; // prune!
+      combo.push(candidates[i]);
+      bt(i, remaining - candidates[i], combo);
+      combo.pop();
+    }
+  }
+
+  bt(0, target, []);
+  return result;
+}`,
+              codeNote: "Sorting + breaking when candidate > remaining eliminates huge branches that can never sum to target.",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "What is the key step that differentiates backtracking from plain recursion?",
+              code: null,
+              options: [
+                "Using a loop",
+                "Undoing the choice after exploring (un-choose)",
+                "Sorting the input first",
+                "Using memoization",
+              ],
+              correct: 1,
+              body: "Backtracking explicitly undoes each choice after exploring it, restoring state so the next candidate can be tried from a clean slate.",
+            },
+            {
+              id: "c2",
+              question: "How many subsets does a set of n elements have?",
+              code: null,
+              options: ["n", "n!", "2^n", "n^2"],
+              correct: 2,
+              body: "Each element is either included or excluded, giving 2 choices per element and 2^n total subsets.",
+            },
+            {
+              id: "c3",
+              question: "In N-Queens, what constraint sets are used for O(1) conflict checking?",
+              code: null,
+              options: [
+                "Rows and columns only",
+                "Columns, row-col diagonal, row+col diagonal",
+                "A 2D board check",
+                "A single hash set of positions",
+              ],
+              correct: 1,
+              body: "Since we place one queen per row, we only need sets for columns and both diagonals (row-col and row+col) to check all attack directions in O(1).",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      no: 23,
+      name: "Tries",
+      difficulty: "Advanced",
+      duration: "15 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "Trie Structure",
+          subtitle: "Prefix trees for strings",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "What Is a Trie?",
+              body: "A trie (prefix tree) stores strings character by character in a tree. Each node represents a prefix, and paths from root to marked nodes form complete words. Lookups take O(L) time where L is the word length.",
+              code: `class TrieNode {
+  constructor() {
+    this.children = {};
+    this.isEnd = false;
+  }
+}
+
+class Trie {
+  constructor() {
+    this.root = new TrieNode();
+  }
+
+  insert(word) {
+    let node = this.root;
+    for (const ch of word) {
+      if (!node.children[ch]) {
+        node.children[ch] = new TrieNode();
+      }
+      node = node.children[ch];
+    }
+    node.isEnd = true;
+  }
+}`,
+              codeNote: "Each edge represents a character. The isEnd flag marks nodes where a complete word terminates.",
+            },
+            {
+              heading: "Search & Prefix Check",
+              body: "Searching a trie follows edges character by character. If a character is missing, the word doesn't exist. A 'startsWith' check is the same but doesn't require isEnd to be true.",
+              code: `// Add to the Trie class:
+Trie.prototype.search = function(word) {
+  let node = this.root;
+  for (const ch of word) {
+    if (!node.children[ch]) return false;
+    node = node.children[ch];
+  }
+  return node.isEnd;
+};
+
+Trie.prototype.startsWith = function(prefix) {
+  let node = this.root;
+  for (const ch of prefix) {
+    if (!node.children[ch]) return false;
+    node = node.children[ch];
+  }
+  return true; // don't check isEnd
+};`,
+              codeNote: "search checks for an exact word; startsWith checks for any word beginning with the prefix.",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "Autocomplete",
+          subtitle: "Real-world trie application",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "Collecting All Words with a Prefix",
+              body: "To implement autocomplete, navigate to the prefix node, then DFS from there to collect all words. This is extremely fast because you skip irrelevant branches entirely.",
+              code: `Trie.prototype.autocomplete = function(prefix) {
+  let node = this.root;
+  for (const ch of prefix) {
+    if (!node.children[ch]) return [];
+    node = node.children[ch];
+  }
+
+  const results = [];
+  function dfs(curr, path) {
+    if (curr.isEnd) results.push(prefix + path);
+    for (const [ch, child] of Object.entries(curr.children)) {
+      dfs(child, path + ch);
+    }
+  }
+  dfs(node, "");
+  return results;
+};
+
+const trie = new Trie();
+["apple","app","ape","april","bat"].forEach(w => trie.insert(w));
+console.log(trie.autocomplete("ap"));
+// ["app", "apple", "ape", "april"]`,
+              codeNote: "Search engines and IDEs use tries (or compressed variants) for instant autocomplete suggestions.",
+            },
+            {
+              heading: "Trie Complexity",
+              body: "Insert and search are both O(L) where L is the word length — independent of how many words are stored. Space can be large for many long words, but shared prefixes save significant memory.",
+              code: `// Trie Complexity Summary:
+//
+// Operation     Time     Space
+// insert(word)  O(L)     O(L) worst case (new branch)
+// search(word)  O(L)     O(1) (just traversal)
+// startsWith    O(L)     O(1)
+// autocomplete  O(L + K) where K = total chars in results
+//
+// Space for N words of avg length L:
+//   Worst case: O(N × L) — no shared prefixes
+//   Best case:  O(L)     — all words share a prefix
+//
+// Trie vs Hash Set:
+//   Hash: O(L) per lookup, no prefix queries
+//   Trie: O(L) per lookup, supports prefix queries ✓`,
+              codeNote: "Tries trade extra space for prefix-query capability that hash sets can't provide.",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "Trie Variations",
+          subtitle: "Beyond basic tries",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "Word Count & Delete",
+              body: "You can augment trie nodes with a count field for frequency tracking or implement deletion by decrementing counts and pruning empty branches. These variants appear in real-world auto-suggest systems.",
+              code: `class CountTrieNode {
+  constructor() {
+    this.children = {};
+    this.count = 0; // how many words end here
+  }
+}
+
+// Insert increments count at the end node
+function insertCount(root, word) {
+  let node = root;
+  for (const ch of word) {
+    if (!node.children[ch]) node.children[ch] = new CountTrieNode();
+    node = node.children[ch];
+  }
+  node.count++;
+}
+
+// Top-K autocomplete can sort by count
+// for ranking suggestions by popularity`,
+              codeNote: "Adding a count field turns a trie into a frequency map that still supports prefix queries.",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "What is the time complexity of inserting a word of length L into a trie?",
+              code: null,
+              options: ["O(1)", "O(L)", "O(N)", "O(N × L)"],
+              correct: 1,
+              body: "Insert traverses or creates one node per character, so it takes O(L) time regardless of how many words are already in the trie.",
+            },
+            {
+              id: "c2",
+              question: "How does search differ from startsWith in a trie?",
+              code: null,
+              options: [
+                "search is faster",
+                "startsWith uses BFS",
+                "search requires isEnd to be true; startsWith does not",
+                "There is no difference",
+              ],
+              correct: 2,
+              body: "search returns true only if the traversal ends at a node marked isEnd (a complete word). startsWith returns true if the prefix path exists, regardless of isEnd.",
+            },
+            {
+              id: "c3",
+              question: "What advantage does a trie have over a hash set for string storage?",
+              code: null,
+              options: [
+                "Faster exact lookups",
+                "Less memory usage always",
+                "Support for prefix-based queries",
+                "Simpler implementation",
+              ],
+              correct: 2,
+              body: "Both have O(L) lookup, but a trie supports prefix queries like autocomplete and startsWith that a hash set cannot do efficiently.",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      no: 24,
+      name: "Union-Find",
+      difficulty: "Advanced",
+      duration: "15 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "Disjoint Sets",
+          subtitle: "Grouping elements efficiently",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "What Is Union-Find?",
+              body: "Union-Find (Disjoint Set Union) tracks a collection of non-overlapping sets. It supports two operations: find (which set does an element belong to?) and union (merge two sets). It's ideal for connectivity problems.",
+              code: `class UnionFind {
+  constructor(n) {
+    this.parent = Array.from({ length: n }, (_, i) => i);
+    this.rank = new Array(n).fill(0);
+  }
+
+  find(x) {
+    if (this.parent[x] !== x) {
+      this.parent[x] = this.find(this.parent[x]); // path compression
+    }
+    return this.parent[x];
+  }
+
+  union(x, y) {
+    const rootX = this.find(x);
+    const rootY = this.find(y);
+    if (rootX === rootY) return false; // already connected
+    // union by rank
+    if (this.rank[rootX] < this.rank[rootY]) this.parent[rootX] = rootY;
+    else if (this.rank[rootX] > this.rank[rootY]) this.parent[rootY] = rootX;
+    else { this.parent[rootY] = rootX; this.rank[rootX]++; }
+    return true;
+  }
+
+  connected(x, y) {
+    return this.find(x) === this.find(y);
+  }
+}`,
+              codeNote: "Path compression + union by rank gives nearly O(1) amortized time per operation (inverse Ackermann).",
+            },
+            {
+              heading: "Path Compression Explained",
+              body: "Path compression flattens the tree during find by making every node on the path point directly to the root. This keeps trees almost flat, ensuring future finds are nearly constant time.",
+              code: `// Without path compression:
+// find(4) walks: 4 → 3 → 2 → 1 → 0  (O(n) worst case)
+
+// With path compression:
+// find(4) walks: 4 → 3 → 2 → 1 → 0
+// then sets:     4 → 0, 3 → 0, 2 → 0, 1 → 0
+// next find(4):  4 → 0  (O(1))
+
+// This is the single line that does it:
+// this.parent[x] = this.find(this.parent[x]);`,
+              codeNote: "One recursive line transforms a tall chain into a flat star rooted at the root node.",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "Union by Rank",
+          subtitle: "Keeping trees balanced",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "Why Rank Matters",
+              body: "Without rank, unioning can create long chains (like a linked list). Union by rank always attaches the shorter tree under the taller one, keeping tree height logarithmic even without path compression.",
+              code: `// Union by rank example:
+// Tree A (rank 2):     Tree B (rank 1):
+//       0                    3
+//      / \\                   |
+//     1   2                  4
+//
+// union(0, 3):
+// rank[0]=2 > rank[3]=1, so 3's root → 0
+//       0
+//      /|\\
+//     1  2  3
+//           |
+//           4`,
+              codeNote: "The smaller tree always goes under the larger one, preventing degenerate chains.",
+            },
+            {
+              heading: "Counting Components",
+              body: "Union-Find naturally tracks connected components. Start with n components; each successful union reduces the count by one. This makes it perfect for problems like 'number of islands' or 'friend circles'.",
+              code: `class UnionFindCount extends UnionFind {
+  constructor(n) {
+    super(n);
+    this.count = n; // number of components
+  }
+
+  union(x, y) {
+    const merged = super.union(x, y);
+    if (merged) this.count--;
+    return merged;
+  }
+
+  getCount() {
+    return this.count;
+  }
+}
+
+// Example: 5 nodes, connect some
+const uf = new UnionFindCount(5);
+uf.union(0, 1);
+uf.union(2, 3);
+uf.union(1, 3);
+console.log(uf.getCount()); // 2 ({0,1,2,3} and {4})`,
+              codeNote: "Every successful union decreases the component count by exactly one.",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "Classic Applications",
+          subtitle: "Where Union-Find shines",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "Kruskal's MST & Cycle Detection",
+              body: "Union-Find is the backbone of Kruskal's minimum spanning tree algorithm. Sort edges by weight, then add each edge if it connects two different components. If find returns the same root, adding the edge would create a cycle — skip it.",
+              code: `function kruskalMST(n, edges) {
+  edges.sort((a, b) => a.weight - b.weight);
+  const uf = new UnionFind(n);
+  const mst = [];
+
+  for (const { u, v, weight } of edges) {
+    if (!uf.connected(u, v)) {
+      uf.union(u, v);
+      mst.push({ u, v, weight });
+      if (mst.length === n - 1) break; // MST complete
+    }
+    // skip edge if u and v are already connected (cycle)
+  }
+  return mst;
+}
+
+// With path compression + union by rank:
+// Nearly O(E log E) total (dominated by sorting)`,
+              codeNote: "Union-Find makes cycle detection O(α(n)) per edge, where α is the inverse Ackermann function — effectively constant.",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "What two optimizations make Union-Find nearly O(1) per operation?",
+              code: null,
+              options: [
+                "Sorting and caching",
+                "Path compression and union by rank",
+                "Memoization and tabulation",
+                "BFS and DFS",
+              ],
+              correct: 1,
+              body: "Path compression flattens the tree during find, and union by rank keeps trees balanced during union. Together they achieve O(α(n)) amortized time.",
+            },
+            {
+              id: "c2",
+              question: "In Kruskal's algorithm, what happens when union(u, v) finds they share the same root?",
+              code: null,
+              options: [
+                "The edge is added to the MST",
+                "The edge is skipped to avoid a cycle",
+                "The algorithm terminates",
+                "The edge weight is doubled",
+              ],
+              correct: 1,
+              body: "If u and v are already connected (same root), adding the edge would create a cycle in the spanning tree, so it is skipped.",
+            },
+            {
+              id: "c3",
+              question: "If you start with n elements and perform k successful unions, how many components remain?",
+              code: null,
+              options: ["n", "n - k", "k", "n + k"],
+              correct: 1,
+              body: "Each successful union merges two components into one, reducing the total count by 1. After k unions: n - k components remain.",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
+export const sqlCourse = {
+  language: "SQL",
+  accentColor: "#F59E0B",
+  accentLight: "#FBBF24",
+  totalChapters: 15,
+  chapters: [
+    // ─── Chapter 1: SELECT Basics ───
+    {
+      no: 1,
+      name: "SELECT Basics",
+      difficulty: "Beginner",
+      duration: "10 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "Your First Query",
+          subtitle: "Retrieve all rows from a table",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "SELECT * FROM",
+              body: "The SELECT statement is the foundation of every SQL query. The asterisk (*) is a wildcard that returns every column in the table.",
+              code: `-- Retrieve all columns from the users table\nSELECT * FROM users;`,
+              codeNote: "The * wildcard selects every column.",
+            },
+            {
+              heading: "Running the Query",
+              body: "When you execute a SELECT query, the database scans the specified table and returns a result set. Each row in the result set represents one record.",
+              code: `-- Execute in your SQL client\nSELECT * FROM users;`,
+              codeNote: "Result sets contain rows and columns.",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "Selecting Specific Columns",
+          subtitle: "Choose only the columns you need",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "Column Selection",
+              body: "Instead of selecting all columns with *, list the specific column names you need. This improves performance and makes your queries more readable.",
+              code: `-- Select only name and email\nSELECT name, email FROM users;`,
+              codeNote: "Separate column names with commas.",
+            },
+            {
+              heading: "Column Aliases",
+              body: "Use the AS keyword to rename columns in your result set. Aliases make output more readable without changing the actual table structure.",
+              code: `-- Rename columns in the output\nSELECT name AS full_name, email AS contact_email\nFROM users;`,
+              codeNote: "Aliases only affect the result display.",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "DISTINCT & Expressions",
+          subtitle: "Remove duplicates and compute values",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "DISTINCT Keyword",
+              body: "DISTINCT removes duplicate rows from the result set. It's useful when you need to see unique values in a column.",
+              code: `-- Get unique cities from the users table\nSELECT DISTINCT city FROM users;`,
+              codeNote: "DISTINCT applies to the entire row.",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "Which SQL keyword retrieves data from a table?",
+              code: null,
+              options: ["INSERT", "SELECT", "UPDATE", "DELETE"],
+              correct: 1,
+              body: "SELECT is the SQL statement used to query and retrieve data from one or more tables.",
+            },
+            {
+              id: "c2",
+              question: "What does the * wildcard do in SELECT * FROM users?",
+              code: null,
+              options: [
+                "Deletes all rows",
+                "Selects all columns",
+                "Counts all rows",
+                "Creates a new table",
+              ],
+              correct: 1,
+              body: "The asterisk (*) is a shorthand that tells SQL to return every column in the specified table.",
+            },
+            {
+              id: "c3",
+              question: "Which keyword removes duplicate rows from results?",
+              code: null,
+              options: ["UNIQUE", "DISTINCT", "DIFFERENT", "SINGLE"],
+              correct: 1,
+              body: "DISTINCT filters out duplicate rows so each row in the result set is unique.",
+            },
+          ],
+        },
+      ],
+    },
+    // ─── Chapter 2: WHERE Clause ───
+    {
+      no: 2,
+      name: "WHERE Clause",
+      difficulty: "Beginner",
+      duration: "12 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "Basic Filtering",
+          subtitle: "Filter rows with conditions",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "The WHERE Clause",
+              body: "WHERE filters rows based on a condition. Only rows that satisfy the condition are included in the result set.",
+              code: `-- Find users in a specific city\nSELECT * FROM users\nWHERE city = 'New York';`,
+              codeNote: "String values must be wrapped in single quotes.",
+            },
+            {
+              heading: "Comparison Operators",
+              body: "SQL supports =, !=, <, >, <=, and >= for comparisons. These operators work on numbers, strings, and dates.",
+              code: `-- Find users older than 25\nSELECT name, age FROM users\nWHERE age > 25;`,
+              codeNote: "Numeric values don't need quotes.",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "AND, OR & NOT",
+          subtitle: "Combine multiple conditions",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "AND Operator",
+              body: "AND requires all conditions to be true. Use it when you need rows that satisfy every specified criterion.",
+              code: `-- Users older than 25 in New York\nSELECT * FROM users\nWHERE age > 25 AND city = 'New York';`,
+              codeNote: "Both conditions must be true for a row to appear.",
+            },
+            {
+              heading: "OR and NOT Operators",
+              body: "OR requires at least one condition to be true. NOT negates a condition, returning rows where the condition is false.",
+              code: `-- Users in New York OR Los Angeles\nSELECT * FROM users\nWHERE city = 'New York' OR city = 'Los Angeles';\n\n-- Users NOT in New York\nSELECT * FROM users\nWHERE NOT city = 'New York';`,
+              codeNote: "Use parentheses to clarify complex logic.",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "IN, BETWEEN & LIKE",
+          subtitle: "Advanced filtering patterns",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "IN, BETWEEN, and LIKE",
+              body: "IN matches against a list of values. BETWEEN filters a range. LIKE performs pattern matching with % (any characters) and _ (single character).",
+              code: `-- IN: match a list\nSELECT * FROM users WHERE city IN ('New York', 'Chicago', 'Miami');\n\n-- BETWEEN: match a range\nSELECT * FROM users WHERE age BETWEEN 20 AND 30;\n\n-- LIKE: pattern matching\nSELECT * FROM users WHERE name LIKE 'J%';`,
+              codeNote: "% matches zero or more characters; _ matches exactly one.",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "Which clause filters rows in a SELECT query?",
+              code: null,
+              options: ["ORDER BY", "GROUP BY", "WHERE", "HAVING"],
+              correct: 2,
+              body: "The WHERE clause is used to filter rows based on specified conditions before any grouping happens.",
+            },
+            {
+              id: "c2",
+              question: "What does the LIKE operator with '%son' match?",
+              code: null,
+              options: [
+                "Names starting with 'son'",
+                "Names ending with 'son'",
+                "Names containing only 'son'",
+                "Names exactly equal to 'son'",
+              ],
+              correct: 1,
+              body: "The % wildcard before 'son' matches any characters followed by 'son', so it finds names ending with 'son'.",
+            },
+            {
+              id: "c3",
+              question: "Which operator checks if a value falls within a range?",
+              code: null,
+              options: ["IN", "LIKE", "BETWEEN", "EXISTS"],
+              correct: 2,
+              body: "BETWEEN checks if a value is within a specified inclusive range, e.g., BETWEEN 10 AND 20.",
+            },
+          ],
+        },
+      ],
+    },
+    // ─── Chapter 3: ORDER BY & LIMIT ───
+    {
+      no: 3,
+      name: "ORDER BY & LIMIT",
+      difficulty: "Beginner",
+      duration: "10 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "Sorting Results",
+          subtitle: "Order rows by column values",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "ORDER BY Clause",
+              body: "ORDER BY sorts the result set by one or more columns. By default, sorting is in ascending (ASC) order.",
+              code: `-- Sort users by name alphabetically\nSELECT name, age FROM users\nORDER BY name;`,
+              codeNote: "ASC is the default sort direction.",
+            },
+            {
+              heading: "Descending Order",
+              body: "Add DESC after a column name to sort in descending order. You can mix ASC and DESC across multiple columns.",
+              code: `-- Sort by age descending, then name ascending\nSELECT name, age FROM users\nORDER BY age DESC, name ASC;`,
+              codeNote: "DESC reverses the default sort order.",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "LIMIT & OFFSET",
+          subtitle: "Control how many rows are returned",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "LIMIT Clause",
+              body: "LIMIT restricts the number of rows returned. It's essential for pagination and preventing large result sets from overwhelming your application.",
+              code: `-- Return only the first 10 users\nSELECT * FROM users\nLIMIT 10;`,
+              codeNote: "LIMIT is applied after sorting.",
+            },
+            {
+              heading: "OFFSET for Pagination",
+              body: "OFFSET skips a specified number of rows before returning results. Combined with LIMIT, it enables pagination through large datasets.",
+              code: `-- Skip the first 20 rows, then return 10\nSELECT * FROM users\nORDER BY id\nLIMIT 10 OFFSET 20;`,
+              codeNote: "This fetches rows 21-30 (page 3 of 10-per-page).",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "Top-N Queries",
+          subtitle: "Find the top or bottom records",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "Top-N Pattern",
+              body: "Combine ORDER BY with LIMIT to find the highest or lowest values. This pattern is used frequently to find top performers, latest entries, or extremes.",
+              code: `-- Find the 5 oldest users\nSELECT name, age FROM users\nORDER BY age DESC\nLIMIT 5;`,
+              codeNote: "ORDER BY + LIMIT is the classic Top-N pattern.",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "What is the default sort order for ORDER BY?",
+              code: null,
+              options: ["DESC", "ASC", "RANDOM", "NONE"],
+              correct: 1,
+              body: "ORDER BY sorts in ascending (ASC) order by default. You must explicitly write DESC for descending.",
+            },
+            {
+              id: "c2",
+              question: "What does LIMIT 5 OFFSET 10 return?",
+              code: null,
+              options: [
+                "First 5 rows",
+                "Rows 6-10",
+                "Rows 11-15",
+                "Last 5 rows",
+              ],
+              correct: 2,
+              body: "OFFSET 10 skips the first 10 rows, then LIMIT 5 returns the next 5 rows (rows 11-15).",
+            },
+            {
+              id: "c3",
+              question: "How do you find the 3 youngest users?",
+              code: null,
+              options: [
+                "SELECT * FROM users LIMIT 3",
+                "SELECT * FROM users ORDER BY age ASC LIMIT 3",
+                "SELECT * FROM users WHERE age < 3",
+                "SELECT TOP 3 FROM users",
+              ],
+              correct: 1,
+              body: "Sort by age ascending to put the youngest first, then LIMIT 3 returns only those three rows.",
+            },
+          ],
+        },
+      ],
+    },
+    // ─── Chapter 4: INSERT, UPDATE, DELETE ───
+    {
+      no: 4,
+      name: "INSERT, UPDATE, DELETE",
+      difficulty: "Beginner",
+      duration: "12 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "Inserting Data",
+          subtitle: "Add new rows to a table",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "INSERT INTO",
+              body: "INSERT INTO adds new rows to a table. You specify the table name, column list, and the values to insert.",
+              code: `-- Insert a new user\nINSERT INTO users (name, email, age, city)\nVALUES ('Alice', 'alice@example.com', 28, 'Chicago');`,
+              codeNote: "Column order must match the VALUES order.",
+            },
+            {
+              heading: "Inserting Multiple Rows",
+              body: "You can insert several rows in a single statement by separating each value set with a comma. This is more efficient than running multiple INSERT statements.",
+              code: `-- Insert multiple users at once\nINSERT INTO users (name, email, age, city)\nVALUES\n  ('Bob', 'bob@example.com', 32, 'Miami'),\n  ('Carol', 'carol@example.com', 24, 'Denver');`,
+              codeNote: "Batch inserts are faster than individual ones.",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "Updating Data",
+          subtitle: "Modify existing rows",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "UPDATE Statement",
+              body: "UPDATE modifies existing rows in a table. Always include a WHERE clause to target specific rows, otherwise all rows will be updated.",
+              code: `-- Update a user's city\nUPDATE users\nSET city = 'San Francisco'\nWHERE name = 'Alice';`,
+              codeNote: "Always use WHERE with UPDATE to avoid changing all rows.",
+            },
+            {
+              heading: "Updating Multiple Columns",
+              body: "You can set multiple columns in a single UPDATE statement by separating assignments with commas. The WHERE clause still controls which rows are affected.",
+              code: `-- Update age and city together\nUPDATE users\nSET age = 29, city = 'Seattle'\nWHERE name = 'Alice';`,
+              codeNote: "Separate multiple SET assignments with commas.",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "Deleting Data",
+          subtitle: "Remove rows from a table",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "DELETE Statement",
+              body: "DELETE removes rows from a table. Like UPDATE, always use a WHERE clause to target specific rows. Without WHERE, all rows will be deleted.",
+              code: `-- Delete a specific user\nDELETE FROM users\nWHERE name = 'Bob';\n\n-- DANGER: This deletes ALL rows!\n-- DELETE FROM users;`,
+              codeNote: "Never run DELETE without WHERE in production.",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "What happens if you run UPDATE without a WHERE clause?",
+              code: null,
+              options: [
+                "Nothing happens",
+                "Only the first row is updated",
+                "All rows in the table are updated",
+                "An error is thrown",
+              ],
+              correct: 2,
+              body: "Without a WHERE clause, UPDATE applies the changes to every row in the table, which is usually unintended.",
+            },
+            {
+              id: "c2",
+              question: "Which statement adds a new row to a table?",
+              code: null,
+              options: ["UPDATE", "INSERT INTO", "ALTER TABLE", "CREATE"],
+              correct: 1,
+              body: "INSERT INTO is the SQL statement for adding new rows with specified values into a table.",
+            },
+            {
+              id: "c3",
+              question: "How do you insert multiple rows in one statement?",
+              code: null,
+              options: [
+                "Use multiple INSERT statements",
+                "Separate value sets with commas",
+                "Use INSERT ALL",
+                "Use BULK INSERT only",
+              ],
+              correct: 1,
+              body: "Standard SQL allows comma-separated value sets after VALUES to insert multiple rows in a single INSERT INTO statement.",
+            },
+          ],
+        },
+      ],
+    },
+    // ─── Chapter 5: Aggregate Functions ───
+    {
+      no: 5,
+      name: "Aggregate Functions",
+      difficulty: "Beginner",
+      duration: "10 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "COUNT & SUM",
+          subtitle: "Count rows and sum values",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "COUNT Function",
+              body: "COUNT returns the number of rows that match a condition. COUNT(*) counts all rows, while COUNT(column) counts non-NULL values in that column.",
+              code: `-- Count all users\nSELECT COUNT(*) AS total_users FROM users;\n\n-- Count users with an email\nSELECT COUNT(email) AS users_with_email FROM users;`,
+              codeNote: "COUNT(*) includes NULLs; COUNT(column) does not.",
+            },
+            {
+              heading: "SUM Function",
+              body: "SUM adds up all numeric values in a column. It ignores NULL values automatically. Use it on numeric columns like prices, quantities, or scores.",
+              code: `-- Total of all order amounts\nSELECT SUM(amount) AS total_revenue\nFROM orders;`,
+              codeNote: "SUM only works on numeric columns.",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "AVG, MIN & MAX",
+          subtitle: "Calculate averages and extremes",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "AVG Function",
+              body: "AVG calculates the arithmetic mean of a numeric column. Like SUM, it ignores NULL values when computing the average.",
+              code: `-- Average age of all users\nSELECT AVG(age) AS average_age FROM users;`,
+              codeNote: "AVG ignores NULLs in its calculation.",
+            },
+            {
+              heading: "MIN and MAX",
+              body: "MIN returns the smallest value and MAX returns the largest value in a column. They work on numbers, strings, and dates.",
+              code: `-- Youngest and oldest users\nSELECT MIN(age) AS youngest, MAX(age) AS oldest\nFROM users;`,
+              codeNote: "MIN/MAX work on any comparable data type.",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "Combining Aggregates",
+          subtitle: "Use multiple functions in one query",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "Multiple Aggregates",
+              body: "You can use several aggregate functions in a single SELECT statement. This lets you build summary reports with one query instead of many.",
+              code: `-- Complete summary of user ages\nSELECT\n  COUNT(*) AS total,\n  AVG(age) AS avg_age,\n  MIN(age) AS min_age,\n  MAX(age) AS max_age,\n  SUM(age) AS sum_age\nFROM users;`,
+              codeNote: "Each aggregate is computed independently.",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "What does COUNT(*) count?",
+              code: null,
+              options: [
+                "Only non-NULL values",
+                "All rows including NULLs",
+                "Only distinct values",
+                "Only numeric values",
+              ],
+              correct: 1,
+              body: "COUNT(*) counts every row in the result set regardless of NULL values in any column.",
+            },
+            {
+              id: "c2",
+              question: "Which function returns the average of a numeric column?",
+              code: null,
+              options: ["MEAN", "AVG", "AVERAGE", "MID"],
+              correct: 1,
+              body: "AVG is the SQL aggregate function that computes the arithmetic mean of a numeric column.",
+            },
+            {
+              id: "c3",
+              question: "How do aggregate functions handle NULL values?",
+              code: null,
+              options: [
+                "They treat NULLs as 0",
+                "They ignore NULLs",
+                "They throw an error",
+                "They include NULLs in calculations",
+              ],
+              correct: 1,
+              body: "Aggregate functions like SUM, AVG, MIN, and MAX skip NULL values. Only COUNT(*) counts rows with NULLs.",
+            },
+          ],
+        },
+      ],
+    },
+    // ─── Chapter 6: GROUP BY & HAVING ───
+    {
+      no: 6,
+      name: "GROUP BY & HAVING",
+      difficulty: "Beginner",
+      duration: "12 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "Grouping Data",
+          subtitle: "Group rows by column values",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "GROUP BY Clause",
+              body: "GROUP BY divides rows into groups based on column values. Each group is then summarized using an aggregate function like COUNT or SUM.",
+              code: `-- Count users per city\nSELECT city, COUNT(*) AS user_count\nFROM users\nGROUP BY city;`,
+              codeNote: "Every non-aggregated column in SELECT must appear in GROUP BY.",
+            },
+            {
+              heading: "Grouping with Aggregates",
+              body: "GROUP BY is most powerful when combined with aggregate functions. It lets you compute summary statistics for each category in your data.",
+              code: `-- Average age per city\nSELECT city, AVG(age) AS avg_age\nFROM users\nGROUP BY city;`,
+              codeNote: "Each group produces one row in the result.",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "Filtering Groups with HAVING",
+          subtitle: "Apply conditions to grouped results",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "HAVING Clause",
+              body: "HAVING filters groups after aggregation, while WHERE filters rows before aggregation. Use HAVING when your condition involves an aggregate function.",
+              code: `-- Cities with more than 5 users\nSELECT city, COUNT(*) AS user_count\nFROM users\nGROUP BY city\nHAVING COUNT(*) > 5;`,
+              codeNote: "HAVING filters after GROUP BY; WHERE filters before.",
+            },
+            {
+              heading: "WHERE vs HAVING",
+              body: "Use WHERE to filter individual rows before grouping. Use HAVING to filter groups after aggregation. They can be used together in the same query.",
+              code: `-- Cities with more than 3 users older than 25\nSELECT city, COUNT(*) AS user_count\nFROM users\nWHERE age > 25\nGROUP BY city\nHAVING COUNT(*) > 3;`,
+              codeNote: "WHERE runs first, then GROUP BY, then HAVING.",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "Multiple Grouping Columns",
+          subtitle: "Group by more than one column",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "Multi-Column GROUP BY",
+              body: "You can group by multiple columns to create more specific categories. The result has one row for each unique combination of the grouped columns.",
+              code: `-- Count users by city and age bracket\nSELECT city, age, COUNT(*) AS user_count\nFROM users\nGROUP BY city, age\nORDER BY city, age;`,
+              codeNote: "Each unique (city, age) pair becomes one group.",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "What is the difference between WHERE and HAVING?",
+              code: null,
+              options: [
+                "No difference",
+                "WHERE filters rows before grouping; HAVING filters groups after",
+                "HAVING filters rows; WHERE filters groups",
+                "WHERE works only with numbers",
+              ],
+              correct: 1,
+              body: "WHERE filters individual rows before GROUP BY runs. HAVING filters the aggregated groups after GROUP BY produces its results.",
+            },
+            {
+              id: "c2",
+              question: "What must every non-aggregated SELECT column appear in?",
+              code: null,
+              options: ["WHERE", "HAVING", "GROUP BY", "ORDER BY"],
+              correct: 2,
+              body: "SQL requires all non-aggregated columns in the SELECT list to also appear in the GROUP BY clause to avoid ambiguous results.",
+            },
+            {
+              id: "c3",
+              question: "Which query finds cities where the average age is over 30?",
+              code: null,
+              options: [
+                "SELECT city FROM users WHERE AVG(age) > 30",
+                "SELECT city, AVG(age) FROM users GROUP BY city HAVING AVG(age) > 30",
+                "SELECT city FROM users GROUP BY city WHERE age > 30",
+                "SELECT city FROM users HAVING age > 30",
+              ],
+              correct: 1,
+              body: "You need GROUP BY city to create groups, then HAVING AVG(age) > 30 to filter groups. WHERE cannot use aggregate functions.",
+            },
+          ],
+        },
+      ],
+    },
+    // ─── Chapter 7: INNER JOIN ───
+    {
+      no: 7,
+      name: "INNER JOIN",
+      difficulty: "Beginner",
+      duration: "12 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "Joining Two Tables",
+          subtitle: "Combine rows from related tables",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "INNER JOIN Basics",
+              body: "INNER JOIN returns only the rows that have matching values in both tables. It combines columns from two tables based on a related column.",
+              code: `-- Join users with their orders\nSELECT users.name, orders.amount\nFROM users\nINNER JOIN orders ON users.id = orders.user_id;`,
+              codeNote: "Only matching rows from both tables are returned.",
+            },
+            {
+              heading: "The ON Clause",
+              body: "The ON clause specifies the condition for matching rows between tables. It typically compares a primary key in one table to a foreign key in another.",
+              code: `-- ON specifies how tables relate\nSELECT u.name, o.amount, o.order_date\nFROM users u\nINNER JOIN orders o ON u.id = o.user_id;`,
+              codeNote: "The ON condition defines the relationship between tables.",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "Table Aliases",
+          subtitle: "Shorten table references in joins",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "Using Aliases",
+              body: "Table aliases are short names you assign to tables in a query. They make join queries shorter and more readable, especially with long table names.",
+              code: `-- u and o are aliases for users and orders\nSELECT u.name, u.email, o.amount\nFROM users u\nINNER JOIN orders o ON u.id = o.user_id\nWHERE o.amount > 100;`,
+              codeNote: "Aliases are defined right after the table name.",
+            },
+            {
+              heading: "Qualifying Column Names",
+              body: "When two tables share a column name, you must prefix it with the table name or alias to avoid ambiguity. This is required in JOIN queries.",
+              code: `-- Both tables have an 'id' column\nSELECT u.id AS user_id, o.id AS order_id, u.name\nFROM users u\nINNER JOIN orders o ON u.id = o.user_id;`,
+              codeNote: "Always qualify ambiguous column names with table aliases.",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "Joining with Conditions",
+          subtitle: "Add WHERE to filter joined results",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "Filtering After Join",
+              body: "You can add WHERE, ORDER BY, and other clauses after a JOIN. The join happens first, then the filters and sorting are applied to the combined result.",
+              code: `-- Find large orders with user details\nSELECT u.name, o.amount, o.order_date\nFROM users u\nINNER JOIN orders o ON u.id = o.user_id\nWHERE o.amount > 500\nORDER BY o.amount DESC;`,
+              codeNote: "JOIN first, then WHERE filters the joined rows.",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "What does INNER JOIN return?",
+              code: null,
+              options: [
+                "All rows from both tables",
+                "Only rows with matches in both tables",
+                "All rows from the left table",
+                "All rows from the right table",
+              ],
+              correct: 1,
+              body: "INNER JOIN returns only the rows where there is a matching value in both the left and right tables based on the ON condition.",
+            },
+            {
+              id: "c2",
+              question: "What does the ON clause specify?",
+              code: null,
+              options: [
+                "Which columns to display",
+                "How to sort results",
+                "The matching condition between tables",
+                "Which rows to delete",
+              ],
+              correct: 2,
+              body: "The ON clause defines the relationship between the two tables, specifying which columns should match for rows to be joined.",
+            },
+            {
+              id: "c3",
+              question: "Why are table aliases useful in JOINs?",
+              code: null,
+              options: [
+                "They make queries run faster",
+                "They create new tables",
+                "They shorten references and resolve ambiguity",
+                "They are required by SQL standard",
+              ],
+              correct: 2,
+              body: "Aliases provide short names for tables, making queries more readable and resolving ambiguity when both tables share column names.",
+            },
+          ],
+        },
+      ],
+    },
+    // ─── Chapter 8: LEFT & RIGHT JOIN ───
+    {
+      no: 8,
+      name: "LEFT & RIGHT JOIN",
+      difficulty: "Beginner",
+      duration: "12 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1,
+          title: "LEFT JOIN",
+          subtitle: "Keep all rows from the left table",
+          xp: 30,
+          color: "#3B82F6",
+          glow: "rgba(59,130,246,0.35)",
+          steps: [
+            {
+              heading: "LEFT JOIN Basics",
+              body: "LEFT JOIN returns all rows from the left table plus matched rows from the right table. If there's no match, the right table columns are filled with NULL.",
+              code: `-- All users, even those without orders\nSELECT u.name, o.amount\nFROM users u\nLEFT JOIN orders o ON u.id = o.user_id;`,
+              codeNote: "Unmatched right-side columns show NULL.",
+            },
+            {
+              heading: "Finding Unmatched Rows",
+              body: "A common pattern with LEFT JOIN is to find rows in the left table that have no match in the right table. Simply check for NULL in the right table's column.",
+              code: `-- Find users who have never placed an order\nSELECT u.name, u.email\nFROM users u\nLEFT JOIN orders o ON u.id = o.user_id\nWHERE o.id IS NULL;`,
+              codeNote: "IS NULL on the join key finds unmatched rows.",
+            },
+          ],
+        },
+        {
+          id: 2,
+          title: "RIGHT JOIN",
+          subtitle: "Keep all rows from the right table",
+          xp: 30,
+          color: "#10B981",
+          glow: "rgba(16,185,129,0.35)",
+          steps: [
+            {
+              heading: "RIGHT JOIN Basics",
+              body: "RIGHT JOIN is the mirror of LEFT JOIN. It returns all rows from the right table and matched rows from the left table. Unmatched left columns show NULL.",
+              code: `-- All orders, even if the user was deleted\nSELECT u.name, o.amount, o.order_date\nFROM users u\nRIGHT JOIN orders o ON u.id = o.user_id;`,
+              codeNote: "RIGHT JOIN keeps all right-table rows.",
+            },
+            {
+              heading: "LEFT vs RIGHT JOIN",
+              body: "LEFT JOIN and RIGHT JOIN are interchangeable if you swap the table order. Most developers prefer LEFT JOIN for consistency and readability.",
+              code: `-- These two queries produce identical results:\n\n-- Using LEFT JOIN\nSELECT u.name, o.amount\nFROM users u\nLEFT JOIN orders o ON u.id = o.user_id;\n\n-- Equivalent RIGHT JOIN (tables swapped)\nSELECT u.name, o.amount\nFROM orders o\nRIGHT JOIN users u ON u.id = o.user_id;`,
+              codeNote: "Swapping tables + changing join type gives the same result.",
+            },
+          ],
+        },
+        {
+          id: 3,
+          title: "NULL Handling in Joins",
+          subtitle: "Work with missing data from outer joins",
+          xp: 20,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.35)",
+          steps: [
+            {
+              heading: "COALESCE for NULLs",
+              body: "COALESCE replaces NULL with a default value. It's especially useful after LEFT or RIGHT JOINs where unmatched rows produce NULLs.",
+              code: `-- Replace NULL amounts with 0\nSELECT u.name, COALESCE(o.amount, 0) AS amount\nFROM users u\nLEFT JOIN orders o ON u.id = o.user_id;`,
+              codeNote: "COALESCE returns the first non-NULL argument.",
+            },
+          ],
+        },
+        {
+          id: 4,
+          title: "Mini Challenge",
+          subtitle: "Test your knowledge",
+          xp: 40,
+          color: "#F59E0B",
+          glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            {
+              id: "c1",
+              question: "What does LEFT JOIN return for unmatched rows?",
+              code: null,
+              options: [
+                "An error",
+                "The row is skipped",
+                "NULL for right-table columns",
+                "Zero for all columns",
+              ],
+              correct: 2,
+              body: "LEFT JOIN includes all left-table rows. When there's no match in the right table, those columns are filled with NULL.",
+            },
+            {
+              id: "c2",
+              question: "How do you find users with no orders using LEFT JOIN?",
+              code: null,
+              options: [
+                "WHERE orders.amount = 0",
+                "WHERE orders.id IS NULL",
+                "WHERE orders.id IS NOT NULL",
+                "WHERE users.id NOT IN orders",
+              ],
+              correct: 1,
+              body: "After LEFT JOIN, unmatched right-table rows have NULL. Checking IS NULL on the join key finds left-only rows.",
+            },
+            {
+              id: "c3",
+              question: "What does COALESCE(value, 0) return when value is NULL?",
+              code: null,
+              options: ["NULL", "0", "An error", "Empty string"],
+              correct: 1,
+              body: "COALESCE returns the first non-NULL argument. When value is NULL, it falls through to 0 and returns that instead.",
+            },
+          ],
+        },
+      ],
+    },
+    // ─── Chapter 9: FULL OUTER JOIN & CROSS JOIN ───
+    {
+      no: 9,
+      name: "FULL OUTER JOIN & CROSS JOIN",
+      difficulty: "Intermediate",
+      duration: "12 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1, title: "FULL OUTER JOIN", subtitle: "Combine all rows from both tables", xp: 30, color: "#3B82F6", glow: "rgba(59,130,246,0.35)",
+          steps: [
+            { heading: "What Is a FULL OUTER JOIN?", body: "A FULL OUTER JOIN returns every row from both tables. Where there is no match, NULLs fill the missing side.", code: `-- FULL OUTER JOIN returns all rows from both tables\nSELECT c.name, o.total\nFROM customers c\nFULL OUTER JOIN orders o ON c.id = o.customer_id;`, codeNote: "Unmatched rows from either side appear with NULLs." },
+            { heading: "Finding Unmatched Rows", body: "You can filter for rows that exist in only one table. Check for NULLs on the opposite table's key column.", code: `-- Customers with no orders OR orders with no customer\nSELECT c.name, o.id AS order_id\nFROM customers c\nFULL OUTER JOIN orders o ON c.id = o.customer_id\nWHERE c.id IS NULL OR o.customer_id IS NULL;`, codeNote: "This reveals orphan records on both sides." }
+          ]
+        },
+        {
+          id: 2, title: "CROSS JOIN", subtitle: "Generate every combination of rows", xp: 30, color: "#10B981", glow: "rgba(16,185,129,0.35)",
+          steps: [
+            { heading: "What Is a CROSS JOIN?", body: "A CROSS JOIN produces the Cartesian product of two tables. Every row from the first table is paired with every row from the second.", code: `-- Cartesian product: every size × every color\nSELECT s.size, c.color\nFROM sizes s\nCROSS JOIN colors c;`, codeNote: "If sizes has 3 rows and colors has 4, the result has 12 rows." },
+            { heading: "Practical Use Cases", body: "CROSS JOINs are useful for generating combinations like schedules or product variants. Be cautious with large tables since the result set grows multiplicatively.", code: `-- Generate a report skeleton for every employee × every month\nSELECT e.name, m.month_name\nFROM employees e\nCROSS JOIN months m\nORDER BY e.name, m.month_num;`, codeNote: "Great for scaffolding reports or lookup grids." }
+          ]
+        },
+        {
+          id: 3, title: "Cartesian Product Pitfalls", subtitle: "Avoid accidental explosions", xp: 20, color: "#8B5CF6", glow: "rgba(139,92,246,0.35)",
+          steps: [
+            { heading: "Accidental Cartesian Products", body: "Forgetting a JOIN condition can accidentally create a CROSS JOIN. Always verify your ON clause to avoid unexpectedly huge result sets.", code: `-- WRONG: missing ON clause creates a Cartesian product\nSELECT *\nFROM orders, customers;\n\n-- CORRECT: specify the join condition\nSELECT *\nFROM orders o\nJOIN customers c ON o.customer_id = c.id;`, codeNote: "An implicit join without WHERE acts like a CROSS JOIN." }
+          ]
+        },
+        {
+          id: 4, title: "Mini Challenge", subtitle: "Test your knowledge", xp: 40, color: "#F59E0B", glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            { id: "c1", question: "What does a FULL OUTER JOIN return?", code: null, options: ["Only matching rows", "All rows from the left table", "All rows from both tables with NULLs for non-matches", "A Cartesian product"], correct: 2, body: "A FULL OUTER JOIN keeps every row from both tables. Non-matching rows get NULLs on the opposite side." },
+            { id: "c2", question: "How many rows does a CROSS JOIN of a 5-row table and a 4-row table produce?", code: null, options: ["9", "5", "20", "4"], correct: 2, body: "A CROSS JOIN produces N × M rows. 5 × 4 = 20 rows in the result set." },
+            { id: "c3", question: "What commonly causes an accidental Cartesian product?", code: null, options: ["Using GROUP BY", "Forgetting the ON or WHERE clause in a join", "Using too many indexes", "Selecting too many columns"], correct: 1, body: "Omitting the join condition makes the database pair every row with every other row, causing an accidental Cartesian product." }
+          ]
+        }
+      ]
+    },
+    // ─── Chapter 10: Subqueries ───
+    {
+      no: 10,
+      name: "Subqueries",
+      difficulty: "Intermediate",
+      duration: "12 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1, title: "Scalar Subqueries", subtitle: "Return a single value", xp: 30, color: "#3B82F6", glow: "rgba(59,130,246,0.35)",
+          steps: [
+            { heading: "What Is a Scalar Subquery?", body: "A scalar subquery returns exactly one value. You can use it anywhere a single value is expected, such as in SELECT or WHERE.", code: `-- Scalar subquery: find employees earning above average\nSELECT name, salary\nFROM employees\nWHERE salary > (SELECT AVG(salary) FROM employees);`, codeNote: "The inner query computes one number; the outer query uses it as a filter." },
+            { heading: "Subqueries in SELECT", body: "You can embed a scalar subquery in the SELECT list to compute a value per row. The subquery runs once for each row in context.", code: `-- Show each order with the customer's total order count\nSELECT o.id, o.total,\n  (SELECT COUNT(*) FROM orders o2 WHERE o2.customer_id = o.customer_id) AS cust_orders\nFROM orders o;`, codeNote: "Correlated subqueries in SELECT reference the outer row." }
+          ]
+        },
+        {
+          id: 2, title: "IN & EXISTS", subtitle: "Filter with subquery results", xp: 30, color: "#10B981", glow: "rgba(16,185,129,0.35)",
+          steps: [
+            { heading: "Using IN with a Subquery", body: "IN checks if a value matches any result from a subquery. It is straightforward for filtering against a list of IDs or values.", code: `-- Find customers who have placed at least one order\nSELECT name\nFROM customers\nWHERE id IN (SELECT customer_id FROM orders);`, codeNote: "IN collects all values from the subquery first, then filters." },
+            { heading: "Using EXISTS", body: "EXISTS tests whether a correlated subquery returns any rows. It short-circuits as soon as one match is found, making it efficient for large datasets.", code: `-- Same result using EXISTS\nSELECT name\nFROM customers c\nWHERE EXISTS (\n  SELECT 1 FROM orders o WHERE o.customer_id = c.id\n);`, codeNote: "EXISTS is often faster than IN for correlated checks." }
+          ]
+        },
+        {
+          id: 3, title: "Correlated Subqueries", subtitle: "Reference the outer query", xp: 20, color: "#8B5CF6", glow: "rgba(139,92,246,0.35)",
+          steps: [
+            { heading: "How Correlated Subqueries Work", body: "A correlated subquery references columns from the outer query. It re-executes for every row the outer query processes, which can impact performance.", code: `-- Find products priced above their category average\nSELECT p.name, p.price\nFROM products p\nWHERE p.price > (\n  SELECT AVG(p2.price) FROM products p2 WHERE p2.category_id = p.category_id\n);`, codeNote: "The inner AVG recalculates for each product's category." }
+          ]
+        },
+        {
+          id: 4, title: "Mini Challenge", subtitle: "Test your knowledge", xp: 40, color: "#F59E0B", glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            { id: "c1", question: "What does a scalar subquery return?", code: null, options: ["A table", "Multiple rows", "Exactly one value", "A boolean"], correct: 2, body: "A scalar subquery must return exactly one value (one row, one column). It can be used wherever a single value is expected." },
+            { id: "c2", question: "When is EXISTS generally preferred over IN?", code: null, options: ["When the subquery returns few rows", "When you need the actual values", "When the subquery is correlated and the table is large", "When you want duplicates"], correct: 2, body: "EXISTS short-circuits on the first match and works well with correlated subqueries on large tables." },
+            { id: "c3", question: "What makes a subquery 'correlated'?", code: null, options: ["It uses JOIN", "It references a column from the outer query", "It returns multiple rows", "It uses GROUP BY"], correct: 1, body: "A correlated subquery references the outer query's columns, causing it to re-execute for each outer row." }
+          ]
+        }
+      ]
+    },
+    // ─── Chapter 11: Common Table Expressions ───
+    {
+      no: 11,
+      name: "Common Table Expressions",
+      difficulty: "Intermediate",
+      duration: "12 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1, title: "The WITH Clause", subtitle: "Name your subqueries for clarity", xp: 30, color: "#3B82F6", glow: "rgba(59,130,246,0.35)",
+          steps: [
+            { heading: "Basic CTE Syntax", body: "A CTE is defined with the WITH keyword and gives a temporary name to a subquery. It makes complex queries more readable by breaking them into logical steps.", code: `-- Basic CTE: calculate department averages first\nWITH dept_avg AS (\n  SELECT department_id, AVG(salary) AS avg_salary\n  FROM employees\n  GROUP BY department_id\n)\nSELECT e.name, e.salary, d.avg_salary\nFROM employees e\nJOIN dept_avg d ON e.department_id = d.department_id;`, codeNote: "The CTE acts like a named temporary result set." },
+            { heading: "Chaining Multiple CTEs", body: "You can define several CTEs in a single WITH clause separated by commas. Later CTEs can reference earlier ones, building up logic step by step.", code: `-- Chain two CTEs together\nWITH active_users AS (\n  SELECT id, name FROM users WHERE active = true\n),\nuser_orders AS (\n  SELECT u.name, COUNT(o.id) AS order_count\n  FROM active_users u\n  JOIN orders o ON u.id = o.user_id\n  GROUP BY u.name\n)\nSELECT * FROM user_orders WHERE order_count > 5;`, codeNote: "Each CTE builds on the previous one for clarity." }
+          ]
+        },
+        {
+          id: 2, title: "Recursive CTEs", subtitle: "Traverse hierarchical data", xp: 30, color: "#10B981", glow: "rgba(16,185,129,0.35)",
+          steps: [
+            { heading: "Recursive CTE Basics", body: "A recursive CTE references itself to traverse hierarchical or tree-structured data. It has an anchor member and a recursive member joined by UNION ALL.", code: `-- Recursive CTE: build an org chart\nWITH RECURSIVE org_chart AS (\n  -- Anchor: top-level manager\n  SELECT id, name, manager_id, 1 AS level\n  FROM employees WHERE manager_id IS NULL\n  UNION ALL\n  -- Recursive: find each employee's reports\n  SELECT e.id, e.name, e.manager_id, oc.level + 1\n  FROM employees e\n  JOIN org_chart oc ON e.manager_id = oc.id\n)\nSELECT * FROM org_chart ORDER BY level, name;`, codeNote: "The anchor starts the recursion; UNION ALL appends each level." },
+            { heading: "Generating a Number Series", body: "Recursive CTEs can generate sequences without needing a helper table. This is useful for filling date ranges or creating row numbers on the fly.", code: `-- Generate numbers 1 through 10\nWITH RECURSIVE nums AS (\n  SELECT 1 AS n\n  UNION ALL\n  SELECT n + 1 FROM nums WHERE n < 10\n)\nSELECT n FROM nums;`, codeNote: "The recursion terminates when the WHERE condition fails." }
+          ]
+        },
+        {
+          id: 3, title: "CTE vs Subquery", subtitle: "When to use which approach", xp: 20, color: "#8B5CF6", glow: "rgba(139,92,246,0.35)",
+          steps: [
+            { heading: "Readability and Reuse", body: "CTEs improve readability by assigning meaningful names to intermediate results. Unlike subqueries, a CTE can be referenced multiple times in the same query without repeating code.", code: `-- CTE referenced twice: compare each sale to the average\nWITH sale_stats AS (\n  SELECT AVG(amount) AS avg_amount FROM sales\n)\nSELECT s.id, s.amount,\n  s.amount - ss.avg_amount AS diff_from_avg\nFROM sales s, sale_stats ss;`, codeNote: "Without a CTE you would need to repeat the AVG subquery." }
+          ]
+        },
+        {
+          id: 4, title: "Mini Challenge", subtitle: "Test your knowledge", xp: 40, color: "#F59E0B", glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            { id: "c1", question: "What keyword introduces a CTE?", code: null, options: ["CTE", "WITH", "DEFINE", "TEMP"], correct: 1, body: "The WITH keyword introduces one or more Common Table Expressions before the main SELECT statement." },
+            { id: "c2", question: "What are the two parts of a recursive CTE?", code: null, options: ["SELECT and FROM", "Anchor member and recursive member", "HEAD and TAIL", "BASE and STEP"], correct: 1, body: "A recursive CTE has an anchor member (base case) and a recursive member joined by UNION ALL." },
+            { id: "c3", question: "What advantage does a CTE have over an inline subquery?", code: null, options: ["It runs faster always", "It can be referenced multiple times in the same query", "It persists across sessions", "It creates a permanent table"], correct: 1, body: "A CTE can be referenced multiple times in the main query without duplicating the subquery logic." }
+          ]
+        }
+      ]
+    },
+    // ─── Chapter 12: Window Functions ───
+    {
+      no: 12,
+      name: "Window Functions",
+      difficulty: "Intermediate",
+      duration: "12 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1, title: "ROW_NUMBER & RANK", subtitle: "Assign rankings to rows", xp: 30, color: "#3B82F6", glow: "rgba(59,130,246,0.35)",
+          steps: [
+            { heading: "ROW_NUMBER", body: "ROW_NUMBER assigns a unique sequential integer to each row within a partition. Ties get different numbers based on the ORDER BY.", code: `-- Assign a row number to each employee by salary\nSELECT name, department, salary,\n  ROW_NUMBER() OVER (PARTITION BY department ORDER BY salary DESC) AS rn\nFROM employees;`, codeNote: "ROW_NUMBER never produces duplicate numbers within a partition." },
+            { heading: "RANK vs DENSE_RANK", body: "RANK leaves gaps after ties while DENSE_RANK does not. For example, two tied first-place rows make the next RANK = 3 but DENSE_RANK = 2.", code: `-- Compare RANK and DENSE_RANK\nSELECT name, score,\n  RANK() OVER (ORDER BY score DESC) AS rank_val,\n  DENSE_RANK() OVER (ORDER BY score DESC) AS dense_rank_val\nFROM students;`, codeNote: "RANK skips numbers after ties; DENSE_RANK does not." }
+          ]
+        },
+        {
+          id: 2, title: "OVER & PARTITION BY", subtitle: "Define the window frame", xp: 30, color: "#10B981", glow: "rgba(16,185,129,0.35)",
+          steps: [
+            { heading: "The OVER Clause", body: "The OVER clause defines the window for a function. Without PARTITION BY, the window is the entire result set. Adding ORDER BY controls the row ordering.", code: `-- Running total of sales ordered by date\nSELECT sale_date, amount,\n  SUM(amount) OVER (ORDER BY sale_date) AS running_total\nFROM sales;`, codeNote: "SUM with OVER computes a running total without GROUP BY." },
+            { heading: "PARTITION BY", body: "PARTITION BY divides rows into groups for the window function. Each partition is processed independently, similar to GROUP BY but without collapsing rows.", code: `-- Running total per department\nSELECT department, sale_date, amount,\n  SUM(amount) OVER (PARTITION BY department ORDER BY sale_date) AS dept_running\nFROM sales;`, codeNote: "Each department gets its own independent running total." }
+          ]
+        },
+        {
+          id: 3, title: "LAG & LEAD", subtitle: "Access adjacent rows", xp: 20, color: "#8B5CF6", glow: "rgba(139,92,246,0.35)",
+          steps: [
+            { heading: "Comparing to Previous or Next Rows", body: "LAG accesses the previous row's value and LEAD accesses the next row's value. These are useful for calculating differences between consecutive rows.", code: `-- Compare each month's revenue to the previous month\nSELECT month, revenue,\n  LAG(revenue) OVER (ORDER BY month) AS prev_revenue,\n  revenue - LAG(revenue) OVER (ORDER BY month) AS change\nFROM monthly_revenue;`, codeNote: "LAG(column, 1) is the default; use LAG(column, 2) to go back two rows." }
+          ]
+        },
+        {
+          id: 4, title: "Mini Challenge", subtitle: "Test your knowledge", xp: 40, color: "#F59E0B", glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            { id: "c1", question: "What does ROW_NUMBER do with tied values?", code: null, options: ["Assigns the same number", "Leaves gaps", "Assigns different numbers arbitrarily", "Returns NULL"], correct: 2, body: "ROW_NUMBER always assigns unique sequential integers. Tied values receive different numbers based on internal row order." },
+            { id: "c2", question: "What is the difference between RANK and DENSE_RANK?", code: null, options: ["RANK is faster", "RANK leaves gaps after ties, DENSE_RANK does not", "DENSE_RANK only works with numbers", "There is no difference"], correct: 1, body: "RANK skips numbers after ties (1, 1, 3) while DENSE_RANK keeps consecutive numbers (1, 1, 2)." },
+            { id: "c3", question: "What does PARTITION BY do in a window function?", code: null, options: ["Filters rows", "Divides rows into independent groups for the window", "Sorts the final output", "Limits the result count"], correct: 1, body: "PARTITION BY splits the result set into partitions. The window function is applied independently within each partition." }
+          ]
+        }
+      ]
+    },
+    // ─── Chapter 13: Indexes & Performance ───
+    {
+      no: 13,
+      name: "Indexes & Performance",
+      difficulty: "Intermediate",
+      duration: "12 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1, title: "Creating Indexes", subtitle: "Speed up your queries", xp: 30, color: "#3B82F6", glow: "rgba(59,130,246,0.35)",
+          steps: [
+            { heading: "CREATE INDEX Basics", body: "An index is a data structure that speeds up lookups on a column. Creating an index on frequently queried columns can dramatically reduce query time.", code: `-- Create an index on the email column\nCREATE INDEX idx_users_email ON users (email);\n\n-- Create a composite index on two columns\nCREATE INDEX idx_orders_cust_date ON orders (customer_id, order_date);`, codeNote: "Composite indexes help queries that filter on multiple columns." },
+            { heading: "Unique Indexes", body: "A unique index enforces that no two rows can have the same value in the indexed column. It acts as both a constraint and a performance optimization.", code: `-- Unique index prevents duplicate emails\nCREATE UNIQUE INDEX idx_unique_email ON users (email);\n\n-- Attempting a duplicate insert will fail\nINSERT INTO users (name, email) VALUES ('Alice', 'alice@example.com');\nINSERT INTO users (name, email) VALUES ('Bob', 'alice@example.com'); -- Error!`, codeNote: "Unique indexes combine data integrity with fast lookups." }
+          ]
+        },
+        {
+          id: 2, title: "Query Plans", subtitle: "Understand how queries execute", xp: 30, color: "#10B981", glow: "rgba(16,185,129,0.35)",
+          steps: [
+            { heading: "Using EXPLAIN", body: "EXPLAIN shows the execution plan the database will use for a query. It reveals whether indexes are being used or if a full table scan occurs.", code: `-- See the query plan\nEXPLAIN SELECT * FROM users WHERE email = 'alice@example.com';\n\n-- More detail with ANALYZE (actually runs the query)\nEXPLAIN ANALYZE SELECT * FROM orders WHERE customer_id = 42;`, codeNote: "Look for 'Seq Scan' (slow) vs 'Index Scan' (fast) in the output." },
+            { heading: "Reading Plan Output", body: "Key things to look for are scan type, estimated rows, and cost. An Index Scan means your index is working. A Sequential Scan means the database reads every row.", code: `-- If you see Seq Scan, consider adding an index\n-- Before: Seq Scan on orders (cost=0.00..1520.00)\nCREATE INDEX idx_orders_customer ON orders (customer_id);\n-- After: Index Scan using idx_orders_customer (cost=0.00..8.27)`, codeNote: "Indexes can reduce costs by orders of magnitude on large tables." }
+          ]
+        },
+        {
+          id: 3, title: "When to Index", subtitle: "Balance speed and overhead", xp: 20, color: "#8B5CF6", glow: "rgba(139,92,246,0.35)",
+          steps: [
+            { heading: "Index Trade-offs", body: "Indexes speed up reads but slow down writes because every INSERT, UPDATE, or DELETE must also update the index. Only index columns that are frequently queried or used in WHERE, JOIN, and ORDER BY clauses.", code: `-- Good candidates for indexing:\n-- Columns in WHERE clauses\nSELECT * FROM products WHERE category_id = 5;\n-- Columns in JOIN conditions\nSELECT * FROM orders o JOIN customers c ON o.customer_id = c.id;\n-- Columns in ORDER BY (for large result sets)\nSELECT * FROM logs ORDER BY created_at DESC LIMIT 100;`, codeNote: "Avoid indexing columns with very low cardinality like boolean flags." }
+          ]
+        },
+        {
+          id: 4, title: "Mini Challenge", subtitle: "Test your knowledge", xp: 40, color: "#F59E0B", glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            { id: "c1", question: "What does CREATE INDEX do?", code: null, options: ["Creates a new table", "Builds a data structure for faster lookups", "Backs up the database", "Adds a foreign key"], correct: 1, body: "CREATE INDEX builds a data structure (typically a B-tree) that allows the database to find rows faster without scanning the entire table." },
+            { id: "c2", question: "What SQL command shows a query's execution plan?", code: null, options: ["SHOW PLAN", "EXPLAIN", "DESCRIBE QUERY", "ANALYZE TABLE"], correct: 1, body: "EXPLAIN displays the execution plan the database engine will use, showing scan types, costs, and whether indexes are utilized." },
+            { id: "c3", question: "Why shouldn't you index every column?", code: null, options: ["Indexes take no space", "Indexes slow down INSERT, UPDATE, and DELETE operations", "The database ignores extra indexes", "Indexes only work on primary keys"], correct: 1, body: "Each index must be maintained on every write operation. Too many indexes degrade write performance and consume storage." }
+          ]
+        }
+      ]
+    },
+    // ─── Chapter 14: Transactions ───
+    {
+      no: 14,
+      name: "Transactions",
+      difficulty: "Intermediate",
+      duration: "12 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1, title: "BEGIN & COMMIT", subtitle: "Group operations atomically", xp: 30, color: "#3B82F6", glow: "rgba(59,130,246,0.35)",
+          steps: [
+            { heading: "Starting a Transaction", body: "BEGIN starts a transaction block. All statements after BEGIN are part of the same atomic unit and are only applied when you issue COMMIT.", code: `-- Transfer funds between accounts atomically\nBEGIN;\nUPDATE accounts SET balance = balance - 100 WHERE id = 1;\nUPDATE accounts SET balance = balance + 100 WHERE id = 2;\nCOMMIT;`, codeNote: "Both updates succeed together or neither is applied." },
+            { heading: "Why Transactions Matter", body: "Without transactions, a failure between two related statements could leave your data in an inconsistent state. Transactions ensure all-or-nothing execution.", code: `-- Without a transaction, a crash here leaves data inconsistent\nUPDATE inventory SET quantity = quantity - 1 WHERE product_id = 10;\n-- If the server crashes before the next line, the order is lost\nINSERT INTO order_items (order_id, product_id) VALUES (50, 10);`, codeNote: "Wrapping both statements in BEGIN/COMMIT prevents partial updates." }
+          ]
+        },
+        {
+          id: 2, title: "ROLLBACK", subtitle: "Undo changes on error", xp: 30, color: "#10B981", glow: "rgba(16,185,129,0.35)",
+          steps: [
+            { heading: "Using ROLLBACK", body: "ROLLBACK discards all changes made since the last BEGIN. Use it when an error occurs and you need to revert to a clean state.", code: `-- Rollback on error\nBEGIN;\nUPDATE accounts SET balance = balance - 500 WHERE id = 1;\n-- Check: does the sender have enough funds?\n-- If not, undo everything\nROLLBACK;`, codeNote: "ROLLBACK undoes all changes back to the BEGIN statement." },
+            { heading: "Savepoints", body: "Savepoints let you roll back part of a transaction without discarding everything. You can set a savepoint and roll back to it while keeping earlier work intact.", code: `BEGIN;\nINSERT INTO orders (customer_id, total) VALUES (1, 200);\nSAVEPOINT before_items;\nINSERT INTO order_items (order_id, product_id) VALUES (100, 999);\n-- Oops, bad product ID — roll back just the item insert\nROLLBACK TO before_items;\nINSERT INTO order_items (order_id, product_id) VALUES (100, 42);\nCOMMIT;`, codeNote: "The order insert is preserved; only the bad item is rolled back." }
+          ]
+        },
+        {
+          id: 3, title: "ACID Properties", subtitle: "The four guarantees of transactions", xp: 20, color: "#8B5CF6", glow: "rgba(139,92,246,0.35)",
+          steps: [
+            { heading: "Understanding ACID", body: "ACID stands for Atomicity, Consistency, Isolation, and Durability. These properties guarantee reliable transaction processing even during system failures.", code: `-- ACID in action:\n-- Atomicity:    Both statements succeed or both fail\n-- Consistency:  Constraints are checked at COMMIT\n-- Isolation:    Other sessions don't see partial changes\n-- Durability:   Once committed, data survives a crash\n\nBEGIN;\nUPDATE accounts SET balance = balance - 50 WHERE id = 1;\nUPDATE accounts SET balance = balance + 50 WHERE id = 2;\nCOMMIT; -- All four guarantees apply`, codeNote: "ACID is the foundation of reliable relational databases." }
+          ]
+        },
+        {
+          id: 4, title: "Mini Challenge", subtitle: "Test your knowledge", xp: 40, color: "#F59E0B", glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            { id: "c1", question: "What does BEGIN do in SQL?", code: null, options: ["Starts the database server", "Starts a transaction block", "Creates a new table", "Locks the entire database"], correct: 1, body: "BEGIN marks the start of a transaction. All subsequent statements are grouped until a COMMIT or ROLLBACK." },
+            { id: "c2", question: "What does ROLLBACK do?", code: null, options: ["Saves all changes permanently", "Discards all changes since the last BEGIN", "Deletes the table", "Restarts the query"], correct: 1, body: "ROLLBACK undoes all changes made within the current transaction, reverting to the state before BEGIN." },
+            { id: "c3", question: "What does the 'A' in ACID stand for?", code: null, options: ["Availability", "Atomicity", "Authentication", "Aggregation"], correct: 1, body: "Atomicity means a transaction is all-or-nothing. Either every statement in the transaction succeeds, or none of them are applied." }
+          ]
+        }
+      ]
+    },
+    // ─── Chapter 15: Views & Stored Procedures ───
+    {
+      no: 15,
+      name: "Views & Stored Procedures",
+      difficulty: "Intermediate",
+      duration: "12 min",
+      totalXP: 120,
+      parts: [
+        {
+          id: 1, title: "Creating Views", subtitle: "Save reusable queries", xp: 30, color: "#3B82F6", glow: "rgba(59,130,246,0.35)",
+          steps: [
+            { heading: "CREATE VIEW Basics", body: "A view is a saved SELECT query that acts like a virtual table. You can query it just like a regular table, but it always reflects the latest data.", code: `-- Create a view for active premium users\nCREATE VIEW active_premium_users AS\nSELECT id, name, email\nFROM users\nWHERE active = true AND plan = 'premium';\n\n-- Use the view like a table\nSELECT * FROM active_premium_users;`, codeNote: "Views simplify complex queries and provide a clean interface." },
+            { heading: "Updating and Dropping Views", body: "Use CREATE OR REPLACE VIEW to modify an existing view. DROP VIEW removes it entirely. Views don't store data, so dropping one doesn't delete any rows.", code: `-- Update the view definition\nCREATE OR REPLACE VIEW active_premium_users AS\nSELECT id, name, email, created_at\nFROM users\nWHERE active = true AND plan = 'premium';\n\n-- Remove the view\nDROP VIEW IF EXISTS active_premium_users;`, codeNote: "CREATE OR REPLACE avoids needing to DROP first." }
+          ]
+        },
+        {
+          id: 2, title: "Stored Procedures", subtitle: "Encapsulate logic in the database", xp: 30, color: "#10B981", glow: "rgba(16,185,129,0.35)",
+          steps: [
+            { heading: "What Are Stored Procedures?", body: "A stored procedure is a block of SQL saved in the database that you can call by name. It can accept parameters, execute multiple statements, and contain control flow.", code: `-- Create a stored procedure to deactivate old users\nCREATE PROCEDURE deactivate_old_users(cutoff_days INT)\nLANGUAGE SQL\nAS $$\n  UPDATE users\n  SET active = false\n  WHERE last_login < NOW() - INTERVAL '1 day' * cutoff_days;\n$$;\n\n-- Call the procedure\nCALL deactivate_old_users(90);`, codeNote: "CALL executes the procedure with the given arguments." },
+            { heading: "Procedures vs Functions", body: "Stored procedures use CALL and can perform actions like INSERT or UPDATE. Functions return a value and can be used inside SELECT statements. Choose based on your use case.", code: `-- Create a function that returns a value\nCREATE FUNCTION get_user_count()\nRETURNS INT\nLANGUAGE SQL\nAS $$\n  SELECT COUNT(*) FROM users WHERE active = true;\n$$;\n\n-- Use in a SELECT\nSELECT get_user_count() AS total_active;`, codeNote: "Functions return values; procedures perform actions." }
+          ]
+        },
+        {
+          id: 3, title: "Benefits of Views & Procedures", subtitle: "Security, reuse, and abstraction", xp: 20, color: "#8B5CF6", glow: "rgba(139,92,246,0.35)",
+          steps: [
+            { heading: "Why Use Views and Stored Procedures?", body: "Views hide complex joins from application code and can restrict which columns users see. Stored procedures centralize business logic in the database and reduce round trips between app and server.", code: `-- View for restricted access: analysts see aggregates, not raw data\nCREATE VIEW sales_summary AS\nSELECT department, SUM(amount) AS total, COUNT(*) AS num_sales\nFROM sales\nGROUP BY department;\n\n-- Grant access to the view, not the underlying table\nGRANT SELECT ON sales_summary TO analyst_role;`, codeNote: "Views provide a security layer by exposing only what's needed." }
+          ]
+        },
+        {
+          id: 4, title: "Mini Challenge", subtitle: "Test your knowledge", xp: 40, color: "#F59E0B", glow: "rgba(245,158,11,0.4)",
+          isChallengepart: true,
+          challenges: [
+            { id: "c1", question: "What does a SQL view store?", code: null, options: ["A copy of the data", "The query definition only", "Indexes on the table", "Backup of the table"], correct: 1, body: "A view stores the query definition, not the data itself. Each time you query a view, it executes the underlying SELECT." },
+            { id: "c2", question: "How do you execute a stored procedure?", code: null, options: ["SELECT procedure_name()", "RUN procedure_name", "CALL procedure_name()", "EXEC procedure_name"], correct: 2, body: "The CALL statement is the standard way to execute a stored procedure with its arguments." },
+            { id: "c3", question: "What is a key difference between a stored procedure and a function?", code: null, options: ["Procedures are faster", "Functions return a value and can be used in SELECT", "Procedures cannot accept parameters", "Functions cannot query tables"], correct: 1, body: "Functions return a value and can be embedded in SELECT statements. Procedures perform actions and are invoked with CALL." }
+          ]
+        }
+      ]
+    },
   ],
 };
 

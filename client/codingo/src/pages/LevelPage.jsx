@@ -1,7 +1,12 @@
 // src/pages/LevelPage.jsx
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { getCourseData, getChapterData } from '../components/LandingPage/LevelData.js';
+import CodeMirror from '@uiw/react-codemirror';
+import { javascript } from '@codemirror/lang-javascript';
+import { python } from '@codemirror/lang-python';
+import { oneDark } from '@codemirror/theme-one-dark';
 
 // ─── SYNTAX HIGHLIGHTER ───────────────────────────────────────────────────────
 function highlight(code) {
@@ -275,7 +280,7 @@ function ChallengeContent({ part, answers, onAnswer, submitted }) {
 // ─── SIDEBAR PART ITEM ────────────────────────────────────────────────────────
 function SidebarPartItem({ part, index, isActive, isDone, isAccessible, onClick }) {
   const icons = ['📖', '🔢', '⚡', '🏆', '📌', '🔑', '🛠️'];
-  const icon = icons[index] ?? '📌';
+  const icon = part.codeChallenge ? '</>' : part.isChallengepart ? '🏆' : (icons[index] ?? '📌');
 
   return (
     <div
@@ -336,6 +341,178 @@ function SidebarPartItem({ part, index, isActive, isDone, isAccessible, onClick 
   );
 }
 
+// ─── CODE CHALLENGE CONTENT ───────────────────────────────────────────────────
+// Reads:  part.codeChallenge → { prompt, starterCode, testCases[], hint }
+function CodeChallengeContent({ part, submitted, onSubmitCode }) {
+  const [userCode, setUserCode] = useState(part.codeChallenge?.starterCode || '');
+  const [results, setResults] = useState(null);
+  const [isRunning, setIsRunning] = useState(false);
+  const [showHint, setShowHint] = useState(false);
+
+  const challenge = part.codeChallenge;
+  if (!challenge) return null;
+
+  // Pick CodeMirror language extension based on the course
+  const langExtension = challenge.language === 'python' ? python() : javascript();
+
+  function runTests() {
+    setIsRunning(true);
+    setResults(null);
+
+    setTimeout(() => {
+      const testResults = (challenge.testCases || []).map((tc) => {
+        try {
+          // Create a sandboxed function from user code + test call
+          const callExpr = tc.call || `${tc.input}`;
+          const fn = new Function(userCode + '\nreturn ' + callExpr + ';');
+          const actual = fn();
+          const expected = tc.expectedOutput !== undefined ? tc.expectedOutput : tc.expected;
+          const passed = JSON.stringify(actual) === JSON.stringify(expected);
+          return { ...tc, actual, passed, expected };
+        } catch (err) {
+          return { ...tc, actual: err.message, passed: false, error: true, expected: tc.expectedOutput !== undefined ? tc.expectedOutput : tc.expected };
+        }
+      });
+      setResults(testResults);
+      setIsRunning(false);
+
+      if (testResults.every((r) => r.passed) && !submitted) {
+        onSubmitCode();
+      }
+    }, 300);
+  }
+
+  const allPassed = results && results.every((r) => r.passed);
+
+  return (
+    <div className="space-y-5">
+      {/* intro */}
+      <div
+        className="flex gap-3 items-start p-4 rounded-xl border"
+        style={{ background: 'rgba(139,92,246,0.06)', borderColor: 'rgba(139,92,246,0.2)' }}
+      >
+        <span className="text-2xl shrink-0">💻</span>
+        <div>
+          <p className="text-[0.86rem] text-white/60 leading-relaxed">
+            <strong className="text-purple-400">Code Challenge</strong> — Write code to solve the problem.
+            Pass all tests to earn <strong className="text-purple-400">+{part.xp} XP</strong>.
+          </p>
+        </div>
+      </div>
+
+      {/* prompt */}
+      <div className="rounded-2xl border border-white/10 bg-[#161625] p-5">
+        <h3 className="text-lg font-bold text-white mb-3" style={{ fontFamily: "'Syne', sans-serif" }}>
+          {challenge.prompt}
+        </h3>
+        {challenge.description && (
+          <p className="text-sm text-white/50 leading-relaxed mb-4">{challenge.description}</p>
+        )}
+
+        {/* hint toggle */}
+        {challenge.hint && (
+          <button
+            type="button"
+            onClick={() => setShowHint(!showHint)}
+            className="text-xs text-amber-400/70 hover:text-amber-400 font-mono mb-3 transition"
+          >
+            {showHint ? '🔽 Hide hint' : '💡 Show hint'}
+          </button>
+        )}
+        {showHint && challenge.hint && (
+          <div className="px-4 py-2.5 rounded-lg bg-amber-500/[0.07] border border-amber-500/20 text-sm text-amber-200/80 mb-4">
+            {challenge.hint}
+          </div>
+        )}
+
+        {/* CodeMirror editor */}
+        <div className="rounded-xl overflow-hidden border border-white/10">
+          <CodeMirror
+            value={userCode}
+            height="220px"
+            theme={oneDark}
+            extensions={[langExtension]}
+            onChange={(val) => setUserCode(val)}
+            basicSetup={{
+              lineNumbers: true,
+              highlightActiveLine: true,
+              bracketMatching: true,
+              autocompletion: true,
+              foldGutter: false,
+            }}
+          />
+        </div>
+
+        {/* run button */}
+        <div className="flex items-center gap-3 mt-4">
+          <button
+            type="button"
+            onClick={runTests}
+            disabled={isRunning || allPassed}
+            className="px-6 py-2.5 rounded-xl font-bold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              background: allPassed ? '#10B981' : 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
+              color: 'white',
+              boxShadow: allPassed ? '0 0 20px rgba(16,185,129,0.3)' : '0 4px 20px rgba(139,92,246,0.3)',
+            }}
+          >
+            {isRunning ? '⏳ Running...' : allPassed ? '✅ All Tests Passed!' : '▶ Run Tests'}
+          </button>
+          {results && !allPassed && (
+            <span className="text-sm text-red-400 font-semibold">
+              {results.filter(r => r.passed).length}/{results.length} passed
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* test results */}
+      {results && (
+        <div className="space-y-2">
+          {results.map((r, i) => (
+            <div
+              key={i}
+              className={`rounded-lg border p-3 text-sm font-mono ${
+                r.passed
+                  ? 'bg-emerald-500/[0.07] border-emerald-500/25'
+                  : 'bg-red-500/[0.07] border-red-500/25'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-white/70">{r.passed ? '✅' : '❌'} Test {i + 1}</span>
+                <span className="text-white/40 text-xs">{r.description || r.label || r.call}</span>
+              </div>
+              <div className="text-white/50 text-xs">
+                Expected: <span className="text-cyan-400">{JSON.stringify(r.expected)}</span>
+                {!r.passed && (
+                  <> | Got: <span className="text-red-400">{r.error ? r.actual : JSON.stringify(r.actual)}</span></>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* success card */}
+      {allPassed && (
+        <div className="flex flex-col items-center text-center p-8 rounded-2xl border border-white/10 bg-[#161625]">
+          <div className="text-5xl mb-3">🏆</div>
+          <h3 className="text-2xl font-extrabold text-white mb-1.5" style={{ fontFamily: "'Syne', sans-serif" }}>
+            Challenge Complete!
+          </h3>
+          <p className="text-sm text-white/40 mb-5">All {results.length} tests passed</p>
+          <div
+            className="flex items-center gap-2 px-6 py-3 rounded-xl border font-mono font-bold text-lg"
+            style={{ color: '#8B5CF6', background: 'rgba(139,92,246,0.08)', borderColor: 'rgba(139,92,246,0.25)' }}
+          >
+            ⚡ +{part.xp} XP Earned
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 export default function LevelPage() {
   const { courseId, levelNo } = useParams();
@@ -358,8 +535,48 @@ export default function LevelPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [xpBurst, setXpBurst] = useState(null);        // { amount, key, particles: [...] }
   const [showLevelUp, setShowLevelUp] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const xpBurstKeyRef = useRef(0);
+  const savedPartsRef = useRef(new Set());  // track which parts already synced
   const mainRef = useRef(null);
+  const apiUrl = import.meta.env.VITE_API_URL || '';
+
+  // ── Sync progress to backend ──────────────────────────────────────────────
+  const syncProgress = useCallback(async (partXp) => {
+    const token = localStorage.getItem('token');
+    if (!token || !courseId) return;
+    try {
+      const res = await axios.patch(
+        `${apiUrl}/api/learning/courses/${courseId}/progress`,
+        { lectureNumber: currentNo, completed: true, points: partXp },
+        { withCredentials: true, headers: { Authorization: `Bearer ${token}` } }
+      );
+      // Refresh local user data with updated stats
+      if (res.data?.userStats) {
+        const stored = localStorage.getItem('user');
+        if (stored) {
+          const user = JSON.parse(stored);
+          user.totalXp = res.data.userStats.totalXp;
+          user.level = res.data.userStats.level;
+          user.league = res.data.userStats.league;
+          localStorage.setItem('user', JSON.stringify(user));
+          window.dispatchEvent(new Event('auth:user-updated'));
+        }
+      }
+      // Also fetch fresh user data so header XP is fully up to date
+      try {
+        const meRes = await axios.get(`${apiUrl}/api/auth/user/me`, {
+          withCredentials: true, headers: { Authorization: `Bearer ${token}` }
+        });
+        if (meRes.data?.user) {
+          localStorage.setItem('user', JSON.stringify(meRes.data.user));
+          window.dispatchEvent(new Event('auth:user-updated'));
+        }
+      } catch { /* non-critical */ }
+    } catch {
+      // Keep UX smooth even if backend sync fails
+    }
+  }, [apiUrl, courseId, currentNo]);
 
   // ── Reset all state when the level changes ────────────────────────────────
   // React Router reuses the same component instance across levels (same route
@@ -371,6 +588,7 @@ export default function LevelPage() {
     setAnswers({});
     setSubmitted(false);
     setSidebarOpen(false);
+    savedPartsRef.current = new Set();
     if (mainRef.current) mainRef.current.scrollTop = 0;
   }, [levelNo, courseId]);
 
@@ -398,6 +616,7 @@ if (!levelData || !levelData.parts) {
   const xpPct = totalXP > 0 ? Math.round((earnedXP / totalXP) * 100) : 0;
   const part = parts[currentPartIdx];
   const isChallenge = !!part.isChallengepart;                    // ← from data
+  const isCodeChallenge = !!part.codeChallenge;                  // ← code challenge
   const isSubmitted = submitted || completedParts.has(currentPartIdx);
   const allAnswered = isChallenge
     ? part.challenges.every((_, qi) => answers[qi] !== undefined)
@@ -405,7 +624,8 @@ if (!levelData || !levelData.parts) {
 
   // Bottom-right button label
   const nextLabel =
-    isChallenge && !isSubmitted ? 'Submit ✓'
+    isCodeChallenge && !isSubmitted ? 'Skip →'
+    : isChallenge && !isSubmitted ? 'Submit ✓'
       : currentPartIdx === parts.length - 1 ? 'Next Chapter →'
         : 'Next Part →';
 
@@ -429,7 +649,7 @@ if (!levelData || !levelData.parts) {
     // Reset answers when changing parts so each part starts fresh
     setAnswers({});
     // Restore submitted state if this challenge part was already done
-    setSubmitted(parts[idx].isChallengepart ? completedParts.has(idx) : false);
+    setSubmitted((parts[idx].isChallengepart || parts[idx].codeChallenge) ? completedParts.has(idx) : false);
     setSidebarOpen(false);
     if (mainRef.current) mainRef.current.scrollTop = 0;
   }
@@ -452,7 +672,35 @@ if (!levelData || !levelData.parts) {
     setTimeout(() => setXpBurst(null), 1400);
   }
 
+  function handleCodeChallengeComplete() {
+    if (!completedParts.has(currentPartIdx)) {
+      setSubmitted(true);
+      setCompletedParts(prev => new Set([...prev, currentPartIdx]));
+      setEarnedXP(prev => prev + part.xp);
+      triggerXpBurst(part.xp);
+      if (!savedPartsRef.current.has(currentPartIdx)) {
+        savedPartsRef.current.add(currentPartIdx);
+        syncProgress(part.xp);
+      }
+      if (completedParts.size + 1 === parts.length) {
+        setTimeout(() => setShowLevelUp(true), 900);
+      }
+    }
+  }
+
   function handleNext() {
+    if (isCodeChallenge && !isSubmitted) {
+      // ── Skip code challenge (user can still go back)
+      const nextIdx = currentPartIdx + 1;
+      if (nextIdx < parts.length) {
+        setCurrentPartIdx(nextIdx);
+        setAnswers({});
+        setSubmitted((parts[nextIdx].isChallengepart || parts[nextIdx].codeChallenge) ? completedParts.has(nextIdx) : false);
+        setSidebarOpen(false);
+        if (mainRef.current) mainRef.current.scrollTop = 0;
+      }
+      return;
+    }
     if (isChallenge && !isSubmitted) {
       // ── Submit challenge
       setSubmitted(true);
@@ -460,6 +708,11 @@ if (!levelData || !levelData.parts) {
         setCompletedParts(prev => new Set([...prev, currentPartIdx]));
         setEarnedXP(prev => prev + part.xp);
         triggerXpBurst(part.xp);
+        // Sync part XP to backend
+        if (!savedPartsRef.current.has(currentPartIdx)) {
+          savedPartsRef.current.add(currentPartIdx);
+          syncProgress(part.xp);
+        }
         // Level-up check: show modal when all parts completed
         if (completedParts.size + 1 === parts.length) {
           setTimeout(() => setShowLevelUp(true), 900);
@@ -471,11 +724,16 @@ if (!levelData || !levelData.parts) {
         setCompletedParts(prev => new Set([...prev, currentPartIdx]));
         setEarnedXP(prev => prev + part.xp);
         triggerXpBurst(part.xp);
+        // Sync part XP to backend
+        if (!savedPartsRef.current.has(currentPartIdx)) {
+          savedPartsRef.current.add(currentPartIdx);
+          syncProgress(part.xp);
+        }
       }
       const nextIdx = currentPartIdx + 1;
       setCurrentPartIdx(nextIdx);
       setAnswers({});
-      setSubmitted(parts[nextIdx].isChallengepart ? completedParts.has(nextIdx) : false);
+      setSubmitted((parts[nextIdx].isChallengepart || parts[nextIdx].codeChallenge) ? completedParts.has(nextIdx) : false);
       setSidebarOpen(false);
       if (mainRef.current) mainRef.current.scrollTop = 0;
     } else {
@@ -484,6 +742,11 @@ if (!levelData || !levelData.parts) {
         setCompletedParts(prev => new Set([...prev, currentPartIdx]));
         setEarnedXP(prev => prev + part.xp);
         triggerXpBurst(part.xp);
+        // Sync part XP to backend
+        if (!savedPartsRef.current.has(currentPartIdx)) {
+          savedPartsRef.current.add(currentPartIdx);
+          syncProgress(part.xp);
+        }
         // Level-up modal before navigating
         setTimeout(() => {
           setShowLevelUp(true);
@@ -732,8 +995,14 @@ if (!levelData || !levelData.parts) {
 
             <div className="h-px bg-white/[0.07] mb-8" />
 
-            {/* lesson or challenge */}
-            {!isChallenge ? (
+            {/* lesson, MCQ challenge, or code challenge */}
+            {isCodeChallenge ? (
+              <CodeChallengeContent
+                part={part}
+                submitted={isSubmitted}
+                onSubmitCode={handleCodeChallengeComplete}
+              />
+            ) : !isChallenge ? (
               <LessonContent part={part} />
             ) : (
               <ChallengeContent

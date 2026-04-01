@@ -184,25 +184,36 @@ function CourseMarketColumn() {
     { title: "Functions Deep Dive", course: "JavaScript Fundamentals", time: "Tomorrow · 7:30 PM" },
     { title: "React State", course: "React Foundations", time: "Fri · 5:00 PM" },
   ]);
-  const [activityFeed] = useState([
-    { title: "Completed", detail: "React Hooks Quiz", time: "Today" },
-    { title: "Gained", detail: "+120 XP in Python Basics", time: "Yesterday" },
-    { title: "Unlocked", detail: "Lesson 12: Objects", time: "Yesterday" },
-  ]);
+  const [activityFeed] = useState(() => {
+    const notifs = getStoredUser()?.notifications || [];
+    if (notifs.length > 0) {
+      return notifs.slice(0, 5).map(n => ({
+        title: n.title || 'Activity',
+        detail: n.detail || n.message || '',
+        time: n.createdAt ? new Date(n.createdAt).toLocaleDateString() : 'Recent',
+      }));
+    }
+    return [
+      { title: "Completed", detail: "React Hooks Quiz", time: "Today" },
+      { title: "Gained", detail: "+120 XP in Python Basics", time: "Yesterday" },
+      { title: "Unlocked", detail: "Lesson 12: Objects", time: "Yesterday" },
+    ];
+  });
   const [earnedBadges, setEarnedBadges] = useState([]);
   const [isLoadingBadges, setIsLoadingBadges] = useState(false);
   const [rewardClaimed, setRewardClaimed] = useState(false);
   const [isClaimingReward, setIsClaimingReward] = useState(false);
   const [rewardBannerDismissed, setRewardBannerDismissed] = useState(false);
+  const [activityData, setActivityData] = useState([]);
 
   // const totalXP = 4850;
   // const currentLevel = 18;
   // const xpToNextLevel = 5000;
   // const levelProgress = ((totalXP - 4500) / (5000 - 4500)) * 100;
 
-  const githubUsername = "your-username";
+  const _githubUsername = "your-username";
 
-  const formatDate = (date) => {
+  const _formatDate = (date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");
@@ -367,6 +378,20 @@ function CourseMarketColumn() {
     }
   }, [apiUrl]);
 
+  const fetchActivityHeatmap = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    try {
+      const res = await axios.get(`${apiUrl}/api/learning/me/activity`, {
+        withCredentials: true,
+        headers: getAuthHeaders()
+      });
+      setActivityData(Array.isArray(res.data?.activity) ? res.data.activity : []);
+    } catch (error) {
+      console.error('Failed to fetch activity heatmap:', error);
+    }
+  }, [apiUrl]);
+
   const handleEnrollAndStart = async (courseId) => {
     setIsEnrollingCourse(courseId);
     setOverviewError("");
@@ -427,7 +452,8 @@ function CourseMarketColumn() {
   useEffect(() => {
     fetchBadges();
     fetchFriends();
-  }, [fetchBadges, fetchFriends, userIdentifier]);
+    fetchActivityHeatmap();
+  }, [fetchBadges, fetchFriends, fetchActivityHeatmap, userIdentifier]);
 
   const isFirstDashboardVisit = useMemo(() => {
     const firstVisitKey = `dashboard-first-visit:${userIdentifier}`;
@@ -456,6 +482,13 @@ function CourseMarketColumn() {
   }, [enrolledCourses, searchTerm, sortBy, statusFilter]);
 
   const calendarData = useMemo(() => {
+    // Build a map from activityData (real API data)
+    const activityMap = new Map();
+    for (const item of activityData) {
+      const key = typeof item.date === 'string' ? item.date.slice(0, 10) : '';
+      if (key) activityMap.set(key, item.count || 0);
+    }
+
     const data = [];
     const today = new Date();
     const oneYearAgo = new Date(today);
@@ -463,14 +496,16 @@ function CourseMarketColumn() {
 
     let currentDate = new Date(oneYearAgo);
     while (currentDate <= today) {
-      const daySeed = Math.floor(currentDate.getTime() / (24 * 60 * 60 * 1000));
-      const count = Math.abs((daySeed * 17 + 11) % 6);
-      data.push({ date: new Date(currentDate), count });
+      const y = currentDate.getFullYear();
+      const m = String(currentDate.getMonth() + 1).padStart(2, '0');
+      const d = String(currentDate.getDate()).padStart(2, '0');
+      const key = `${y}-${m}-${d}`;
+      data.push({ date: new Date(currentDate), count: activityMap.get(key) || 0 });
       currentDate.setDate(currentDate.getDate() + 1);
     }
 
     return data;
-  }, []);
+  }, [activityData]);
 
   return (
     <>
@@ -490,6 +525,38 @@ function CourseMarketColumn() {
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-2">{greeting}</h1>
           <p className="text-gray-400 text-sm sm:text-base">Please choose a course to start your adventure.</p>
         </header>
+
+        {/* ── CONTINUE LEARNING HERO ──────────────────────────────────────── */}
+        {enrolledCourses.length > 0 && (() => {
+          const recent = [...enrolledCourses].sort((a, b) => (b.progress || 0) - (a.progress || 0)).find(c => c.progress < 100) || enrolledCourses[0];
+          const catalog = courseCatalog[recent.id] || {};
+          return (
+            <div className="mb-6 relative overflow-hidden rounded-2xl border border-cyan-500/20 bg-linear-to-r from-[#0d1b2a] via-[#1b2838] to-[#0d1b2a] p-5 sm:p-7 shadow-xl">
+              <div className="absolute top-0 right-0 w-60 h-60 rounded-full bg-cyan-500/5 -translate-y-1/2 translate-x-1/3" />
+              <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div className="text-5xl">{catalog.icon || '📘'}</div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-mono uppercase tracking-widest text-cyan-400 mb-1">Continue Learning</p>
+                  <h3 className="text-xl sm:text-2xl font-extrabold text-white truncate">{recent.title}</h3>
+                  <div className="flex items-center gap-3 mt-2">
+                    <div className="flex-1 bg-[#0f1419] rounded-full h-2 overflow-hidden border border-[#1f2a38] max-w-xs">
+                      <div className="bg-linear-to-r from-cyan-400 to-emerald-400 h-full rounded-full transition-all" style={{ width: `${recent.progress}%` }} />
+                    </div>
+                    <span className="text-xs text-gray-400 font-mono">{recent.progress}%</span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">{recent.lessons}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/language/${recent.id}`)}
+                  className="shrink-0 px-6 py-3 rounded-xl font-bold text-sm bg-linear-to-r from-cyan-500 to-emerald-500 text-white hover:brightness-110 transition shadow-lg shadow-cyan-500/20 flex items-center gap-2"
+                >
+                  <FaPlayCircle /> Resume
+                </button>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* ── MONTHLY REWARD BANNER ─────────────────────────────────────────── */}
         {!rewardClaimed && !rewardBannerDismissed && (
@@ -549,6 +616,25 @@ function CourseMarketColumn() {
             </div>
           </div>
         )}
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <div className="rounded-xl border border-[#2a3a4a] bg-[#1a2332] p-4 text-center">
+            <div className="text-2xl sm:text-3xl font-extrabold text-orange-400">{totalXP.toLocaleString()}</div>
+            <div className="text-[0.68rem] uppercase tracking-wider text-gray-500 mt-1">Total XP</div>
+          </div>
+          <div className="rounded-xl border border-[#2a3a4a] bg-[#1a2332] p-4 text-center">
+            <div className="text-2xl sm:text-3xl font-extrabold text-cyan-400">Lv.{currentLevel}</div>
+            <div className="text-[0.68rem] uppercase tracking-wider text-gray-500 mt-1">Level</div>
+          </div>
+          <div className="rounded-xl border border-[#2a3a4a] bg-[#1a2332] p-4 text-center">
+            <div className="text-2xl sm:text-3xl font-extrabold text-red-400">🔥 {Number(currentUser?.streakCount || 0)}</div>
+            <div className="text-[0.68rem] uppercase tracking-wider text-gray-500 mt-1">Day Streak</div>
+          </div>
+          <div className="rounded-xl border border-[#2a3a4a] bg-[#1a2332] p-4 text-center">
+            <div className="text-2xl sm:text-3xl font-extrabold text-emerald-400">#{userRank || "-"}</div>
+            <div className="text-[0.68rem] uppercase tracking-wider text-gray-500 mt-1">Rank</div>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <section className="lg:col-span-2 space-y-6">
@@ -722,7 +808,7 @@ function CourseMarketColumn() {
             </div>
 
             <div className="bg-[#1a2332] rounded-2xl p-6 border border-[#2a3a4a] shadow-lg">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
                 <div className="bg-[#141b24] rounded-xl p-4 text-center border border-[#1f2a38]">
                   <div className="text-orange-400 text-3xl font-bold">{totalXP}</div>
                   <div className="text-gray-400 text-xs mt-1">TOTAL XP</div>
@@ -734,6 +820,12 @@ function CourseMarketColumn() {
                 <div className="bg-[#141b24] rounded-xl p-4 text-center border border-[#1f2a38]">
                   <div className="text-emerald-400 text-3xl font-bold">#{userRank || "-"}</div>
                   <div className="text-gray-400 text-xs mt-1">YOUR RANK</div>
+                </div>
+                <div className="bg-[#141b24] rounded-xl p-4 text-center border border-[#1f2a38]">
+                  <div className={`text-3xl font-bold ${{ Bronze: 'text-amber-600', Silver: 'text-gray-300', Gold: 'text-yellow-400', Platinum: 'text-cyan-300' }[learningOverview.stats?.league] || 'text-amber-600'}`}>
+                    {learningOverview.stats?.league || "Bronze"}
+                  </div>
+                  <div className="text-gray-400 text-xs mt-1">LEAGUE</div>
                 </div>
               </div>
 
@@ -941,7 +1033,7 @@ function CourseMarketColumn() {
                   {friends.map((friend) => (
                     <div key={friend._id} className="bg-[#141b24] rounded-lg p-3 border border-[#1f2a38] hover:border-cyan-600/30 transition cursor-pointer" onClick={() => navigate('/friends')}>
                       <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-sm font-bold flex-shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-linear-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-sm font-bold shrink-0">
                           {friend.profilePic ? (
                             <img src={friend.profilePic} alt={friend.username} className="w-full h-full rounded-full object-cover" />
                           ) : (

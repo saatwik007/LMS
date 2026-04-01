@@ -16,6 +16,9 @@ import ProfilePage from './pages/ProfilePage.jsx';
 import CommunityPage from './pages/CommunityPage.jsx';
 import ProgressPage from './pages/ProgressPage.jsx';
 import FriendsPage from './pages/FriendsPage.jsx';
+import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx';
+import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
+import OAuthCallbackPage from './pages/OAuthCallbackPage.jsx';
 import { useEffect, useState } from 'react';
 import LandingPage from './pages/LandingPage.jsx';
 import LandingHeader from './components/LandingPage/LandingHeader.jsx';
@@ -86,7 +89,7 @@ function App() {
 
 function AppShell() {
   const location = useLocation();
-  const sidebarHiddenRoutes = ['/', '/login', '/Login', '/signup', '/next-step'];
+  const sidebarHiddenRoutes = ['/', '/login', '/Login', '/signup', '/next-step', '/forgot-password', '/reset-password', '/oauth/callback'];
   const showSidebar = !sidebarHiddenRoutes.includes(location.pathname);
 
   return (
@@ -103,6 +106,9 @@ function AppShell() {
           <Route path="/register" element={<RegisterationPage />} />
           <Route path="/Register" element={<RegisterationPage />} />
           <Route path="/signup" element={<SignupPage  />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
           <Route path="/next-step" element={<SignupNextPage  />} />
           <Route
             path="/dashboard"

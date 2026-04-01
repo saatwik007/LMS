@@ -23,7 +23,8 @@ const rewardSchema = new mongoose.Schema({
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true, minlength: 3 },
   email:    { type: String, required: true, unique: true },
-  password: { type: String, required: true },
+  password: { type: String },
+  googleId: { type: String, sparse: true },
   profilePic: { type: String, default: '' },
   totalXp: { type: Number, default: 0, min: 0, index: true },
   level: { type: Number, default: 1, min: 1 },
@@ -44,7 +45,9 @@ const userSchema = new mongoose.Schema({
     default: []
   },
   bio: { type: String, default: '', maxlength: 200 },
-  rewards: { type: [rewardSchema], default: [] }
+  rewards: { type: [rewardSchema], default: [] },
+  resetToken: { type: String, default: null },
+  resetTokenExpiry: { type: Date, default: null }
 },
 {
     timestamps: true
