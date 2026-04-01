@@ -9,7 +9,7 @@ import CodeMirror from '@uiw/react-codemirror';
 // import { python } from '@codemirror/lang-python';
 // import { oneDark } from '@codemirror/theme-one-dark';
 
-const STORAGE_KEY = 'lms_levels_unlocked_v1_vertical';
+const STORAGE_KEY_PREFIX = 'lms_levels_unlocked_v1_';
 const ForeignObject = 'foreignObject';
 
 // Format course ID to display name
@@ -44,9 +44,10 @@ export default function LevelsRoute({ courseId, onBack }) {
   const [output, setOutput] = useState('');
   const [testResults, setTestResults] = useState([]);
   const [dailyChallenges, setDailyChallenges] = useState([]);
+  const storageKey = `${STORAGE_KEY_PREFIX}${(courseId || 'default').toLowerCase()}`;
   const [unlocked, setUnlocked] = useState(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(storageKey);
       if (!raw) return [1];
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length) return parsed;
@@ -60,8 +61,42 @@ export default function LevelsRoute({ courseId, onBack }) {
   const courseData = useMemo(() => getCourseData(courseId), [courseId]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(unlocked));
-  }, [unlocked]);
+    localStorage.setItem(storageKey, JSON.stringify(unlocked));
+  }, [unlocked, storageKey]);
+
+  // Fetch backend progress on mount and compute unlocked levels
+  useEffect(() => {
+    if (!courseId) return;
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    async function fetchProgress() {
+      try {
+        const res = await axios.get(`${apiUrl}/api/learning/me/progress`, {
+          withCredentials: true,
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const courses = res.data?.courses || [];
+        const match = courses.find(c => c.id?.toLowerCase() === courseId.toLowerCase());
+        if (match && match.completedLectures > 0) {
+          // Unlock all completed levels + the next one
+          const newUnlocked = [];
+          for (let i = 1; i <= match.completedLectures; i++) newUnlocked.push(i);
+          const nextLevel = match.completedLectures + 1;
+          if (nextLevel <= (match.totalLectures || courseData.totalChapters)) {
+            newUnlocked.push(nextLevel);
+          }
+          setUnlocked(prev => {
+            const merged = new Set([...prev, ...newUnlocked]);
+            return Array.from(merged).sort((a, b) => a - b);
+          });
+        }
+      } catch {
+        // Fall back to localStorage state
+      }
+    }
+    fetchProgress();
+  }, [apiUrl, courseId, courseData.totalChapters]);
 
   const levels = useMemo(
     () => Array.from({ length: courseData.totalChapters }, (_, i) => ({ id: i + 1, title: `Level ${i + 1}` })),
@@ -82,13 +117,16 @@ export default function LevelsRoute({ courseId, onBack }) {
     const token = localStorage.getItem('token');
     if (!token) return;
 
+    const chapter = courseData.chapters?.find(ch => ch.no === levelId);
+    const chapterXP = chapter?.totalXP || 120;
+
     try {
       await axios.patch(
         `${apiUrl}/api/learning/courses/${courseId}/progress`,
         {
           lectureNumber: levelId,
           completed: true,
-          points: 25
+          points: chapterXP
         },
         {
           withCredentials: true,
@@ -430,7 +468,7 @@ export default function LevelsRoute({ courseId, onBack }) {
             <div className="mt-4">
               <button
                 onClick={() => {
-                  localStorage.removeItem(STORAGE_KEY);
+                  localStorage.removeItem(storageKey);
                   setUnlocked([1]);
                 }}
                 className="w-full px-3 py-2 rounded-md bg-gray-700 hover:bg-gray-600 transition text-sm text-gray-200"

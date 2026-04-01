@@ -536,6 +536,7 @@ export default function LevelPage() {
   const [xpBurst, setXpBurst] = useState(null);        // { amount, key, particles: [...] }
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [syncError, setSyncError] = useState('');
   const xpBurstKeyRef = useRef(0);
   const savedPartsRef = useRef(new Set());  // track which parts already synced
   const mainRef = useRef(null);
@@ -573,8 +574,12 @@ export default function LevelPage() {
           window.dispatchEvent(new Event('auth:user-updated'));
         }
       } catch { /* non-critical */ }
-    } catch {
-      // Keep UX smooth even if backend sync fails
+    } catch (err) {
+      const msg = err.response?.data?.message || '';
+      if (msg) {
+        setSyncError(msg);
+        setTimeout(() => setSyncError(''), 6000);
+      }
     }
   }, [apiUrl, courseId, currentNo]);
 
@@ -680,7 +685,7 @@ if (!levelData || !levelData.parts) {
       triggerXpBurst(part.xp);
       if (!savedPartsRef.current.has(currentPartIdx)) {
         savedPartsRef.current.add(currentPartIdx);
-        syncProgress(part.xp);
+        syncProgress(earnedXP + part.xp);
       }
       if (completedParts.size + 1 === parts.length) {
         setTimeout(() => setShowLevelUp(true), 900);
@@ -708,10 +713,10 @@ if (!levelData || !levelData.parts) {
         setCompletedParts(prev => new Set([...prev, currentPartIdx]));
         setEarnedXP(prev => prev + part.xp);
         triggerXpBurst(part.xp);
-        // Sync part XP to backend
+        // Sync cumulative chapter XP to backend
         if (!savedPartsRef.current.has(currentPartIdx)) {
           savedPartsRef.current.add(currentPartIdx);
-          syncProgress(part.xp);
+          syncProgress(earnedXP + part.xp);
         }
         // Level-up check: show modal when all parts completed
         if (completedParts.size + 1 === parts.length) {
@@ -724,10 +729,10 @@ if (!levelData || !levelData.parts) {
         setCompletedParts(prev => new Set([...prev, currentPartIdx]));
         setEarnedXP(prev => prev + part.xp);
         triggerXpBurst(part.xp);
-        // Sync part XP to backend
+        // Sync cumulative chapter XP to backend
         if (!savedPartsRef.current.has(currentPartIdx)) {
           savedPartsRef.current.add(currentPartIdx);
-          syncProgress(part.xp);
+          syncProgress(earnedXP + part.xp);
         }
       }
       const nextIdx = currentPartIdx + 1;
@@ -742,10 +747,10 @@ if (!levelData || !levelData.parts) {
         setCompletedParts(prev => new Set([...prev, currentPartIdx]));
         setEarnedXP(prev => prev + part.xp);
         triggerXpBurst(part.xp);
-        // Sync part XP to backend
+        // Sync cumulative chapter XP to backend
         if (!savedPartsRef.current.has(currentPartIdx)) {
           savedPartsRef.current.add(currentPartIdx);
-          syncProgress(part.xp);
+          syncProgress(earnedXP + part.xp);
         }
         // Level-up modal before navigating
         setTimeout(() => {
@@ -956,6 +961,14 @@ if (!levelData || !levelData.parts) {
           style={{ scrollbarWidth: 'thin', scrollbarColor: '#1e1e32 transparent' }}
         >
           <div className="max-w-3xl mx-auto px-5 md:px-8 pt-10 pb-28">
+
+            {/* Sync error banner */}
+            {syncError && (
+              <div className="mb-4 px-4 py-2.5 rounded-lg bg-red-900/40 border border-red-800/50 text-red-300 text-sm font-semibold flex items-center justify-between">
+                <span>⚠ Progress sync failed: {syncError}</span>
+                <button onClick={() => setSyncError('')} className="text-red-400 hover:text-red-200 ml-3 text-lg leading-none">&times;</button>
+              </div>
+            )}
 
             {/* part header */}
             <div className="mb-8">

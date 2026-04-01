@@ -14,7 +14,7 @@ const DEFAULT_COURSES = [
       description: 'Python is used from automation to AI and data systems, with beginner-friendly syntax and a huge package ecosystem.',
     domain: 'Coding',
     level: 'Beginner',
-      totalLectures: 19
+      totalLectures: 25
   },
   {
       slug: 'java',
@@ -22,7 +22,7 @@ const DEFAULT_COURSES = [
       description: 'Java remains a backbone for enterprise systems, Android apps, and large distributed backends.',
     domain: 'Coding',
       level: 'Intermediate',
-      totalLectures: 18
+      totalLectures: 25
   },
   {
     slug: 'javascript',
@@ -30,7 +30,7 @@ const DEFAULT_COURSES = [
       description: 'JavaScript powers modern frontend, full-stack web apps, and real-time product experiences.',
       domain: 'Coding',
     level: 'Beginner',
-    totalLectures: 18
+    totalLectures: 25
   },
   {
     slug: 'claude',
@@ -54,7 +54,7 @@ const DEFAULT_COURSES = [
       description: 'C++ is used where performance and system-level control are critical, from engines to infrastructure.',
       domain: 'Coding',
       level: 'Advanced',
-      totalLectures: 21
+      totalLectures: 25
     },
     {
       slug: 'azure',
@@ -151,7 +151,23 @@ const DEFAULT_COURSES = [
       domain: 'Coding',
       level: 'Intermediate',
       totalLectures: 24
-  }
+    },
+    {
+      slug: 'html',
+      title: 'HTML Fundamentals',
+      description: 'Learn the building blocks of the web with semantic HTML and modern markup patterns.',
+      domain: 'Coding',
+      level: 'Beginner',
+      totalLectures: 22
+    },
+    {
+      slug: 'css',
+      title: 'CSS & Styling',
+      description: 'Master layout, responsive design, animations, and modern CSS techniques.',
+      domain: 'Coding',
+      level: 'Beginner',
+      totalLectures: 24
+    }
 ];
 
 function toObjectId(id) {
@@ -550,6 +566,8 @@ async function updateCourseProgress(req, res) {
       if (!wasAlreadyCompleted) {
         targetLecture.completedAt = new Date();
       }
+      // Frontend sends cumulative chapter XP on each part completion.
+      // Math.max ensures idempotency — re-syncing the same or lower value is a no-op.
       targetLecture.points = Math.max(targetLecture.points || 0, points);
     } else {
       targetLecture.completed = false;

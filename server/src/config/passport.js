@@ -2,6 +2,8 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const User = require('../models/user.model');
 
+let isGoogleEnabled = false;
+
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
@@ -42,6 +44,7 @@ passport.use(new GoogleStrategy({
     }
   }
 ));
+isGoogleEnabled = true;
 } else {
   console.warn('Google OAuth credentials not set — Google login disabled.');
 }
@@ -57,3 +60,4 @@ passport.deserializeUser(async (id, done) => {
 });
 
 module.exports = passport;
+module.exports.isGoogleEnabled = isGoogleEnabled;

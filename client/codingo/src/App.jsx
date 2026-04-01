@@ -109,7 +109,7 @@ function AppShell() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
-          <Route path="/next-step" element={<SignupNextPage  />} />
+          <Route path="/next-step" element={<ProtectedRoute><SignupNextPage /></ProtectedRoute>} />
           <Route
             path="/dashboard"
             element={(
@@ -126,8 +126,8 @@ function AppShell() {
               </ProtectedRoute>
             )}
           />
-          <Route path="/welcome" element={<WelcomePage  />} />
-          <Route path="/Welcome" element={<WelcomePage  />} />
+          <Route path="/welcome" element={<ProtectedRoute><WelcomePage /></ProtectedRoute>} />
+          <Route path="/Welcome" element={<ProtectedRoute><WelcomePage /></ProtectedRoute>} />
           <Route
             path="/levels"
             element={(

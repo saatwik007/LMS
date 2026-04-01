@@ -46,7 +46,7 @@ const userSchema = new mongoose.Schema({
   },
   bio: { type: String, default: '', maxlength: 200 },
   rewards: { type: [rewardSchema], default: [] },
-  resetToken: { type: String, default: null },
+  resetToken: { type: String, default: null, index: true },
   resetTokenExpiry: { type: Date, default: null }
 },
 {

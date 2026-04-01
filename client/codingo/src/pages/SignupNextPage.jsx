@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios"; // at the top
+import axios from "axios";
 
 
 export default function SignupProfile() {
@@ -10,6 +10,12 @@ export default function SignupProfile() {
   const [showPw, setShowPw] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const navigate = useNavigate();
+
+  // Redirect unauthenticated users
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) navigate('/signup', { replace: true });
+  }, [navigate]);
 
   // Validation: Only enable if email and pw not empty
   const valid = email.trim() && pw.length >= 6;
