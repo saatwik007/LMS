@@ -2,6 +2,7 @@
 
 const express = require('express');
 const cookieParser = require('cookie-parser');
+const passport = require('./config/passport');
 const authRoutes = require('./routes/auth.routes');
 const learningRoutes = require('./routes/learning.routes');
 const challengeRoutes = require('./routes/challenge.routes');
@@ -18,7 +19,7 @@ app.use(cors({
 	origin: process.env.CLIENT_URL || 'http://localhost:5173',
 	credentials: true
 }));
-
+app.use(passport.initialize());
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 app.use('/api/auth', authRoutes);

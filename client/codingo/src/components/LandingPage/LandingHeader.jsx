@@ -436,7 +436,7 @@ const LandingHeader = ({ onBack }) => {
                       className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-200 hover:bg-gray-800 rounded-lg"
                       onClick={() => {
                         setIsDropdownOpen(false);
-                        navigate('/dashboard');
+                        navigate('/profile');
                       }}
                       type="button"
                     >

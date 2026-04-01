@@ -5,6 +5,7 @@ const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs/promises');
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 const { checkAndAwardBadges } = require('./badge.controller');
 
 const PROFILE_PICS_DIR = path.join(__dirname, '..', '..', 'uploads', 'profile-pics');
@@ -397,6 +398,76 @@ async function claimReward(req, res) {
   }
 }
 
+async function forgotPassword(req, res) {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email is required.' });
+
+    const user = await userModel.findOne({ email: email.toLowerCase().trim() });
+    // Always return success to prevent email enumeration
+    if (!user) return res.status(200).json({ message: 'If that email exists, a reset token has been generated.' });
+
+    // Generate a secure hex token using crypto.randomBytes
+    const plainToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = await bcrypt.hash(plainToken, 10);
+
+    user.resetToken = hashedToken;
+    user.resetTokenExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 min
+    await user.save();
+
+    // In production, send this via email. For now, return it in the response for testing.
+    console.log(`[DEV] Password reset token for ${email}: ${plainToken}`);
+
+    return res.status(200).json({
+      message: 'If that email exists, a reset token has been generated.',
+      // DEV ONLY — remove in production
+      resetToken: process.env.NODE_ENV !== 'production' ? plainToken : undefined
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+async function resetPassword(req, res) {
+  try {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) {
+      return res.status(400).json({ message: 'Token and new password are required.' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters.' });
+    }
+
+    // Find all users who have a non-expired reset token
+    const candidates = await userModel.find({
+      resetToken: { $ne: null },
+      resetTokenExpiry: { $gt: new Date() }
+    });
+
+    let matchedUser = null;
+    for (const candidate of candidates) {
+      const isMatch = await bcrypt.compare(token, candidate.resetToken);
+      if (isMatch) {
+        matchedUser = candidate;
+        break;
+      }
+    }
+
+    if (!matchedUser) {
+      return res.status(400).json({ message: 'Invalid or expired reset token.' });
+    }
+
+    matchedUser.password = await bcrypt.hash(newPassword, 10);
+    matchedUser.resetToken = null;
+    matchedUser.resetTokenExpiry = null;
+    await matchedUser.save();
+
+    return res.status(200).json({ message: 'Password has been reset successfully.' });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}
+
 async function logoutUser(req, res) {
   res.clearCookie('token', getCookieOptions());
   return res.status(200).json({ message: 'Logout successful' });
@@ -413,5 +484,7 @@ module.exports = {
   markNotificationRead,
   updateStreak,
   claimReward,
+  forgotPassword,
+  resetPassword,
   logoutUser
 };

@@ -1,5 +1,7 @@
 const express = require('express');
 const authController = require('../controllers/auth.controller');
+const passport = require('../config/passport');
+const jwt = require('jsonwebtoken');
 const { protect } = require('../middlewares/auth.middleware');
 const { profileImageUpload } = require('../middlewares/upload.middleware');
 
@@ -15,6 +17,20 @@ router.get('/user/notifications', protect, authController.getNotifications);
 router.patch('/user/notifications/:notificationId/read', protect, authController.markNotificationRead);
 router.patch('/user/streak', protect, authController.updateStreak);
 router.post('/user/rewards/claim', protect, authController.claimReward);
+router.post('/user/forgot-password', authController.forgotPassword);
+router.post('/user/reset-password', authController.resetPassword);
 router.get('/user/logout', authController.logoutUser);
+
+// Google OAuth
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+router.get('/google/callback',
+  passport.authenticate('google', { session: false, failureRedirect: (process.env.CLIENT_URL || 'http://localhost:5173') + '/login?error=oauth_failed' }),
+  (req, res) => {
+    const token = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    res.redirect(`${clientUrl}/oauth/callback?token=${token}`);
+  }
+);
 
 module.exports = router;
