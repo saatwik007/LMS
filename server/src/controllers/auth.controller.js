@@ -407,20 +407,18 @@ async function forgotPassword(req, res) {
     // Always return success to prevent email enumeration
     if (!user) return res.status(200).json({ message: 'If that email exists, a reset token has been generated.' });
 
-    // Generate a secure hex token using crypto.randomBytes
+    // Generate a secure hex token and store its SHA-256 digest for deterministic lookup
     const plainToken = crypto.randomBytes(32).toString('hex');
-    const hashedToken = await bcrypt.hash(plainToken, 10);
+    const tokenDigest = crypto.createHash('sha256').update(plainToken).digest('hex');
 
-    user.resetToken = hashedToken;
+    user.resetToken = tokenDigest;
     user.resetTokenExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 min
     await user.save();
 
-    // In production, send this via email. For now, return it in the response for testing.
     console.log(`[DEV] Password reset token for ${email}: ${plainToken}`);
 
     return res.status(200).json({
       message: 'If that email exists, a reset token has been generated.',
-      // DEV ONLY — remove in production
       resetToken: process.env.NODE_ENV !== 'production' ? plainToken : undefined
     });
   } catch (error) {
@@ -438,29 +436,21 @@ async function resetPassword(req, res) {
       return res.status(400).json({ message: 'Password must be at least 6 characters.' });
     }
 
-    // Find all users who have a non-expired reset token
-    const candidates = await userModel.find({
-      resetToken: { $ne: null },
+    // Deterministic lookup: hash the incoming token and query directly
+    const tokenDigest = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await userModel.findOne({
+      resetToken: tokenDigest,
       resetTokenExpiry: { $gt: new Date() }
     });
 
-    let matchedUser = null;
-    for (const candidate of candidates) {
-      const isMatch = await bcrypt.compare(token, candidate.resetToken);
-      if (isMatch) {
-        matchedUser = candidate;
-        break;
-      }
-    }
-
-    if (!matchedUser) {
+    if (!user) {
       return res.status(400).json({ message: 'Invalid or expired reset token.' });
     }
 
-    matchedUser.password = await bcrypt.hash(newPassword, 10);
-    matchedUser.resetToken = null;
-    matchedUser.resetTokenExpiry = null;
-    await matchedUser.save();
+    user.password = await bcrypt.hash(newPassword, 10);
+    user.resetToken = null;
+    user.resetTokenExpiry = null;
+    await user.save();
 
     return res.status(200).json({ message: 'Password has been reset successfully.' });
   } catch (error) {

@@ -75,7 +75,7 @@
 //   );
 // }
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import HowDidYouHearStep from "../components/WelcomeFlow/HowDidYouHearStep";
 import LearningReasonStep from "../components/WelcomeFlow/LearningReasonStep";
@@ -99,6 +99,12 @@ export default function WelcomeFlow() {
   const navigate = useNavigate();
   const location = useLocation();
   const params = new URLSearchParams(location.search);
+
+  // Redirect unauthenticated users
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) navigate('/login', { replace: true });
+  }, [navigate]);
 
   // Get step from URL or default to first
   const stepKey = params.get("welcomeStep") || steps[0].key;

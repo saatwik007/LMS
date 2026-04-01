@@ -14,7 +14,7 @@ function getRegistry() {
 
 // Fallback totalChapters to match backend DEFAULT_COURSES.totalLectures
 const BACKEND_TOTAL_CHAPTERS = {
-  python: 19, javascript: 18, java: 18, claude: 15, aws: 16, cpp: 21,
+  python: 25, javascript: 25, java: 25, claude: 15, aws: 16, cpp: 25,
   azure: 16, gcp: 16, ml: 20, dl: 22, nlp: 19, data: 17, sql: 15,
   spark: 21, docker: 15, k8s: 20, security: 15, dsa: 24, html: 22, css: 24
 };
