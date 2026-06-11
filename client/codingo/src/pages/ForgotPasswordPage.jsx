@@ -1,29 +1,32 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useDispatch, useSelector } from 'react-redux';
+import { setError } from '../redux/slices/postSlice';
+import { setDevToken, setEmail, setLoading, setSent } from '../redux/slices/forgotPasswordSlice';
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL || '';
-
-  const [email, setEmail] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
-  const [devToken, setDevToken] = useState('');
+  const dispatch = useDispatch();
+  const email = useSelector(state => state.forgotPassword.email);
+  const error = useSelector(state => state.forgotPassword.error);
+  const loading = useSelector(state => state.forgotPassword.loading);
+  const sent = useSelector(state => state.forgotPassword.sent);
+  const devToken = useSelector(state => state.forgotPassword.devToken);
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setError('');
-    setLoading(true);
+    dispatch(setError(''));
+    dispatch(setLoading(true));
     try {
       const res = await axios.post(`${apiUrl}/api/auth/user/forgot-password`, { email });
-      setSent(true);
-      if (res.data?.resetToken) setDevToken(res.data.resetToken);
+      dispatch(setSent(true));
+      if (res.data?.resetToken) dispatch(setDevToken(res.data.resetToken));
     } catch (err) {
-      setError(err.response?.data?.message || 'Something went wrong.');
+      dispatch(setError(err.response?.data?.message || 'Something went wrong.'));
     } finally {
-      setLoading(false);
+      dispatch(setLoading(false));
     }
   }
 
@@ -57,7 +60,7 @@ export default function ForgotPasswordPage() {
               type="email"
               placeholder="Email address"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => dispatch(setEmail(e.target.value))}
               required
             />
             <button

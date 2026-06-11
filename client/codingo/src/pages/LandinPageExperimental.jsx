@@ -1,903 +1,828 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { gsap } from "gsap";
 
-// ─── DATA ─────────────────────────────────────────────────────────────────────
-const CHAPTER = {
-  id: 1,
-  title: "JavaScript Fundamentals",
-  totalXP: 120,
-  parts: [
-    {
-      id: 1,
-      title: "Variables & Declarations",
-      subtitle: "var, let, const — know the difference",
-      xp: 25,
-      color: "#6c63ff",
-      glow: "rgba(108,99,255,0.35)",
-      icon: "📦",
-      type: "lesson",
-      steps: [
-        {
-          heading: "Three ways to declare a variable. Only two are modern.",
-          body:  "Think of a variable as a named box that holds a value. JavaScript gives you three ways to create one. Use const when the value will never change — it's your safe default. Use let when you know you'll need to update the value later. Avoid var — it's from older JavaScript, behaves in confusing ways, and you'll almost never need it in modern code.",
-          code: `const name = "Alice";   // const — value stays the same
-let score = 0;          // let — we'll update this later
-score = 10;             // ✓ works fine
- 
-// Trying to change a const throws an error
-// name = "Bob";        // ✗ TypeError: Assignment to constant
- 
-// var is old — avoid it
-var old = "legacy";     // unpredictable behaviour, skip this`,
-          codeNote:
-            "Simple rule: always use const first. If you later need to change it, switch to let. Never use var.",
-        },
-      ],
-    },
-    {
-      id: 2,
-      title: "Primitive Data Types",
-      subtitle: "The 7 basic value types",
-      xp: 25,
-      color: "#8B5CF6",
-      glow: "rgba(139,92,246,0.35)",
-      icon: "🔢",
-      type: "lesson",
-      steps: [
-        {
-          heading: "JS has 7 primitives. Know them all.",
-          body: "Primitives are the simplest values in JS — they're <strong>immutable</strong> and passed <strong>by value</strong>. The 7 types are: <strong>String</strong> (text), <strong>Number</strong> (integers + decimals), <strong>Boolean</strong> (true/false), <strong>null</strong> (intentionally empty), <strong>undefined</strong> (not yet assigned), <strong>BigInt</strong> (huge integers), and <strong>Symbol</strong> (unique keys). You'll use String, Number, and Boolean constantly.",
-          code: `const str  = "Hello";         // String
-const num  = 42;              // Number (also: 3.14, -7, Infinity)
-const bool = true;            // Boolean
-const nothing = null;         // null — intentionally empty
-let notYet;                   // undefined — no value assigned yet
-
-console.log(typeof str);      // "string"
-console.log(typeof num);      // "number"
-console.log(typeof bool);     // "boolean"
-console.log(typeof nothing);  // "object" ← famous JS quirk!
-console.log(typeof notYet);   // "undefined"`,
-          codeNote:
-            "typeof null returns 'object' — this is a 25-year-old bug in JS that can't be fixed without breaking the web.",
-        },
-      ],
-    },
-    {
-      id: 3,
-      title: "Dynamic Typing & typeof",
-      subtitle: "JS figures out the type for you",
-      xp: 25,
-      color: "#10B981",
-      glow: "rgba(16,185,129,0.35)",
-      icon: "🔄",
-      type: "lesson",
-      steps: [
-        {
-          heading: "Variables have no fixed type — values do.",
-          body: "JavaScript is <strong>dynamically typed</strong>: you don't declare what type a variable holds, and it can change at runtime. The <strong>typeof</strong> operator lets you inspect the current type of any value. This flexibility is powerful but demands care — accidentally mixing types leads to bugs.",
-          code: `let data = 100;
-console.log(typeof data);   // "number"
-
-data = "one hundred";
-console.log(typeof data);   // "string"
-
-data = false;
-console.log(typeof data);   // "boolean"
-
-// Practical use: guard against wrong types
-function double(n) {
-  if (typeof n !== "number") {
-    return "Error: expected a number";
-  }
-  return n * 2;
+/* ─── Google Fonts injected once ─── */
+if (!document.getElementById("coder-fonts")) {
+  const link = document.createElement("link");
+  link.id = "coder-fonts";
+  link.rel = "stylesheet";
+  link.href =
+    "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@400;600;700;800&display=swap";
+  document.head.appendChild(link);
 }
-console.log(double(5));      // 10
-console.log(double("hi"));   // "Error: expected a number"`,
-          codeNote:
-            "Dynamic typing is a feature, not a bug — but always validate types when receiving external data.",
-        },
-      ],
-    },
-    {
-      id: 4,
-      title: "Chapter Challenge",
-      subtitle: "Variables & types quiz",
-      xp: 45,
-      color: "#F59E0B",
-      glow: "rgba(245,158,11,0.4)",
-      icon: "⚡",
-      type: "challenge",
-      challenges: [
-        {
-          id: "c1",
-          question: "What does this code log?",
-          code: `const x = 5;\nlet y = x;\ny = 10;\nconsole.log(x);`,
-          options: ["5", "10", "undefined", "TypeError"],
-          correct: 0,
-          explanation:
-            "Primitives are copied by value. y = x copies the value 5. Changing y doesn't affect x.",
-        },
-        {
-          id: "c2",
-          question: "Which of these will throw a TypeError?",
-          code: `const a = 1;\nlet b = 2;\nvar c = 3;`,
-          options: ["a = 5", "b = 5", "c = 5", "console.log(a + b + c)"],
-          correct: 0,
-          explanation:
-            "const variables cannot be reassigned. Trying to do a = 5 throws a TypeError at runtime.",
-        },
-        {
-          id: "c3",
-          question: "What does typeof null return?",
-          code: `console.log(typeof null);`,
-          options: ['"null"', '"undefined"', '"object"', '"boolean"'],
-          correct: 2,
-          explanation:
-            "typeof null returns 'object' — a historical bug in JS that has never been fixed to avoid breaking existing code.",
-        },
-      ],
-    },
-  ],
-};
 
-// ─── SYNTAX HIGHLIGHTER ───────────────────────────────────────────────────────
-function highlight(code) {
-  const lines = code.split("\n");
-  return lines.map((line, i) => {
-    const parts = [];
-    let rest = line;
-
-    // comments first
-    const cmtIdx = rest.indexOf("//");
-    let main = rest;
-    let cmt = null;
-    if (cmtIdx !== -1) {
-      main = rest.slice(0, cmtIdx);
-      cmt = rest.slice(cmtIdx);
+/* ─── CSS Variables & base styles injected once ─── */
+if (!document.getElementById("coder-styles")) {
+  const style = document.createElement("style");
+  style.id = "coder-styles";
+  style.textContent = `
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --surface2: #16161f;
+      --surface3: #1c1c28;
+      --border: #2a2a3a;
+      --border2: #3a3a50;
+      --accent: #7c6aff;
+      --accent2: #a78bfa;
+      --accent-glow: rgba(124,106,255,0.15);
+      --green: #22d3a0;
+      --red: #ff6b6b;
+      --text: #e4e4f0;
+      --text2: #9090a8;
+      --text3: #5a5a70;
     }
-
-    // tokenise main
-    const tokens = main.split(
-      /(\b(?:const|let|var|function|return|if|typeof|new)\b|"[^"]*"|'[^']*'|`[^`]*`|\b\d+\.?\d*\b|\bconsole\b)/
-    );
-
-    const keywordsSet = new Set(["const","let","var","function","return","if","typeof","new"]);
-    parts.push(
-      ...tokens.map((t, ti) => {
-        if (keywordsSet.has(t))
-          return <span key={ti} style={{ color: "#ff79c6" }}>{t}</span>;
-        if (/^["'`]/.test(t))
-          return <span key={ti} style={{ color: "#f1fa8c" }}>{t}</span>;
-        if (/^\d/.test(t))
-          return <span key={ti} style={{ color: "#bd93f9" }}>{t}</span>;
-        if (t === "console")
-          return <span key={ti} style={{ color: "#50fa7b" }}>{t}</span>;
-        return t;
-      })
-    );
-
-    if (cmt)
-      parts.push(
-        <span key="cmt" style={{ color: "#6272a4", fontStyle: "italic" }}>
-          {cmt}
-        </span>
-      );
-
-    return (
-      <div key={i} className="leading-7">
-        {parts}
-      </div>
-    );
-  });
+    .font-mono-coder { font-family: 'JetBrains Mono', monospace; }
+    .font-sans-coder { font-family: 'Syne', sans-serif; }
+    .coder-bg {
+      background-color: var(--bg);
+      background-image:
+        radial-gradient(ellipse 60% 40% at 80% 0%, rgba(124,106,255,0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 30% at 10% 100%, rgba(34,211,160,0.05) 0%, transparent 50%);
+    }
+    .coder-surface { background-color: var(--surface); }
+    .coder-surface2 { background-color: var(--surface2); }
+    .coder-surface3 { background-color: var(--surface3); }
+    .coder-border { border-color: var(--border); }
+    .coder-border2 { border-color: var(--border2); }
+    .coder-text { color: var(--text); }
+    .coder-text2 { color: var(--text2); }
+    .coder-text3 { color: var(--text3); }
+    .coder-accent { color: var(--accent); }
+    .coder-accent2 { color: var(--accent2); }
+    .coder-green { color: var(--green); }
+    .coder-red { color: var(--red); }
+    .input-area-focus:focus-within {
+      border-color: var(--accent) !important;
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .reply-wrap-focus:focus-within {
+      border-color: var(--accent) !important;
+    }
+    .like-btn.liked {
+      color: var(--red);
+      border-color: rgba(255,107,107,0.3);
+      background: rgba(255,107,107,0.07);
+    }
+    .like-btn:not(.liked):hover {
+      border-color: var(--border2);
+      color: var(--text2);
+      background: var(--surface3);
+    }
+    .reply-toggle-btn:hover {
+      color: var(--accent2);
+      border-color: rgba(124,106,255,0.3);
+      background: var(--accent-glow);
+    }
+    .action-btn-hover:hover {
+      border-color: var(--border2);
+      color: var(--text2);
+      background: var(--surface3);
+    }
+    .attach-btn-hover:hover {
+      border-color: var(--accent);
+      color: var(--accent2);
+      background: var(--accent-glow);
+    }
+    .comment-card-hover:hover {
+      border-color: var(--border2);
+    }
+    @keyframes recPulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    .rec-pulse { animation: recPulse 1s infinite; }
+    @keyframes heartBeat { 0%{transform:scale(1)} 50%{transform:scale(1.35)} 100%{transform:scale(1)} }
+    .heart-beat { animation: heartBeat 0.3s ease; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+    code.inline-code {
+      background: var(--surface3);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 12px;
+      color: var(--accent2);
+      font-family: 'JetBrains Mono', monospace;
+    }
+  `;
+  document.head.appendChild(style);
 }
 
-// ─── COPY BUTTON ──────────────────────────────────────────────────────────────
-function CopyButton({ code }) {
-  const [copied, setCopied] = useState(false);
-  const copy = () => {
-    navigator.clipboard.writeText(code).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    });
-  };
+/* ─── Avatar gradient map ─── */
+const AV_GRADIENTS = [
+  "linear-gradient(135deg,#7c6aff,#a78bfa)",
+  "linear-gradient(135deg,#22d3a0,#34d399)",
+  "linear-gradient(135deg,#f59e0b,#f97316)",
+  "linear-gradient(135deg,#ec4899,#f43f5e)",
+  "linear-gradient(135deg,#3b82f6,#06b6d4)",
+  "linear-gradient(135deg,#8b5cf6,#ec4899)",
+];
+const SELF_GRADIENT = "linear-gradient(135deg,#7c6aff,#22d3a0)";
+
+/* ─── Sample data ─── */
+const INITIAL_COMMENTS = [
+  {
+    id: "c1",
+    name: "Aryan Mehta",
+    initials: "AR",
+    avatarIdx: 0,
+    badge: { label: "MOD", type: "mod" },
+    date: "May 3, 2025 · 11:24 AM",
+    body: `Just dropped a new async handler using <code class="inline-code">Promise.allSettled()</code> — it's honestly a game changer for batch API calls where you don't want one failure to block the rest. Highly recommend refactoring anything that uses <code class="inline-code">Promise.all()</code> for non-critical parallel tasks. 🔥`,
+    likes: 24,
+    liked: false,
+    replies: [
+      {
+        id: "r1a",
+        name: "Kriti Sharma",
+        initials: "KS",
+        avatarIdx: 4,
+        date: "May 3, 2025 · 11:51 AM",
+        body: `Yes!! Switched to this last week. Also pairs perfectly with <code class="inline-code">AbortController</code> for timeout control 🧠`,
+        likes: 8,
+        liked: false,
+      },
+      {
+        id: "r1b",
+        name: "Pranav V.",
+        initials: "PV",
+        avatarIdx: 2,
+        date: "May 3, 2025 · 1:10 PM",
+        body: "Added this pattern to our internal toolkit doc. Thanks for the tip 🛠",
+        likes: 4,
+        liked: false,
+      },
+    ],
+  },
+  {
+    id: "c2",
+    name: "Sneha Singh",
+    initials: "SS",
+    avatarIdx: 1,
+    badge: { label: "PRO", type: "pro" },
+    date: "May 3, 2025 · 2:05 PM",
+    body: `Hot take: Most devs are sleeping on CSS <code class="inline-code">container queries</code>. Media queries are tied to the viewport — container queries respond to the parent element's size. Your components finally become truly reusable without layout hacks. CSS is genuinely incredible in 2025 😤`,
+    likes: 41,
+    liked: false,
+    replies: [
+      {
+        id: "r2a",
+        name: "Raghav D.",
+        initials: "RD",
+        avatarIdx: 3,
+        date: "May 3, 2025 · 3:45 PM",
+        body: "Already using it in production. The component portability improvement is real. No more breakpoint spaghetti 🎉",
+        likes: 11,
+        liked: false,
+      },
+    ],
+  },
+  {
+    id: "c3",
+    name: "Nikhil Patel",
+    initials: "NP",
+    avatarIdx: 2,
+    badge: null,
+    date: "May 3, 2025 · 4:30 PM",
+    voiceNote: { duration: "0:47" },
+    body: `Recorded my thought on why <code class="inline-code">Zustand</code> beats Redux for small-mid scale React apps. Less boilerplate, no provider wrapping, selector-based subscriptions just work. Full breakdown above 👆`,
+    likes: 18,
+    liked: false,
+    replies: [],
+  },
+  {
+    id: "c4",
+    name: "Riya Desai",
+    initials: "RD",
+    avatarIdx: 3,
+    badge: null,
+    date: "May 4, 2025 · 9:12 AM",
+    image: "https://opengraph.githubassets.com/1/vercel/next.js",
+    body: "Next.js 15.3 just dropped and the Turbopack build speed improvements are insane 🚀 Our CI pipeline went from 4m 20s to under 90 seconds. Anyone else migrated yet?",
+    likes: 37,
+    liked: false,
+    replies: [],
+  },
+  {
+    id: "c5",
+    name: "Karan Shah",
+    initials: "KS",
+    avatarIdx: 4,
+    badge: null,
+    date: "May 4, 2025 · 10:48 AM",
+    body: `Question for the thread — does anyone have a solid pattern for handling optimistic UI updates with rollback on error? Using React Query but the mutation rollback feels clunky when you have nested dependent queries. 🤔`,
+    likes: 9,
+    liked: false,
+    replies: [],
+  },
+  {
+    id: "c6",
+    name: "Meera Agarwal",
+    initials: "MA",
+    avatarIdx: 5,
+    badge: { label: "PRO", type: "pro" },
+    date: "May 4, 2025 · 12:30 PM",
+    body: `PSA: Stop using <code class="inline-code">any</code> in TypeScript. Even if you're in a rush, use <code class="inline-code">unknown</code> and narrow it down. It takes 2 minutes and saves hours of runtime debugging. Your future self and your teammates will thank you 💯`,
+    likes: 53,
+    liked: false,
+    replies: [],
+  },
+  {
+    id: "c7",
+    name: "Vikram Rao",
+    initials: "VR",
+    avatarIdx: 0,
+    badge: null,
+    date: "May 4, 2025 · 2:00 PM",
+    body: `Reminder that <code class="inline-code">git bisect</code> exists and it's magic 🪄 Binary search through your commit history to find exactly which commit introduced a bug. Saved me 3 hours today tracking down a regression.`,
+    likes: 29,
+    liked: false,
+    replies: [],
+  },
+];
+
+const EMOJIS = ["😂", "🔥", "💀", "🚀", "👀", "✅", "❌", "💯", "🤔", "⚡", "🎉", "🛠", "👾", "🐛", "📦", "🧠"];
+
+const VN_BARS = [8, 18, 12, 24, 10, 20, 14, 8, 22, 16, 10, 18];
+
+function formatDate(d) {
   return (
-    <button
-      onClick={copy}
-      className="text-xs font-mono px-2.5 py-1 rounded border border-white/10 text-white/40 hover:text-white/70 hover:bg-white/5 transition-all"
+    d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) +
+    " · " +
+    d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
+  );
+}
+
+/* ─── Avatar ─── */
+function Avatar({ initials, gradientIdx, size = 36, self = false }) {
+  const bg = self ? SELF_GRADIENT : AV_GRADIENTS[gradientIdx % AV_GRADIENTS.length];
+  return (
+    <div
+      className="flex items-center justify-center font-sans-coder font-bold text-white flex-shrink-0 rounded-full"
+      style={{ width: size, height: size, background: bg, fontSize: size * 0.36 }}
     >
-      {copied ? "Copied!" : "Copy"}
-    </button>
+      {initials}
+    </div>
   );
 }
 
-// ─── CODE BLOCK ───────────────────────────────────────────────────────────────
-function CodeBlock({ code, note }) {
+/* ─── Badge ─── */
+function Badge({ badge }) {
+  if (!badge) return null;
+  const isMod = badge.type === "mod";
   return (
-    <div className="mt-5 rounded-xl overflow-hidden border border-white/10 bg-[#08080f]">
-      {/* top bar */}
-      <div className="flex items-center justify-between px-4 py-2.5 bg-[#161625] border-b border-white/[0.07]">
-        <div className="flex gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
-          <span className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
-          <span className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
-        </div>
-        <span className="font-mono text-[0.65rem] uppercase tracking-widest text-white/30">
-          JavaScript
-        </span>
-        <CopyButton code={code} />
-      </div>
-      {/* code */}
-      <pre
-        className="overflow-x-auto p-5 font-mono text-[0.82rem] text-[#c9d1d9]"
-        style={{ lineHeight: 1.8 }}
+    <span
+      className="text-xs font-bold px-2 py-0.5 rounded-full uppercase tracking-widest font-mono-coder"
+      style={{
+        fontSize: 9,
+        background: isMod ? "rgba(124,106,255,0.15)" : "rgba(34,211,160,0.12)",
+        color: isMod ? "var(--accent2)" : "var(--green)",
+        border: `1px solid ${isMod ? "rgba(124,106,255,0.3)" : "rgba(34,211,160,0.25)"}`,
+      }}
+    >
+      {badge.label}
+    </span>
+  );
+}
+
+/* ─── Voice Note Player ─── */
+function VoiceNote({ duration }) {
+  const [playing, setPlaying] = useState(false);
+  function handlePlay() {
+    setPlaying(true);
+    setTimeout(() => setPlaying(false), 2000);
+  }
+  return (
+    <div
+      className="flex items-center gap-2 rounded-xl px-3 py-2 mb-3"
+      style={{ background: "var(--surface3)", border: "1px solid var(--border)", maxWidth: 260 }}
+    >
+      <button
+        onClick={handlePlay}
+        className="flex items-center justify-center rounded-full text-white text-xs transition-opacity hover:opacity-85"
+        style={{ width: 30, height: 30, background: "var(--accent)", border: "none", cursor: "pointer" }}
       >
-        {highlight(code)}
-      </pre>
-      {/* note */}
-      {note && (
-        <div className="flex gap-2.5 items-start px-4 py-3 bg-white/[0.02] border-t border-white/[0.07] text-[0.78rem] text-white/40 leading-relaxed">
-          <span className="shrink-0">💡</span>
-          <span>{note}</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── LESSON CONTENT ───────────────────────────────────────────────────────────
-function LessonContent({ part }) {
-  return (
-    <div className="space-y-8">
-      {part.steps.map((step, i) => (
-        <div key={i}>
-          <h2
-            className="text-lg font-bold text-white mb-3 leading-snug"
-            style={{ fontFamily: "'Syne', sans-serif" }}
-          >
-            {step.heading}
-          </h2>
-          <p
-            className="text-[0.93rem] leading-7 text-white/70"
-            dangerouslySetInnerHTML={{ __html: step.body }}
+        {playing ? "⏸" : "▶"}
+      </button>
+      <div className="flex items-center gap-0.5 flex-1">
+        {VN_BARS.map((h, i) => (
+          <div
+            key={i}
+            className="rounded"
+            style={{ width: 3, height: h, background: "var(--accent2)", opacity: playing ? 1 : 0.5, transition: "opacity 0.3s" }}
           />
-          <CodeBlock code={step.code} note={step.codeNote} />
-        </div>
-      ))}
+        ))}
+      </div>
+      <span className="font-mono-coder coder-text3" style={{ fontSize: 11 }}>{duration}</span>
     </div>
   );
 }
 
-// ─── CHALLENGE CONTENT ────────────────────────────────────────────────────────
-function ChallengeContent({ part, answers, onAnswer, submitted }) {
-  const resultRef = useRef(null);
+/* ─── Reply Card ─── */
+function ReplyCard({ reply, onLike }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (ref.current) {
+      gsap.fromTo(ref.current, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.28, ease: "power2.out" });
+    }
+  }, []);
+  return (
+    <div
+      ref={ref}
+      className="flex gap-2 rounded-xl px-3 py-2"
+      style={{ background: "var(--surface2)", borderLeft: "2px solid var(--border2)" }}
+    >
+      <Avatar initials={reply.initials} gradientIdx={reply.avatarIdx} size={28} />
+      <div className="flex-1">
+        <div className="font-sans-coder font-bold coder-text" style={{ fontSize: 12 }}>{reply.name}</div>
+        <div className="coder-text3 font-mono-coder" style={{ fontSize: 10, marginTop: 1 }}>{reply.date}</div>
+        <div
+          className="coder-text2 font-mono-coder mt-1"
+          style={{ fontSize: 12, lineHeight: 1.6 }}
+          dangerouslySetInnerHTML={{ __html: reply.body }}
+        />
+        <div className="flex items-center gap-1 mt-1.5">
+          <button
+            onClick={() => onLike(reply.id)}
+            className={`like-btn flex items-center gap-1 rounded-lg px-2 py-1 font-mono-coder transition-all border border-transparent coder-text3`}
+            style={{ fontSize: 11, cursor: "pointer", background: "none" }}
+          >
+            <span>♥</span>
+            <span>{reply.likes}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Comment Card ─── */
+function CommentCard({ comment, onLike, onReplyLike, onAddReply }) {
+  const [repliesOpen, setRepliesOpen] = useState(comment.replies.length > 0);
+  const [replyInputOpen, setReplyInputOpen] = useState(false);
+  const [replyText, setReplyText] = useState("");
+  const cardRef = useRef(null);
+  const repliesRef = useRef(null);
+  const replyWrapRef = useRef(null);
 
   useEffect(() => {
-    if (submitted && resultRef.current) {
-      setTimeout(
-        () => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }),
-        80
+    if (cardRef.current) {
+      gsap.fromTo(
+        cardRef.current,
+        { opacity: 0, y: 14 },
+        { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }
       );
     }
-  }, [submitted]);
-
-  const correctCount = part.challenges.filter(
-    (ch) => answers[ch.id] === ch.correct
-  ).length;
-  const total = part.challenges.length;
-
-  return (
-    <div className="space-y-5">
-      {/* intro */}
-      <div
-        className="flex gap-3 items-start p-4 rounded-xl border"
-        style={{
-          background: "rgba(245,158,11,0.06)",
-          borderColor: "rgba(245,158,11,0.2)",
-        }}
-      >
-        <span className="text-2xl shrink-0">⚡</span>
-        <p className="text-[0.86rem] text-white/60 leading-relaxed">
-          <strong className="text-amber-400">Chapter Challenge</strong> — Answer
-          all {total} questions, then hit{" "}
-          <strong className="text-amber-400">Submit</strong> to see your results
-          and earn{" "}
-          <strong className="text-amber-400">+{part.xp} XP</strong>.
-        </p>
-      </div>
-
-      {/* questions */}
-      {part.challenges.map((ch, ci) => {
-        const selected = answers[ch.id];
-        const hasSelected = selected !== undefined;
-        const isCorrect = selected === ch.correct;
-
-        return (
-          <div
-            key={ch.id}
-            className="rounded-2xl border border-white/10 bg-[#161625] overflow-hidden"
-          >
-            {/* question header */}
-            <div className="flex items-center gap-3 px-5 pt-5">
-              <div
-                className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center font-mono text-[0.7rem] font-bold border"
-                style={{
-                  background: "rgba(245,158,11,0.12)",
-                  color: "#F59E0B",
-                  borderColor: "rgba(245,158,11,0.3)",
-                }}
-              >
-                {ci + 1}
-              </div>
-              <p className="text-[0.93rem] font-medium text-white">{ch.question}</p>
-            </div>
-
-            {/* code snippet */}
-            <div className="mx-5 mt-3.5 rounded-lg overflow-hidden border border-white/[0.08] bg-[#08080f]">
-              <pre
-                className="p-3.5 font-mono text-[0.78rem] text-[#c9d1d9] overflow-x-auto"
-                style={{ lineHeight: 1.8 }}
-              >
-                {highlight(ch.code)}
-              </pre>
-            </div>
-
-            {/* options */}
-            <div className="grid grid-cols-2 gap-2 p-5">
-              {ch.options.map((opt, oi) => {
-                let bg = "bg-[#12121f]";
-                let border = "border-white/10";
-                let textCol = "text-white/70";
-                let letterBg = "bg-[#1e1e32] border-white/10 text-white/40";
-
-                if (hasSelected) {
-                  if (submitted) {
-                    if (oi === ch.correct) {
-                      bg = "bg-emerald-500/10";
-                      border = "border-emerald-500";
-                      textCol = "text-emerald-400";
-                      letterBg = "bg-emerald-500 border-emerald-500 text-white";
-                    } else if (oi === selected && !isCorrect) {
-                      bg = "bg-red-500/10";
-                      border = "border-red-500";
-                      textCol = "text-red-400";
-                      letterBg = "bg-red-500 border-red-500 text-white";
-                    } else {
-                      textCol = "text-white/30";
-                    }
-                  } else {
-                    // selected but not submitted
-                    if (oi === selected) {
-                      bg = "bg-indigo-500/10";
-                      border = "border-indigo-400";
-                      textCol = "text-indigo-300";
-                      letterBg = "bg-indigo-500 border-indigo-500 text-white";
-                    } else {
-                      textCol = "text-white/30";
-                    }
-                  }
-                }
-
-                const disabled = hasSelected;
-                return (
-                  <button
-                    key={oi}
-                    disabled={disabled}
-                    onClick={() => !disabled && onAnswer(ch.id, oi)}
-                    className={`flex items-center gap-2.5 text-left px-3.5 py-2.5 rounded-lg border text-[0.82rem] font-mono transition-all duration-150
-                      ${bg} ${border} ${textCol}
-                      ${!disabled ? "hover:bg-indigo-500/10 hover:border-indigo-400 hover:text-indigo-300 cursor-pointer" : "cursor-default"}
-                    `}
-                  >
-                    <span
-                      className={`w-5 h-5 shrink-0 rounded flex items-center justify-center text-[0.62rem] font-bold border ${letterBg}`}
-                    >
-                      {String.fromCharCode(65 + oi)}
-                    </span>
-                    {opt}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* explanation — only after submit */}
-            {submitted && hasSelected && (
-              <div
-                className={`mx-5 mb-5 px-4 py-3 rounded-lg text-[0.8rem] leading-relaxed border ${
-                  isCorrect
-                    ? "bg-emerald-500/[0.07] border-emerald-500/25 text-white/70"
-                    : "bg-red-500/[0.07] border-red-500/25 text-white/70"
-                }`}
-              >
-                {isCorrect ? "✅" : "❌"} {ch.explanation}
-              </div>
-            )}
-          </div>
-        );
-      })}
-
-      {/* result card — only after submit */}
-      {submitted && (
-        <div
-          ref={resultRef}
-          className="flex flex-col items-center text-center p-8 rounded-2xl border border-white/10 bg-[#161625]"
-        >
-          <div className="text-5xl mb-3">
-            {correctCount === total ? "🏆" : correctCount >= total - 1 ? "🎯" : "📚"}
-          </div>
-          <h3
-            className="text-2xl font-extrabold text-white mb-1.5"
-            style={{ fontFamily: "'Syne', sans-serif" }}
-          >
-            {correctCount === total
-              ? "Perfect Score!"
-              : correctCount >= total - 1
-              ? "Well Done!"
-              : "Keep Practicing!"}
-          </h3>
-          <p className="text-sm text-white/40 mb-5">
-            {correctCount} / {total} correct answers
-          </p>
-          <div
-            className="flex items-center gap-2 px-6 py-3 rounded-xl border font-mono font-bold text-lg"
-            style={{
-              color: "#F59E0B",
-              background: "rgba(245,158,11,0.08)",
-              borderColor: "rgba(245,158,11,0.25)",
-            }}
-          >
-            ⚡ +{part.xp} XP Earned
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── SIDEBAR PART ITEM ────────────────────────────────────────────────────────
-function SidebarPartItem({ part, index, isActive, isDone, isAccessible, onClick }) {
-  return (
-    <div
-      onClick={isAccessible ? onClick : undefined}
-      className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl border mb-1 transition-all duration-200 overflow-hidden
-        ${isAccessible ? "cursor-pointer" : "cursor-not-allowed opacity-40"}
-        ${isActive ? "bg-[#161625] border-white/10" : "border-transparent hover:bg-[#161625]/60"}
-      `}
-    >
-      {/* active indicator bar */}
-      {isActive && (
-        <div
-          className="absolute left-0 top-1 bottom-1 w-0.5 rounded-r"
-          style={{ background: part.color, boxShadow: `0 0 8px ${part.glow}` }}
-        />
-      )}
-
-      {/* icon */}
-      <div
-        className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center text-sm border transition-all"
-        style={
-          isDone
-            ? { background: "rgba(16,185,129,0.12)", borderColor: "#10B981" }
-            : isActive
-            ? { background: "#12121f", borderColor: part.color, boxShadow: `0 0 10px ${part.glow}` }
-            : { background: "#12121f", borderColor: "rgba(255,255,255,0.07)" }
-        }
-      >
-        {isDone ? "✅" : part.icon}
-      </div>
-
-      {/* meta */}
-      <div className="flex-1 min-w-0">
-        <div className="font-mono text-[0.62rem] uppercase tracking-wider text-white/30 mb-0.5">
-          Part {index + 1}
-        </div>
-        <div
-          className={`text-[0.83rem] truncate ${isActive ? "font-semibold text-white" : "font-medium text-white/70"}`}
-        >
-          {part.title}
-        </div>
-      </div>
-
-      {/* xp or lock */}
-      {!isAccessible ? (
-        <span className="text-xs text-white/30">🔒</span>
-      ) : (
-        <span
-          className="text-[0.68rem] font-mono font-bold px-2 py-0.5 rounded-md border shrink-0"
-          style={{
-            color: part.color,
-            background: part.glow.replace("0.35", "0.08").replace("0.4", "0.08"),
-            borderColor: part.color + "44",
-          }}
-        >
-          +{part.xp}
-        </span>
-      )}
-    </div>
-  );
-}
-
-// ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
-export default function LevelPage() {
-  const [currentPart, setCurrentPart] = useState(0);
-  const [completedParts, setCompletedParts] = useState(new Set());
-  const [earnedXP, setEarnedXP] = useState(0);
-  const [answers, setAnswers] = useState({});       // {challengeId: chosenIdx}
-  const [submitted, setSubmitted] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const mainRef = useRef(null);
-
-  const part = CHAPTER.parts[currentPart];
-  const totalXP = CHAPTER.parts.reduce((s, p) => s + p.xp, 0);
-  const xpPct = Math.round((earnedXP / totalXP) * 100);
-
-  const isChallenge = part.type === "challenge";
-  const isSubmitted = submitted || completedParts.has(currentPart);
-  const allAnswered = isChallenge
-    ? part.challenges.every((ch) => answers[ch.id] !== undefined)
-    : false;
-
-  // ── nav labels + enabled state ──
-  const nextLabel = isChallenge && !isSubmitted
-    ? "Submit ✓"
-    : isChallenge && isSubmitted
-    ? "Next Chapter →"
-    : "Next Part →";
-
-  const nextEnabled = isChallenge && !isSubmitted
-    ? allAnswered
-    : true;
-
-  // ── navigate ──
-  const navigateTo = useCallback(
-    (idx) => {
-      if (idx < 0 || idx >= CHAPTER.parts.length) return;
-      const accessible =
-        idx === 0 ||
-        completedParts.has(idx - 1) ||
-        completedParts.has(idx) ||
-        idx <= currentPart;
-      if (!accessible) return;
-
-      setCurrentPart(idx);
-      const p = CHAPTER.parts[idx];
-      setSubmitted(p.type === "challenge" ? completedParts.has(idx) : false);
-      setSidebarOpen(false);
-      if (mainRef.current) mainRef.current.scrollTop = 0;
-    },
-    [completedParts, currentPart]
-  );
-
-  // ── handle answer ──
-  const handleAnswer = useCallback((challengeId, chosen) => {
-    setAnswers((prev) => {
-      if (prev[challengeId] !== undefined) return prev;
-      return { ...prev, [challengeId]: chosen };
-    });
   }, []);
 
-  // ── handle next ──
-  const handleNext = useCallback(() => {
-    if (isChallenge && !isSubmitted) {
-      // Submit
-      setSubmitted(true);
-      if (!completedParts.has(currentPart)) {
-        setCompletedParts((prev) => new Set([...prev, currentPart]));
-        setEarnedXP((prev) => prev + part.xp);
-      }
-    } else if (isChallenge && isSubmitted) {
-      // Next chapter (last part)
-      if (currentPart < CHAPTER.parts.length - 1) {
-        navigateTo(currentPart + 1);
-      } else {
-        alert("🎉 Chapter Complete! Proceeding to next chapter...");
-      }
-    } else {
-      // Lesson — complete and advance
-      if (!completedParts.has(currentPart)) {
-        setCompletedParts((prev) => new Set([...prev, currentPart]));
-        setEarnedXP((prev) => prev + part.xp);
-      }
-      if (currentPart < CHAPTER.parts.length - 1) {
-        navigateTo(currentPart + 1);
-      } else {
-        alert("🎉 Chapter Complete!");
-      }
-    }
-  }, [isChallenge, isSubmitted, completedParts, currentPart, part, navigateTo]);
+  function handleToggleReply() {
+    const opening = !replyInputOpen;
+    setReplyInputOpen(opening);
+    if (opening) setRepliesOpen(true);
+  }
 
-  const isPartAccessible = (idx) =>
-    idx === 0 ||
-    completedParts.has(idx - 1) ||
-    completedParts.has(idx) ||
-    idx <= currentPart;
-
-  // ── grid texture style ──
-  const gridBg = {
-    backgroundImage:
-      "linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px)",
-    backgroundSize: "32px 32px",
-  };
+  function handlePostReply() {
+    if (!replyText.trim()) return;
+    onAddReply(comment.id, replyText.trim());
+    setReplyText("");
+    setReplyInputOpen(false);
+  }
 
   return (
     <div
-      className="h-screen w-screen overflow-hidden flex flex-col bg-[#07070f] text-[#e8e8f0]"
-      style={{ fontFamily: "'DM Sans', sans-serif" }}
+      ref={cardRef}
+      className="comment-card-hover rounded-2xl p-4 transition-colors"
+      style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
     >
-      {/* ── grid overlay ── */}
-      <div className="fixed inset-0 pointer-events-none z-0" style={gridBg} />
-
-      {/* ── HEADER ── */}
-      <header
-        className="fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between px-6 border-b border-white/10"
-        style={{ background: "rgba(7,7,15,0.92)", backdropFilter: "blur(16px)" }}
-      >
-        {/* logo */}
-        <span
-          className="font-extrabold text-xl tracking-tight"
-          style={{
-            fontFamily: "'Syne', sans-serif",
-            background: "linear-gradient(135deg, #a78bfa, #6c63ff)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-          }}
-        >
-          ⟨ CodePath /⟩
-        </span>
-
-        <div className="flex items-center gap-4">
-          {/* hamburger — mobile only */}
-          <button
-            className="md:hidden flex flex-col gap-1.5 p-1"
-            onClick={() => setSidebarOpen((v) => !v)}
-            aria-label="Menu"
-          >
-            <span className="block w-5 h-0.5 bg-white/40 rounded" />
-            <span className="block w-5 h-0.5 bg-white/40 rounded" />
-            <span className="block w-5 h-0.5 bg-white/40 rounded" />
-          </button>
-
-          {/* xp pill */}
-          <div
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-white/10 font-mono text-xs font-bold text-amber-400"
-            style={{ background: "#1e1e32" }}
-          >
-            ⚡ <span>{earnedXP}</span> XP
+      {/* Head */}
+      <div className="flex items-center gap-2.5 mb-2.5">
+        <Avatar initials={comment.initials} gradientIdx={comment.avatarIdx} size={36} />
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <span className="font-sans-coder font-bold coder-text" style={{ fontSize: 13 }}>{comment.name}</span>
+            <Badge badge={comment.badge} />
           </div>
-
-          {/* avatar */}
-          <div
-            className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white"
-            style={{ background: "linear-gradient(135deg, #6c63ff, #a78bfa)" }}
-          >
-            JS
-          </div>
+          <div className="coder-text3 font-mono-coder" style={{ fontSize: 10, marginTop: 1 }}>{comment.date}</div>
         </div>
-      </header>
+      </div>
 
-      {/* ── BODY (below header) ── */}
-      <div className="fixed top-16 bottom-0 left-0 right-0 flex z-10">
+      {/* Voice Note */}
+      {comment.voiceNote && <VoiceNote duration={comment.voiceNote.duration} />}
 
-        {/* ── mobile overlay ── */}
-        {sidebarOpen && (
-          <div
-            className="fixed inset-0 z-40 bg-black/60 md:hidden"
-            style={{ backdropFilter: "blur(4px)" }}
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
+      {/* Image */}
+      {comment.image && (
+        <div className="mb-3 rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)", maxWidth: 320 }}>
+          <img src={comment.image} alt="attachment" className="w-full block" onError={e => e.target.parentElement.style.display = "none"} />
+        </div>
+      )}
 
-        {/* ── SIDEBAR ── */}
-        <aside
-          className={`
-            fixed md:relative top-16 md:top-0 bottom-0 left-0 z-50 md:z-auto
-            w-72 flex flex-col shrink-0
-            border-r border-white/[0.07] bg-[#0d0d1a]
-            transition-transform duration-[350ms] ease-[cubic-bezier(.4,0,.2,1)]
-            ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
-          `}
+      {/* Body */}
+      <div
+        className="font-mono-coder coder-text mb-3"
+        style={{ fontSize: 13, lineHeight: 1.7 }}
+        dangerouslySetInnerHTML={{ __html: comment.body }}
+      />
+
+      {/* Footer */}
+      <div className="flex items-center gap-1.5">
+        <button
+          onClick={() => onLike(comment.id)}
+          className={`like-btn flex items-center gap-1 rounded-lg px-2.5 py-1 font-mono-coder transition-all border border-transparent coder-text3 ${comment.liked ? "liked" : ""}`}
+          style={{ fontSize: 11, cursor: "pointer", background: "none" }}
         >
-          {/* chapter badge */}
-          <div className="px-5 py-4 border-b border-white/[0.07] shrink-0">
-            <div
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-white/10 font-mono text-[0.65rem] uppercase tracking-widest text-white/40 mb-2.5"
-              style={{ background: "#1e1e32" }}
-            >
-              <span
-                className="w-1.5 h-1.5 rounded-full"
-                style={{
-                  background: part.color,
-                  boxShadow: `0 0 6px ${part.color}`,
-                }}
-              />
-              Chapter 1
-            </div>
-            <h2
-              className="text-[1rem] font-bold text-white leading-snug"
-              style={{ fontFamily: "'Syne', sans-serif" }}
-            >
-              {CHAPTER.title}
-            </h2>
-          </div>
+          <span>♥</span>
+          <span>{comment.likes}</span>
+        </button>
 
-          {/* xp bar */}
-          <div className="px-5 py-3.5 border-b border-white/[0.07] shrink-0">
-            <div className="flex justify-between items-center mb-2">
-              <span className="font-mono text-[0.65rem] uppercase tracking-widest text-white/30">
-                ⚡ XP Progress
-              </span>
-              <span className="font-mono text-[0.75rem] font-bold text-amber-400">
-                {earnedXP} / {totalXP} XP
-              </span>
+        <button
+          onClick={handleToggleReply}
+          className="reply-toggle-btn flex items-center gap-1 rounded-lg px-2.5 py-1 font-mono-coder transition-all border border-transparent coder-text3"
+          style={{ fontSize: 11, cursor: "pointer", background: "none" }}
+        >
+          ↩ Reply
+        </button>
+
+        {comment.replies.length > 0 && (
+          <button
+            onClick={() => setRepliesOpen(o => !o)}
+            className="flex items-center gap-1 rounded-lg px-2.5 py-1 font-mono-coder transition-all border border-transparent coder-accent2 action-btn-hover"
+            style={{ fontSize: 11, cursor: "pointer", background: "none", marginLeft: "auto" }}
+          >
+            {repliesOpen ? "▾" : "▸"} {comment.replies.length} {comment.replies.length === 1 ? "reply" : "replies"}
+          </button>
+        )}
+      </div>
+
+      {/* Replies */}
+      {repliesOpen && comment.replies.length > 0 && (
+        <div
+          ref={repliesRef}
+          className="mt-3 pt-3 flex flex-col gap-2.5"
+          style={{ borderTop: "1px solid var(--border)" }}
+        >
+          {comment.replies.map(r => (
+            <ReplyCard key={r.id} reply={r} onLike={(rid) => onReplyLike(comment.id, rid)} />
+          ))}
+        </div>
+      )}
+
+      {/* Reply Input */}
+      {replyInputOpen && (
+        <div
+          ref={replyWrapRef}
+          className="reply-wrap-focus flex gap-2 items-start mt-2.5 p-2.5 rounded-xl transition-colors"
+          style={{ border: "1px solid var(--border)", background: "var(--surface2)" }}
+        >
+          <Avatar initials="Y" size={28} self />
+          <textarea
+            className="flex-1 bg-transparent border-none outline-none coder-text font-mono-coder resize-none"
+            style={{ fontSize: 12, lineHeight: 1.6, minHeight: 40 }}
+            placeholder="Write a reply..."
+            value={replyText}
+            onChange={e => setReplyText(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handlePostReply(); }}
+            autoFocus
+          />
+          <button
+            onClick={handlePostReply}
+            className="text-white rounded-lg px-3 py-1.5 font-mono-coder transition-opacity hover:opacity-85"
+            style={{ fontSize: 11, background: "var(--accent)", border: "none", cursor: "pointer" }}
+          >
+            ↩
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Main Component ─── */
+ function Comments() {
+  const [comments, setComments] = useState(INITIAL_COMMENTS);
+  const [mainText, setMainText] = useState("");
+  const [pendingFiles, setPendingFiles] = useState([]);
+  const [hasVoice, setHasVoice] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recSeconds, setRecSeconds] = useState(0);
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  const [voiceDuration, setVoiceDuration] = useState(0);
+
+  const mainInputRef = useRef(null);
+  const recIntervalRef = useRef(null);
+  const headerRef = useRef(null);
+  const inputAreaRef = useRef(null);
+  const threadRef = useRef(null);
+  const emojiPanelRef = useRef(null);
+
+  /* Page-load GSAP stagger */
+  useEffect(() => {
+    const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+    tl.fromTo(headerRef.current, { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.5 })
+      .fromTo(inputAreaRef.current, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.4 }, "-=0.2")
+      .fromTo(
+        threadRef.current?.children ? Array.from(threadRef.current.children) : [],
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.35, stagger: 0.08 },
+        "-=0.1"
+      );
+  }, []);
+
+  /* Close emoji on outside click */
+  useEffect(() => {
+    function handler(e) {
+      if (emojiPanelRef.current && !emojiPanelRef.current.contains(e.target)) setEmojiOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  /* ─── Recording ─── */
+  function startRecording() {
+    setIsRecording(true);
+    setRecSeconds(0);
+    recIntervalRef.current = setInterval(() => setRecSeconds(s => s + 1), 1000);
+  }
+  function stopRecording() {
+    setIsRecording(false);
+    clearInterval(recIntervalRef.current);
+    setHasVoice(true);
+    setVoiceDuration(recSeconds);
+  }
+  function toggleRecording() {
+    if (isRecording) stopRecording(); else startRecording();
+  }
+  function removeVoice() {
+    setHasVoice(false);
+    setVoiceDuration(0);
+  }
+  const fmtTime = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+
+  /* ─── File upload ─── */
+  function handleFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setPendingFiles(p => [...p, { file, url: URL.createObjectURL(file) }]);
+    e.target.value = "";
+  }
+  function removeFile(name) {
+    setPendingFiles(p => p.filter(f => f.file.name !== name));
+  }
+
+  /* ─── Emoji ─── */
+  function insertEmoji(em) {
+    const inp = mainInputRef.current;
+    const pos = inp.selectionStart;
+    const next = mainText.slice(0, pos) + em + mainText.slice(pos);
+    setMainText(next);
+    setEmojiOpen(false);
+    setTimeout(() => {
+      inp.focus();
+      inp.setSelectionRange(pos + em.length, pos + em.length);
+    }, 0);
+  }
+
+  /* ─── Like ─── */
+  function handleLike(cid) {
+    setComments(cs =>
+      cs.map(c =>
+        c.id === cid
+          ? { ...c, liked: !c.liked, likes: c.liked ? c.likes - 1 : c.likes + 1 }
+          : c
+      )
+    );
+  }
+  function handleReplyLike(cid, rid) {
+    setComments(cs =>
+      cs.map(c =>
+        c.id === cid
+          ? {
+            ...c,
+            replies: c.replies.map(r =>
+              r.id === rid ? { ...r, liked: !r.liked, likes: r.liked ? r.likes - 1 : r.likes + 1 } : r
+            ),
+          }
+          : c
+      )
+    );
+  }
+
+  /* ─── Add Reply ─── */
+  function handleAddReply(cid, text) {
+    const newReply = {
+      id: `r_${Date.now()}`,
+      name: "You",
+      initials: "Y",
+      avatarIdx: Math.floor(Math.random() * AV_GRADIENTS.length),
+      date: formatDate(new Date()),
+      body: text,
+      likes: 0,
+      liked: false,
+      self: true,
+    };
+    setComments(cs =>
+      cs.map(c => c.id === cid ? { ...c, replies: [...c.replies, newReply] } : c)
+    );
+  }
+
+  /* ─── Post Comment ─── */
+  function postComment() {
+    if (!mainText.trim() && !pendingFiles.length && !hasVoice) return;
+    const newComment = {
+      id: `c_${Date.now()}`,
+      name: "You",
+      initials: "Y",
+      avatarIdx: 0,
+      badge: null,
+      date: formatDate(new Date()),
+      body: mainText,
+      likes: 0,
+      liked: false,
+      replies: [],
+      image: pendingFiles[0]?.url || null,
+      voiceNote: hasVoice ? { duration: fmtTime(voiceDuration) } : null,
+      self: true,
+    };
+    setComments(cs => [newComment, ...cs]);
+    setMainText("");
+    setPendingFiles([]);
+    setHasVoice(false);
+    setVoiceDuration(0);
+  }
+
+  const showPreviewBar = pendingFiles.length > 0 || hasVoice;
+
+  return (
+     <div className="coder-bg font-mono-coder coder-text min-h-screen">
+      <div className="max-w-3xl mx-auto px-5 py-10 pb-20">
+
+          {/* ─── INPUT AREA ─── */}
+          <div
+            ref={inputAreaRef}
+            className="input-area-focus rounded-2xl p-4 mb-7 transition-all"
+            style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+          >
+            <div className="flex gap-3 items-start">
+              <Avatar initials="Y" size={36} self />
+              <textarea
+                ref={mainInputRef}
+                className="flex-1 bg-transparent border-none outline-none coder-text font-mono-coder resize-none"
+                style={{ fontSize: 13, lineHeight: 1.6, minHeight: 60 }}
+                placeholder="add your comment"
+                value={mainText}
+                onChange={e => setMainText(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) postComment(); }}
+              />
             </div>
-            <div className="h-1.5 bg-[#1e1e32] rounded-full overflow-hidden">
+
+            {/* Preview Bar */}
+            {showPreviewBar && (
+              <div className="flex flex-wrap gap-2 mt-2.5">
+                {pendingFiles.map(f => (
+                  <div
+                    key={f.file.name}
+                    className="flex items-center gap-1.5 font-mono-coder coder-text2 rounded-lg px-2.5 py-1"
+                    style={{ fontSize: 11, background: "var(--surface3)", border: "1px solid var(--border)" }}
+                  >
+                    🖼 {f.file.name}
+                    <span className="coder-red cursor-pointer" onClick={() => removeFile(f.file.name)}>✕</span>
+                  </div>
+                ))}
+                {hasVoice && (
+                  <div
+                    className="flex items-center gap-1.5 font-mono-coder coder-text2 rounded-lg px-2.5 py-1"
+                    style={{ fontSize: 11, background: "var(--surface3)", border: "1px solid var(--border)" }}
+                  >
+                    🎙 Voice note ({fmtTime(voiceDuration)})
+                    <span className="coder-red cursor-pointer" onClick={removeVoice}>✕</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Voice Recording Bar */}
+            {isRecording && (
               <div
-                className="h-full rounded-full transition-all duration-700 ease-[cubic-bezier(.4,0,.2,1)]"
+                className="flex items-center gap-2.5 mt-2.5 rounded-xl px-3 py-2"
+                style={{ background: "rgba(255,107,107,0.07)", border: "1px solid rgba(255,107,107,0.25)" }}
+              >
+                <div className="rec-pulse rounded-full" style={{ width: 8, height: 8, background: "var(--red)" }} />
+                <span className="coder-red font-mono-coder flex-1" style={{ fontSize: 12 }}>{fmtTime(recSeconds)}</span>
+                <button
+                  onClick={stopRecording}
+                  className="text-white font-mono-coder rounded-lg px-2.5 py-1"
+                  style={{ fontSize: 11, background: "var(--red)", border: "none", cursor: "pointer" }}
+                >
+                  ■ Stop
+                </button>
+              </div>
+            )}
+
+            {/* Action Bar */}
+            <div
+              className="flex items-center gap-2 mt-3 pt-3"
+              style={{ borderTop: "1px solid var(--border)" }}
+            >
+              {/* Image Upload */}
+              <label
+                className="attach-btn-hover flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 coder-text2 font-mono-coder transition-all cursor-pointer"
+                style={{ fontSize: 13, background: "var(--surface2)", border: "1px solid var(--border)" }}
+                title="Image / GIF"
+              >
+                🖼 <span style={{ fontSize: 11 }}>IMG</span>
+                <input type="file" accept="image/*,image/gif" className="hidden" onChange={handleFile} />
+              </label>
+
+              {/* Emoji */}
+              <div className="relative" ref={emojiPanelRef}>
+                <button
+                  className="attach-btn-hover flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 coder-text2 font-mono-coder transition-all"
+                  style={{ fontSize: 13, background: "var(--surface2)", border: "1px solid var(--border)", cursor: "pointer" }}
+                  onClick={() => setEmojiOpen(o => !o)}
+                  title="Emoji"
+                >
+                  😊 <span style={{ fontSize: 11 }}>EMO</span>
+                </button>
+                {emojiOpen && (
+                  <div
+                    className="absolute z-50 rounded-xl p-2.5"
+                    style={{
+                      bottom: 42, left: 0,
+                      background: "var(--surface2)",
+                      border: "1px solid var(--border2)",
+                      boxShadow: "0 8px 30px rgba(0,0,0,0.5)",
+                      width: 260,
+                      display: "grid",
+                      gridTemplateColumns: "repeat(8,1fr)",
+                      gap: 4,
+                    }}
+                  >
+                    {EMOJIS.map(em => (
+                      <button
+                        key={em}
+                        onClick={() => insertEmoji(em)}
+                        className="rounded-lg transition-colors hover:bg-gray-700"
+                        style={{ fontSize: 18, padding: 4, background: "none", border: "none", cursor: "pointer" }}
+                      >
+                        {em}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Voice */}
+              <button
+                onClick={toggleRecording}
+                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-mono-coder transition-all ${isRecording ? "rec-pulse" : "attach-btn-hover"}`}
                 style={{
-                  width: `${xpPct}%`,
-                  background: "linear-gradient(90deg, #F59E0B, #fcd34d)",
-                  boxShadow: "0 0 8px rgba(245,158,11,0.4)",
+                  fontSize: 13,
+                  background: "var(--surface2)",
+                  border: `1px solid ${isRecording ? "var(--red)" : "var(--border)"}`,
+                  color: isRecording ? "var(--red)" : "var(--text2)",
+                  cursor: "pointer",
                 }}
-              />
+                title="Voice Note"
+              >
+                🎙 <span style={{ fontSize: 11 }}>{isRecording ? "REC..." : "VOICE"}</span>
+              </button>
+
+              {/* Send */}
+              <button
+                onClick={postComment}
+                className="ml-auto text-white font-mono-coder font-semibold rounded-lg px-4 py-1.5 transition-all hover:opacity-90 hover:-translate-y-px active:translate-y-0"
+                style={{
+                  fontSize: 12,
+                  letterSpacing: 0.3,
+                  background: "linear-gradient(135deg,var(--accent),#9f7aea)",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                Post →
+              </button>
             </div>
           </div>
 
-          {/* part list */}
-          <div className="flex-1 overflow-y-auto p-3 scrollbar-thin">
-            {CHAPTER.parts.map((p, i) => (
-              <SidebarPartItem
-                key={p.id}
-                part={p}
-                index={i}
-                isActive={i === currentPart}
-                isDone={completedParts.has(i)}
-                isAccessible={isPartAccessible(i)}
-                onClick={() => navigateTo(i)}
+          {/* ─── COMMENTS LABEL ─── */}
+          <div
+            className="font-sans-coder font-bold coder-text3 uppercase tracking-widest mb-4"
+            style={{ fontSize: 12, letterSpacing: "1.5px" }}
+          >
+            — Comments
+          </div>
+
+          {/* ─── COMMENT THREAD ─── */}
+          <div ref={threadRef} className="flex flex-col gap-3.5 min-h-screen overflow-y-scroll">
+            {comments.map(c => (
+              <CommentCard
+                key={c.id}
+                comment={c}
+                onLike={handleLike}
+                onReplyLike={handleReplyLike}
+                onAddReply={handleAddReply}
               />
             ))}
           </div>
-
-          {/* chapter progress footer */}
-          <div className="px-5 py-3.5 border-t border-white/[0.07] shrink-0">
-            <div className="flex justify-between text-[0.72rem] text-white/30 mb-1.5">
-              <span>Chapter Progress</span>
-              <span>{completedParts.size} / {CHAPTER.parts.length} Parts</span>
-            </div>
-            <div className="h-1 bg-[#1e1e32] rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-700"
-                style={{
-                  width: `${(completedParts.size / CHAPTER.parts.length) * 100}%`,
-                  background: part.color,
-                }}
-              />
-            </div>
-          </div>
-        </aside>
-
-        {/* ── MAIN ── */}
-        <main
-          ref={mainRef}
-          className="flex-1 overflow-y-auto relative"
-          style={{ scrollbarWidth: "thin", scrollbarColor: "#1e1e32 transparent" }}
-        >
-          <div className="max-w-3xl mx-auto px-5 md:px-8 pt-10 pb-28">
-
-            {/* part header */}
-            <div className="mb-8">
-              {/* breadcrumb */}
-              <div className="flex items-center gap-2 font-mono text-[0.68rem] uppercase tracking-widest text-white/30 mb-4">
-                <span>Chapter 1</span>
-                <span className="text-white/20">›</span>
-                <span style={{ color: part.color }}>Part {part.id}</span>
-              </div>
-
-              {/* title row */}
-              <div className="flex items-start gap-4 flex-wrap">
-                {/* color bar */}
-                <div
-                  className="w-1 self-stretch min-h-[52px] rounded shrink-0"
-                  style={{ background: part.color, boxShadow: `0 0 12px ${part.glow}` }}
-                />
-                <div className="flex-1">
-                  <h1
-                    className="text-3xl md:text-4xl font-extrabold text-white tracking-tight leading-none mb-1"
-                    style={{ fontFamily: "'Syne', sans-serif", letterSpacing: "-0.03em" }}
-                  >
-                    {part.title}
-                  </h1>
-                  <p className="text-base text-white/40 font-light">{part.subtitle}</p>
-                </div>
-                {/* xp badge */}
-                <div
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border font-mono text-[0.78rem] font-bold shrink-0 mt-1"
-                  style={{
-                    color: part.color,
-                    background: part.glow.replace("0.35","0.07").replace("0.4","0.07"),
-                    borderColor: part.color + "44",
-                  }}
-                >
-                  ⚡ +{part.xp} XP
-                </div>
-              </div>
-            </div>
-
-            {/* divider */}
-            <div className="h-px bg-white/[0.07] mb-8" />
-
-            {/* content */}
-            {part.type === "lesson" ? (
-              <LessonContent part={part} />
-            ) : (
-              <ChallengeContent
-                part={part}
-                answers={answers}
-                onAnswer={handleAnswer}
-                submitted={isSubmitted}
-              />
-            )}
-          </div>
-        </main>
-      </div>
-
-      {/* ── BOTTOM NAV ── */}
-      <div
-        className="fixed bottom-0 right-0 z-30 flex items-center justify-between gap-3 px-5 md:px-8 py-4"
-        style={{
-          left: 0,
-          // on md+ shift right by sidebar width
-          background: "linear-gradient(to top, rgba(7,7,15,0.97) 60%, transparent)",
-        }}
-      >
-        {/* prev */}
-        <button
-          disabled={currentPart === 0}
-          onClick={() => navigateTo(currentPart - 1)}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-white/10 text-white/40 text-sm font-bold transition-all
-            hover:bg-[#161625] hover:text-white/70 disabled:opacity-30 disabled:cursor-not-allowed"
-          style={{ fontFamily: "'Syne', sans-serif" }}
-        >
-          ← Previous Part
-        </button>
-
-        {/* dots */}
-        <div className="hidden sm:flex items-center gap-1.5">
-          {CHAPTER.parts.map((p, i) => (
-            <div
-              key={i}
-              className={`h-2 rounded-full border transition-all duration-300 ${
-                i === currentPart ? "w-5" : "w-2"
-              }`}
-              style={{
-                background: i === currentPart
-                  ? p.color
-                  : completedParts.has(i)
-                  ? "rgba(16,185,129,0.5)"
-                  : "#1e1e32",
-                borderColor: i === currentPart
-                  ? p.color
-                  : completedParts.has(i)
-                  ? "#10B981"
-                  : "rgba(255,255,255,0.1)",
-              }}
-            />
-          ))}
         </div>
-
-        {/* next / submit / next chapter */}
-        <button
-          disabled={!nextEnabled}
-          onClick={handleNext}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-transparent text-white text-sm font-bold transition-all
-            disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110"
-          style={{
-            fontFamily: "'Syne', sans-serif",
-            background: `linear-gradient(135deg, ${part.color}, ${part.color}bb)`,
-            boxShadow: nextEnabled ? `0 4px 20px ${part.glow}` : "none",
-          }}
-        >
-          {nextLabel}
-        </button>
       </div>
-    </div>
   );
-} 
+}

@@ -12,98 +12,97 @@ import {
   FaTrash,
   FaMedal
 } from 'react-icons/fa';
+import { useDispatch, useSelector } from 'react-redux';
+import { setActiveTab, setConfirmRemoveId, setFriendRequests, setIsSearching, setSearchQuery, setSearchResults, setSuccessMessage, setError, setIsLoading, setFriends } from '../redux/slices/friendsSlice';
+import { createAsyncThunk } from '@reduxjs/toolkit';
+import { useNavigate } from 'react-router-dom';
 
 function getAuthHeaders() {
   const token = localStorage.getItem('token');
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-export default function FriendsPage() {
-  const [activeTab, setActiveTab] = useState('friends'); // 'friends', 'requests', 'search'
-  const [friends, setFriends] = useState([]);
-  const [friendRequests, setFriendRequests] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState(null);
-  const [isSearching, setIsSearching] = useState(false);
-  const [confirmRemoveId, setConfirmRemoveId] = useState(null);
-  const apiUrl = import.meta.env.VITE_API_URL || '';
+const apiUrl = import.meta.env.VITE_API_URL || '';
 
-  // Fetch friends list
-  const fetchFriends = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await axios.get(`${apiUrl}/api/social/friends`, {
-        withCredentials: true,
-        headers: getAuthHeaders()
-      });
-      setFriends(response.data.friends);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load friends');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [apiUrl]);
+// Fetch friends list
+export const fetchFriends = createAsyncThunk('friends/fetchFriends', async (_, { rejectWithValue }) => {
+  try {
+    const response = await axios.get(`${apiUrl}/api/social/friends`, {
+      withCredentials: true,
+      headers: getAuthHeaders()
+    });
+    return response.data.friends;
+  } catch (error) {
+    return rejectWithValue(error.response?.data?.message || 'Failed to load friends');
+  }
+});
 
-  // Fetch friend requests
-  const fetchFriendRequests = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await axios.get(`${apiUrl}/api/social/friend-requests`, {
-        withCredentials: true,
-        headers: getAuthHeaders()
-      });
-      setFriendRequests(response.data.requests);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load friend requests');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [apiUrl]);
+// Fetch friend requests
+export const fetchFriendRequests = createAsyncThunk('friends/fetchFriendRequests', async (_, { rejectWithValue }) => {
+  try {
+    const response = await axios.get(`${apiUrl}/api/social/friend-requests`, {
+      withCredentials: true,
+      headers: getAuthHeaders()
+    });
+    return response.data.requests;
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.message || 'Failed to load friend requests');
+  }
+});
 
-  // Search users
-  const searchUsers = useCallback(async () => {
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      return;
-    }
+// Search users
+export const searchUsers = createAsyncThunk('friends/searchUsers', async (query, { rejectWithValue }) => {
+  if (!query.trim()) {
+    return [];
+  }
+  try {
+    const response = await axios.get(`${apiUrl}/api/social/search`, {
+      params: { q: query },
+      withCredentials: true,
+      headers: getAuthHeaders()
+    });
+    return response.data.users;
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.message || 'Search failed');
+  }
+});
 
-    setIsSearching(true);
-    setError(null);
-    try {
-      const response = await axios.get(`${apiUrl}/api/social/search`, {
-        params: { q: searchQuery },
-        withCredentials: true,
-        headers: getAuthHeaders()
-      });
-      setSearchResults(response.data.users);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Search failed');
-    } finally {
-      setIsSearching(false);
-    }
-  }, [apiUrl, searchQuery]);
+export function FriendsPage() {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const activeTab = useSelector(state => state.friends.activeTab);
+  const friends = useSelector(state => state.friends.friends);
+  const friendRequests = useSelector(state => state.friends.friendRequests);
+  const searchQuery = useSelector(state => state.friends.searchQuery);
+  const searchResults = useSelector(state => state.friends.searchResults);
+  const isLoading = useSelector(state => state.friends.isLoading);
+  const error = useSelector(state => state.friends.error);
+  const successMessage = useSelector(state => state.friends.successMessage);
+  const isSearching = useSelector(state => state.friends.isSearching);
+  const confirmRemoveId = useSelector(state => state.friends.confirmRemoveId);
 
+  // Load friends when tab changes to friends
   useEffect(() => {
     if (activeTab === 'friends') {
-      fetchFriends();
+      dispatch(fetchFriends());
     } else if (activeTab === 'requests') {
-      fetchFriendRequests();
+      dispatch(fetchFriendRequests());
     }
-  }, [activeTab, fetchFriends, fetchFriendRequests]);
+  }, [activeTab, dispatch]);
 
+  // Search users with debounce
   useEffect(() => {
+    if (activeTab !== 'search') return;
+
     const debounce = setTimeout(() => {
-      if (activeTab === 'search') {
-        searchUsers();
+      if (searchQuery.trim()) {
+        dispatch(searchUsers(searchQuery));
+      } else {
+        dispatch(setSearchResults([]));
       }
     }, 300);
     return () => clearTimeout(debounce);
-  }, [searchQuery, activeTab, searchUsers]);
+  }, [searchQuery, activeTab, dispatch]);
 
   const handleSendRequest = async (userId) => {
     try {
@@ -112,23 +111,23 @@ export default function FriendsPage() {
         {},
         { withCredentials: true, headers: getAuthHeaders() }
       );
-      setSuccessMessage(response.data.message);
-      setTimeout(() => setSuccessMessage(null), 3000);
-      
+      dispatch(setSuccessMessage(response.data.message));
+      setTimeout(() => dispatch(setSuccessMessage(null)), 3000);
+
       // If auto-accepted, refresh friends list
       if (response.data.status === 'friends') {
-        fetchFriends();
+        dispatch(fetchFriends());
       }
-      
+
       // Update search results to show Pending state instead of removing
-      setSearchResults(prev =>
+      dispatch(setSearchResults(prev =>
         prev.map(user =>
           user._id === userId ? { ...user, hasPendingRequest: true } : user
         )
-      );
+      ));
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to send friend request');
-      setTimeout(() => setError(null), 3000);
+      dispatch(setError(err.response?.data?.message || 'Failed to send friend request'));
+      setTimeout(() => dispatch(setError(null)), 3000);
     }
   };
 
@@ -139,13 +138,13 @@ export default function FriendsPage() {
         {},
         { withCredentials: true, headers: getAuthHeaders() }
       );
-      setSuccessMessage('Friend request accepted!');
-      setTimeout(() => setSuccessMessage(null), 3000);
-      fetchFriendRequests();
-      fetchFriends();
+      dispatch(setSuccessMessage('Friend request accepted!'));
+      setTimeout(() => dispatch(setSuccessMessage(null)), 3000);
+      dispatch(fetchFriendRequests());
+      dispatch(fetchFriends());
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to accept request');
-      setTimeout(() => setError(null), 3000);
+      dispatch(setError(err.response?.data?.message || 'Failed to accept request'));
+      setTimeout(() => dispatch(setError(null)), 3000);
     }
   };
 
@@ -156,12 +155,12 @@ export default function FriendsPage() {
         {},
         { withCredentials: true, headers: getAuthHeaders() }
       );
-      setSuccessMessage('Friend request rejected');
-      setTimeout(() => setSuccessMessage(null), 3000);
-      fetchFriendRequests();
+      dispatch(setSuccessMessage('Friend request rejected'));
+      setTimeout(() => dispatch(setSuccessMessage(null)), 3000);
+      dispatch(fetchFriendRequests());
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to reject request');
-      setTimeout(() => setError(null), 3000);
+      dispatch(setError(err.response?.data?.message || 'Failed to reject request'));
+      setTimeout(() => dispatch(setError(null)), 3000);
     }
   };
 
@@ -171,29 +170,30 @@ export default function FriendsPage() {
         withCredentials: true,
         headers: getAuthHeaders()
       });
-      setSuccessMessage('Friend removed');
-      setTimeout(() => setSuccessMessage(null), 3000);
-      setConfirmRemoveId(null);
-      fetchFriends();
+      dispatch(setSuccessMessage('Friend removed'));
+      setTimeout(() => dispatch(setSuccessMessage(null)), 3000);
+      dispatch(setConfirmRemoveId(null));
+      dispatch(fetchFriends());
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to remove friend');
-      setTimeout(() => setError(null), 3000);
-      setConfirmRemoveId(null);
+      dispatch(setError(err.response?.data?.message || 'Failed to remove friend'));
+      setTimeout(() => dispatch(setError(null)), 3000);
+      dispatch(setConfirmRemoveId(null));
     }
   };
-
   const renderFriendCard = (friend, showRank = false, rank = 0) => (
     <div
       key={friend._id}
-      className="bg-[#141b24] rounded-lg p-4 border border-[#1f2a38] hover:border-cyan-600/50 transition"
+      className="bg-[#141b24] rounded-lg p-4 border border-[#1f2a38] cursor-pointer hover:border-cyan-600/50 transition"
     >
       <div className="flex items-center gap-3">
         {showRank && (
-          <div className="text-2xl font-bold text-cyan-400 w-8 flex-shrink-0">
+          <div className="text-2xl font-bold text-cyan-400 w-8 shrink-0">
             #{rank}
           </div>
         )}
-        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-xl font-bold flex-shrink-0">
+        <div
+          
+          className="w-14 h-14 rounded-full bg-linear-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-xl font-bold shrink-0">
           {friend.profilePic ? (
             <img src={friend.profilePic} alt={friend.username} className="w-full h-full rounded-full object-cover" />
           ) : (
@@ -201,49 +201,48 @@ export default function FriendsPage() {
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="font-bold text-lg truncate">{friend.username}</div>
-          <div className="text-sm text-gray-400">{friend.league}</div>
+          <div onClick={() => friend._id && navigate(`/profile/${friend._id}`)} className="font-bold text-lg truncate">{friend.username}</div>
+          {/* <div className="text-sm text-gray-400">{friend.league}</div> */}
         </div>
-        <div className="text-right flex-shrink-0">
-          <div className="flex items-center gap-1 text-orange-400 text-sm">
+        <div className="text-right shrink-0">
+          {/* <div className="flex items-center gap-1 text-orange-400 text-sm">
             <FaStar />
             <span className="font-semibold">{friend.totalXp.toLocaleString()}</span>
-          </div>
-          <div className="flex items-center gap-1 text-purple-400 text-sm mt-1">
+          </div> */}
+          <button
+              onClick={() => dispatch(setConfirmRemoveId(friend._id))}
+              className="flex-1 px-3 py-2 bg-red-600/20 cursor-pointer hover:bg-red-600/30 text-red-400 rounded-lg text-sm font-semibold transition flex items-center justify-center gap-2"
+            >
+              <FaTrash />
+            </button>
+          {/* <div className="flex items-center gap-1 text-purple-400 text-sm mt-1">
             <FaTrophy />
             <span>Level {friend.level}</span>
-          </div>
-          <div className="flex items-center gap-1 text-orange-500 text-sm mt-1">
+          </div> */}
+          {/* <div className="flex items-center gap-1 text-orange-500 text-sm mt-1">
             <FaFire />
             <span>{friend.streakCount} day</span>
-          </div>
+          </div> */}
         </div>
       </div>
       {!showRank && (
         <div className="mt-3 flex gap-2">
-          {confirmRemoveId === friend._id ? (
+          {confirmRemoveId === friend._id && (
             <>
               <span className="flex-1 text-sm text-gray-300 flex items-center">Are you sure?</span>
               <button
                 onClick={() => handleRemoveFriend(friend._id)}
-                className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition"
+                className="px-3 py-2 cursor-pointer bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition"
               >
                 Yes
               </button>
               <button
-                onClick={() => setConfirmRemoveId(null)}
-                className="px-3 py-2 bg-[#1a2332] hover:bg-[#243547] text-gray-400 rounded-lg text-sm font-semibold transition"
+                onClick={() => dispatch(setConfirmRemoveId(null))}
+                className="px-3 py-2 bg-[#1a2332] hover:bg-[#243547] cursor-pointer text-gray-400 rounded-lg text-sm font-semibold transition"
               >
                 Cancel
               </button>
             </>
-          ) : (
-            <button
-              onClick={() => setConfirmRemoveId(friend._id)}
-              className="flex-1 px-3 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg text-sm font-semibold transition flex items-center justify-center gap-2"
-            >
-              <FaTrash /> Remove
-            </button>
           )}
         </div>
       )}
@@ -279,23 +278,21 @@ export default function FriendsPage() {
         {/* Tabs */}
         <div className="flex gap-2 mb-6 overflow-x-auto">
           <button
-            onClick={() => setActiveTab('friends')}
-            className={`px-4 py-2 rounded-lg font-semibold transition whitespace-nowrap ${
-              activeTab === 'friends'
-                ? 'bg-cyan-600 text-white'
-                : 'bg-[#1a2332] text-gray-400 hover:bg-[#243547]'
-            }`}
+            onClick={() => dispatch(setActiveTab('friends'))}
+            className={`px-4 py-2 rounded-lg font-semibold transition whitespace-nowrap ${activeTab === 'friends'
+              ? 'bg-cyan-600 text-white'
+              : 'bg-[#1a2332] text-gray-400 hover:bg-[#243547]'
+              }`}
           >
             <FaUserFriends className="inline mr-2" />
             Friends ({friends.length})
           </button>
           <button
-            onClick={() => setActiveTab('requests')}
-            className={`px-4 py-2 rounded-lg font-semibold transition whitespace-nowrap relative ${
-              activeTab === 'requests'
-                ? 'bg-cyan-600 text-white'
-                : 'bg-[#1a2332] text-gray-400 hover:bg-[#243547]'
-            }`}
+            onClick={() => dispatch(setActiveTab('requests'))}
+            className={`px-4 py-2 rounded-lg font-semibold transition whitespace-nowrap relative ${activeTab === 'requests'
+              ? 'bg-cyan-600 text-white'
+              : 'bg-[#1a2332] text-gray-400 hover:bg-[#243547]'
+              }`}
           >
             <FaMedal className="inline mr-2" />
             Requests
@@ -306,12 +303,11 @@ export default function FriendsPage() {
             )}
           </button>
           <button
-            onClick={() => setActiveTab('search')}
-            className={`px-4 py-2 rounded-lg font-semibold transition whitespace-nowrap ${
-              activeTab === 'search'
-                ? 'bg-cyan-600 text-white'
-                : 'bg-[#1a2332] text-gray-400 hover:bg-[#243547]'
-            }`}
+            onClick={() => dispatch(setActiveTab('search'))}
+            className={`px-4 py-2 rounded-lg font-semibold transition whitespace-nowrap ${activeTab === 'search'
+              ? 'bg-cyan-600 text-white'
+              : 'bg-[#1a2332] text-gray-400 hover:bg-[#243547]'
+              }`}
           >
             <FaSearch className="inline mr-2" />
             Search
@@ -410,7 +406,7 @@ export default function FriendsPage() {
                   <input
                     type="text"
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => dispatch(setSearchQuery(e.target.value))}
                     placeholder="Search by username..."
                     className="w-full pl-10 pr-4 py-3 bg-[#141b24] border border-[#2a3a4a] rounded-lg focus:outline-none focus:border-cyan-600 text-white"
                   />
@@ -476,7 +472,7 @@ export default function FriendsPage() {
           </div>
 
           {/* Sidebar - Friends Leaderboard */}
-          <div className="lg:col-span-1">
+          {/* <div className="lg:col-span-1">
             <div className="bg-[#1a2332] rounded-2xl p-6 border border-[#2a3a4a] sticky top-20">
               <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
                 <FaTrophy className="text-yellow-400" />
@@ -492,7 +488,7 @@ export default function FriendsPage() {
                 </div>
               )}
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

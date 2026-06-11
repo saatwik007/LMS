@@ -43,4 +43,4 @@ const ParticleCanvas = () => {
   return <canvas ref={cvs} className="fixed inset-0 z-0 pointer-events-none opacity-50" />;
 }
 
-export default ParticleCanvas
+export default ParticleCanvas;

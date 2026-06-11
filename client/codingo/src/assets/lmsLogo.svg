@@ -1,0 +1,92 @@
+<svg width="500" height="500" viewBox="0 0 680 680" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title>Codify LMS Logo</title>
+  <desc>Gamified coding LMS logo: a shield with a joystick and code brackets, surrounded by circular arc elements, in a blue-to-orange gradient. Transparent background.</desc>
+  <defs>
+    <linearGradient id="gShieldTop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4a5cf7"/>
+      <stop offset="50%" stop-color="#2ab8e8"/>
+      <stop offset="100%" stop-color="#20d0d0"/>
+    </linearGradient>
+    <linearGradient id="gShieldBot" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5050e0"/>
+      <stop offset="50%" stop-color="#a060d0"/>
+      <stop offset="100%" stop-color="#f07830"/>
+    </linearGradient>
+    <linearGradient id="gFull" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4060f0"/>
+      <stop offset="35%" stop-color="#30a8e8"/>
+      <stop offset="65%" stop-color="#9050d0"/>
+      <stop offset="100%" stop-color="#f07830"/>
+    </linearGradient>
+    <linearGradient id="gArcTop" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4060f0"/>
+      <stop offset="100%" stop-color="#28c0e8"/>
+    </linearGradient>
+    <linearGradient id="gArcLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7040d0"/>
+      <stop offset="100%" stop-color="#d06030"/>
+    </linearGradient>
+    <linearGradient id="gArcRight" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#e07030"/>
+      <stop offset="100%" stop-color="#f09050"/>
+    </linearGradient>
+    <linearGradient id="gJoy" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6060e8"/>
+      <stop offset="100%" stop-color="#e07030"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Top arc -->
+  <circle cx="340" cy="128" r="10" fill="url(#gArcTop)"/>
+  <circle cx="470" cy="162" r="8" fill="#28c0e8"/>
+  <path d="M 220 168 Q 270 128 340 128" fill="none" stroke="url(#gArcTop)" stroke-width="9" stroke-linecap="round"/>
+  <path d="M 340 128 Q 410 128 468 162" fill="none" stroke="url(#gArcTop)" stroke-width="9" stroke-linecap="round"/>
+  <path d="M 248 178 Q 294 150 340 148 Q 386 150 420 168" fill="none" stroke="url(#gArcTop)" stroke-width="6" stroke-linecap="round" opacity="0.7"/>
+
+  <!-- Bottom-left arc (purple) -->
+  <circle cx="186" cy="310" r="10" fill="#7040d0"/>
+  <circle cx="238" cy="498" r="8" fill="#c05828"/>
+  <path d="M 186 310 Q 158 390 180 460 Q 200 490 238 498" fill="none" stroke="url(#gArcLeft)" stroke-width="9" stroke-linecap="round"/>
+  <path d="M 200 318 Q 175 390 196 454 Q 210 476 238 484" fill="none" stroke="url(#gArcLeft)" stroke-width="6" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- Bottom-right arc (orange) -->
+  <circle cx="476" cy="476" r="8" fill="#f07830"/>
+  <path d="M 494 302 Q 530 380 508 452 Q 496 470 476 476" fill="none" stroke="url(#gArcRight)" stroke-width="9" stroke-linecap="round"/>
+  <path d="M 480 308 Q 514 382 494 450 Q 484 466 466 472" fill="none" stroke="url(#gArcRight)" stroke-width="6" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- Shield outer glow -->
+  <path d="M 234 196 Q 234 182 248 178 L 340 162 L 432 178 Q 446 182 446 196 L 446 370 Q 446 410 412 440 L 340 488 L 268 440 Q 234 410 234 370 Z" fill="url(#gFull)" opacity="0.18"/>
+
+  <!-- Shield main body -->
+  <path d="M 244 202 Q 244 190 256 187 L 340 172 L 424 187 Q 436 190 436 202 L 436 368 Q 436 405 405 432 L 340 478 L 275 432 Q 244 405 244 368 Z" fill="url(#gFull)"/>
+
+  <!-- Shield inner highlight -->
+  <path d="M 262 216 Q 262 206 272 203 L 340 190 L 408 203 Q 418 206 418 216 L 418 364 Q 418 396 392 420 L 340 460 L 288 420 Q 262 396 262 364 Z" fill="white" opacity="0.12"/>
+
+  <!-- Chevron stripes -->
+  <path d="M 290 232 L 340 200 L 390 232" fill="none" stroke="white" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+  <path d="M 306 252 L 340 226 L 374 252" fill="none" stroke="white" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>
+
+  <!-- Joystick base -->
+  <rect x="295" y="400" width="90" height="52" rx="12" fill="url(#gJoy)" opacity="0.95"/>
+  <circle cx="316" cy="426" r="5" fill="white" opacity="0.6"/>
+  <circle cx="340" cy="426" r="5" fill="white" opacity="0.6"/>
+  <circle cx="364" cy="426" r="5" fill="white" opacity="0.6"/>
+
+  <!-- Joystick stem -->
+  <rect x="333" y="338" width="14" height="68" rx="7" fill="url(#gJoy)" opacity="0.95"/>
+
+  <!-- Joystick top ball -->
+  <circle cx="340" cy="330" r="22" fill="url(#gFull)" opacity="0.95"/>
+  <circle cx="340" cy="330" r="20" fill="url(#gShieldTop)" opacity="0.9"/>
+
+  <!-- Star -->
+  <polygon points="340,314 344,325 356,325 347,332 350,344 340,337 330,344 333,332 324,325 336,325" fill="white" opacity="0.95"/>
+
+  <!-- Dashed glow rod -->
+  <line x1="340" y1="278" x2="340" y2="308" stroke="white" stroke-width="3" stroke-dasharray="4,4" stroke-linecap="round" opacity="0.7"/>
+
+  <!-- Code brackets -->
+  <path d="M 292 348 L 276 332 L 292 316" fill="none" stroke="white" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+  <path d="M 388 316 L 404 332 L 388 348" fill="none" stroke="white" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+</svg>

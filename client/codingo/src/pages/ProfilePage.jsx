@@ -460,14 +460,14 @@ export default function ProfilePage() {
         )}
 
         {/* Activity Heatmap */}
-        {isOwnProfile && (
+        {/* {isOwnProfile && (
         <div className="bg-[#1a2332] rounded-2xl p-6 border border-[#2a3a4a] shadow-lg mb-6">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
             <FaFire className="text-orange-400" /> Activity Overview
           </h2>
           <CalendarHeatmap data={calendarData} />
         </div>
-        )}
+        )} */}
 
         {/* Rarity Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">

@@ -10,12 +10,12 @@ import WelcomePage from './pages/WelcomePage.jsx';
 import LevelsPage from './pages/LevelsPage';
 import LanguagePage from './pages/LanguagePage.jsx';
 import LearnPage from './pages/LearnPage.jsx';
-import LeaderboardPage from './pages/LeaderboardPage.jsx';
+import { LeaderboardPage } from './pages/LeaderboardPage.jsx';
 import ChallengePage from './pages/ChallengePage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import CommunityPage from './pages/CommunityPage.jsx';
 import ProgressPage from './pages/ProgressPage.jsx';
-import FriendsPage from './pages/FriendsPage.jsx';
+import { FriendsPage } from './pages/FriendsPage.jsx';
 import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx';
 import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
 import OAuthCallbackPage from './pages/OAuthCallbackPage.jsx';
@@ -24,6 +24,8 @@ import LandingPage from './pages/LandingPage.jsx';
 import LandingHeader from './components/LandingPage/LandingHeader.jsx';
 import AppSidebar from './components/Layout/AppSidebar.jsx';
 import LevelPage from './pages/LevelPage.jsx';
+import Messages from './pages/messages.jsx';
+import Comments from './pages/commentsModal.jsx';
 
 function ProtectedRoute({ children }) {
   const [isChecking, setIsChecking] = useState(true);
@@ -69,9 +71,17 @@ function ProtectedRoute({ children }) {
 
   if (isChecking) {
     return (
-      <div className="min-h-[60vh] bg-[#0f1419] text-gray-200 grid place-items-center">
-        Checking your session...
+      <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 z-50">
+      <div className="flex flex-col items-center">
+        {/* Spinner */}
+        <div className="w-16 h-16 border-4 border-blue-500 border-dashed rounded-full animate-spin"></div>
+        
+        {/* Loading text */}
+        <p className="mt-4 text-white text-lg font-semibold animate-pulse">
+          Loading data...
+        </p>
       </div>
+    </div>
     );
   }
 
@@ -165,6 +175,22 @@ function AppShell() {
             element={(
               <ProtectedRoute>
                 <ChallengePage />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/comments"
+            element={(
+              <ProtectedRoute>
+                <Comments />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/messages"
+            element={(
+              <ProtectedRoute>
+                <Messages />
               </ProtectedRoute>
             )}
           />

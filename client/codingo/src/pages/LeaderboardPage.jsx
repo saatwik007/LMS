@@ -1,6 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import axios from 'axios';
 import { FaTrophy, FaMedal, FaFire, FaChevronLeft, FaChevronRight, FaStar, FaClock, FaInfinity } from 'react-icons/fa';
+import { useDispatch, useSelector } from 'react-redux';
+import { setIsLoading, setPage } from '../redux/slices/feedSlice';
+import { setError } from '../redux/slices/postSlice';
+import { setCurrentUserLeague, setCurrentUserRank, setLeaderboard, setPeriod, setSelectedLeague, setTotal, setTotalPages } from '../redux/slices/leaderboardSlice';
 
 const LEAGUE_COLORS = {
   Bronze: 'text-amber-600',
@@ -40,17 +44,18 @@ function formatNumber(num) {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
-export default function LeaderboardPage() {
-  const [leaderboard, setLeaderboard] = useState([]);
-  const [currentUserRank, setCurrentUserRank] = useState(null);
-  const [currentUserLeague, setCurrentUserLeague] = useState('Bronze');
-  const [selectedLeague, setSelectedLeague] = useState('All');
-  const [period, setPeriod] = useState('alltime');
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+export function LeaderboardPage() {
+  const leaderboard = useSelector(state => state.leaderboard.leaderboard);
+  const currentUserRank = useSelector(state => state.leaderboard.currentUserRank);
+  const currentUserLeague = useSelector(state => state.leaderboard.currentUserLeague);
+  const selectedLeague = useSelector(state => state.leaderboard.selectedLeague);
+  const period = useSelector(state => state.leaderboard.period);
+  const page = useSelector(state => state.leaderboard.page);
+  const totalPages = useSelector(state => state.leaderboard.totalPages);
+  const total = useSelector(state => state.leaderboard.total);
+  const isLoading = useSelector(state => state.leaderboard.isLoading);
+  const error = useSelector(state => state.leaderboard.error);
+  const dispatch = useDispatch();
 
   const currentUserId = JSON.parse(localStorage.getItem('user') || '{}').id;
 
@@ -58,9 +63,9 @@ export default function LeaderboardPage() {
     fetchLeaderboard();
   }, [selectedLeague, page, period]);
 
-  async function fetchLeaderboard() {
-    setIsLoading(true);
-    setError(null);
+   async function fetchLeaderboard() {
+    dispatch(setIsLoading(true));
+    dispatch(setError(null));
     try {
       const apiUrl = import.meta.env.VITE_API_URL || '';
       const params = new URLSearchParams();
@@ -74,26 +79,26 @@ export default function LeaderboardPage() {
         headers: getAuthHeaders()
       });
 
-      setLeaderboard(response.data.leaderboard || []);
-      setCurrentUserRank(response.data.currentUserRank);
-      setCurrentUserLeague(response.data.currentUserLeague || 'Bronze');
-      setTotal(response.data.total || 0);
-      setTotalPages(response.data.totalPages || 1);
+      dispatch(setLeaderboard(response.data.leaderboard || []));
+      dispatch(setCurrentUserRank(response.data.currentUserRank));
+      dispatch(setCurrentUserLeague(response.data.currentUserLeague || 'Bronze'));
+      dispatch(setTotal(response.data.total || 0));
+      dispatch(setTotalPages(response.data.totalPages || 1));
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load leaderboard');
+      dispatch(setError(err.response?.data?.message || 'Failed to load leaderboard'));
     } finally {
-      setIsLoading(false);
+      dispatch(setIsLoading(false));
     }
   }
 
   function handleLeagueChange(league) {
-    setSelectedLeague(league);
-    setPage(1);
+    dispatch(setSelectedLeague(league));
+    dispatch(setPage(1));
   }
 
   function handlePeriodChange(p) {
-    setPeriod(p);
-    setPage(1);
+    dispatch(setPeriod(p));
+    dispatch(setPage(1));
   }
 
   const leagues = ['All', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
