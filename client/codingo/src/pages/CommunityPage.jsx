@@ -596,77 +596,7 @@ const isSearching = useSelector(state => state.friends.isSearching);
                     </p>
                   </div>
                 </div>
-                <div>
-                  <textarea
-                    value={searchQuery}
-                    onChange={e => dispatch(setSearchQuery(e.target.value))}
-                    // onFocus={() => dispatch(setFocused(true))}
-                    // onBlur={() => dispatch(setFocused(false))}
-                    placeholder="Search posts, topics, or devs...🔍"
-                    maxLength={2000}
-                    // rows={focused || searchQuery ? 4 : 2}
-                    className="
-    w-full bg-transparent border-none outline-none resize-none
-    text-[#e8f0fe] text-[15px] leading-[1.6]
-    font-['Plus_Jakarta_Sans'] caret-[#00e5ff]
-    transition-[height] duration-200 ease-in-out
-  "
-                  />
-                  <button onClick={searchButton}>search</button>
-                </div>
-
-  <div>
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 12, margin: '20px 1px 16px',
-    }}>
-      <div style={{ flex: 1, height: 1, background: '#1a2535' }} />
-      <span style={{ fontSize: 11, color: '#2e4460', fontFamily: "'DM Mono', monospace" }}>
-        SEARCH RESULTS
-      </span>
-      <div style={{ flex: 1, height: 1, background: '#1a2535' }} />
-    </div>
-
-    {isSearching && (
-      <div style={{ textAlign: 'center', padding: '32px 0' }}>
-        <div style={{
-          width: 36, height: 36, border: '3px solid #00e5ff', borderTopColor: 'transparent',
-          borderRadius: '50%', margin: '0 auto 12px', animation: 'spin 0.75s linear infinite',
-        }} />
-      </div>
-    )}
-
-    {!isSearching && searchResults.length === 0 && (
-      <div style={{
-        background: '#0b1420', border: '1px solid #1a2535', borderRadius: 20,
-        padding: '48px 24px', textAlign: 'center',
-      }}>
-        <p style={{ color: '#2e4460', fontSize: 14 }}>No users found</p>
-      </div>
-    )}
-
-    {searchResults.map(user => (
-      <div key={user._id} style={{
-        background: '#0b1420', border: '1px solid #1a2535', borderRadius: 12,
-        padding: '16px', marginBottom: 12, display: 'flex', alignItems: 'center',
-        gap: 12, cursor: 'pointer', transition: 'border-color 0.2s',
-      }}
-        onMouseEnter={e => e.currentTarget.style.borderColor = '#243040'}
-        onMouseLeave={e => e.currentTarget.style.borderColor = '#1a2535'}
-        onClick={() => navigate(`/profile/${user._id}`)}
-      >
-        {user.profilePic ? (
-          <img src={user.profilePic} alt={user.username}
-            style={{ width: 44, height: 44, borderRadius: '50%' }} />
-        ) : (
-          <AvatarInitial name={user.username} size={44} />
-        )}
-        <div>
-          <div style={{ color: '#e8f0fe', fontWeight: 600 }}>{user.username}</div>
-          <div style={{ color: '#2e4460', fontSize: 12 }}>{user.email}</div>
-        </div>
-      </div>
-    ))}
-  </div>
+                
                 {/* Composer */}
                 <PostComposer onPostCreated={handlePostCreated} />
 

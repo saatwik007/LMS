@@ -102,9 +102,6 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const currentUser = useSelector(state => state.dashboard.currentUser);
-  const searchTerm = useSelector(state => state.dashboard.searchTerm);
-  const statusFilter = useSelector(state => state.dashboard.statusFilter);
-  const sortBy = useSelector(state => state.dashboard.sortBy);
   const showCalendarModal = useSelector(state => state.dashboard.showCalendarModal);
   const overviewError = useSelector(state => state.dashboard.overviewError);
   const learningOverview = useSelector(state => state.dashboard.learningOverview);
@@ -178,7 +175,7 @@ export default function Dashboard() {
     progress: course.progress,
     lessons: course.lessons
   }));
-  console.log("Enrolled Courses:", enrolledCourses);
+  // console.log("Enrolled Courses:", enrolledCourses);
 
 
 
@@ -256,11 +253,12 @@ export default function Dashboard() {
   const userIdentifier = useMemo(() => {
     return getUserIdentifier(currentUser);
   }, [currentUser]);
-  // console.log("User Identifier:", currentUser, userIdentifier);
+  // console.log("User Identifier:", currentUser,'currentuser:', userIdentifier);
 
   const displayName = useMemo(() => {
     return getUserDisplayName(currentUser);
   }, [currentUser]);
+  console.log('current user:' ,currentUser)
 
   useEffect(() => {
     const now = new Date();
