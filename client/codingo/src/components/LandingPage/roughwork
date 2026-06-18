@@ -3213,3 +3213,27 @@ print(r.area())`,
       },
     ],
   },
+
+
+
+
+
+     {
+          id: 5,
+          title: "Code Challenge",
+          subtitle: "Work with variables",
+          xp: 50,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.4)",
+          codeChallenge: {
+            prompt: "Write a function called swapCase that takes a string and swaps casing.",
+            description: "Given a string, return a new string where every uppercase letter becomes lowercase, and every lowercase letter becomes uppercase. For example: swapCase(\"Hello\") → \"hELLO\"",
+            starterCode: `function swapCase(str) {\n  // write your code here\n}`,
+            hint: "Loop through each character. Use char === char.toUpperCase() to detect uppercase. Build a result string.",
+            testCases: [
+              { call: 'swapCase("Hello")', expected: "hELLO", label: 'swapCase("Hello")' },
+              { call: 'swapCase("JavaScript")', expected: "jAVAsCRIPT", label: 'swapCase("JavaScript")' },
+              { call: 'swapCase("abc")', expected: "ABC", label: 'swapCase("abc")' },
+            ],
+          },
+        },

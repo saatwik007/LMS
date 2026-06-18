@@ -235,14 +235,6 @@ export default function LevelsRoute({ courseId, onBack }) {
             }
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="text-sm text-gray-300">Progress</div>
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-600 to-teal-400 flex items-center justify-center shadow-lg">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-white">
-              <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
-        </div>
       </header>
 
       {/* Main layout: left panel, center map, right panel */}

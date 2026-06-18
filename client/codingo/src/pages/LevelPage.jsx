@@ -1,5 +1,4 @@
-// src/pages/LevelPage.jsx
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, use } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { getCourseData, getChapterData } from '../components/LandingPage/LevelData.js';
@@ -7,26 +6,26 @@ import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
 import { python } from '@codemirror/lang-python';
 import { oneDark } from '@codemirror/theme-one-dark';
-
+ 
 // ─── SYNTAX HIGHLIGHTER ───────────────────────────────────────────────────────
 function highlight(code) {
   const lines = (code || '').split('\n');
-
+ 
   return lines.map((line, i) => {
     const cmtIdx = line.indexOf('//');
     const main = cmtIdx !== -1 ? line.slice(0, cmtIdx) : line;
     const cmt = cmtIdx !== -1 ? line.slice(cmtIdx) : null;
-
+ 
     const keywords = new Set([
       'const', 'let', 'var', 'function', 'return', 'if', 'else',
       'typeof', 'new', 'for', 'while', 'class', 'import', 'export',
       'default', 'async', 'await',
     ]);
-
+ 
     const tokens = main.split(
       /(\b(?:const|let|var|function|return|if|else|typeof|new|for|while|class|import|export|default|async|await)\b|"[^"]*"|'[^']*'|`[^`]*`|\b\d+\.?\d*\b|\bconsole\b)/
     );
-
+ 
     const parts = tokens.map((t, ti) => {
       if (keywords.has(t)) return <span key={ti} style={{ color: '#ff79c6' }}>{t}</span>;
       if (/^["'`]/.test(t)) return <span key={ti} style={{ color: '#f1fa8c' }}>{t}</span>;
@@ -34,26 +33,26 @@ function highlight(code) {
       if (t === 'console') return <span key={ti} style={{ color: '#50fa7b' }}>{t}</span>;
       return t;
     });
-
+ 
     if (cmt) parts.push(
       <span key="cmt" style={{ color: '#6272a4', fontStyle: 'italic' }}>{cmt}</span>
     );
-
+ 
     return <div key={i} className="leading-7">{parts}</div>;
   });
 }
-
+ 
 // ─── COPY BUTTON ──────────────────────────────────────────────────────────────
 function CopyButton({ code }) {
   const [copied, setCopied] = useState(false);
-
+ 
   function copy() {
     navigator.clipboard.writeText(code).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     });
   }
-
+ 
   return (
     <button
       onClick={copy}
@@ -63,7 +62,7 @@ function CopyButton({ code }) {
     </button>
   );
 }
-
+ 
 // ─── CODE BLOCK ───────────────────────────────────────────────────────────────
 function CodeBlock({ code, note }) {
   if (!code) return null;
@@ -80,14 +79,14 @@ function CodeBlock({ code, note }) {
         </span>
         <CopyButton code={code} />
       </div>
-
+ 
       <pre
         className="overflow-x-auto p-5 font-mono text-[0.82rem] text-[#c9d1d9]"
         style={{ lineHeight: 1.8 }}
       >
         {highlight(code)}
       </pre>
-
+ 
       {note && (
         <div className="flex gap-2.5 items-start px-4 py-3 bg-white/[0.02] border-t border-white/[0.07] text-[0.78rem] text-white/40 leading-relaxed">
           <span className="shrink-0">💡</span>
@@ -97,7 +96,7 @@ function CodeBlock({ code, note }) {
     </div>
   );
 }
-
+ 
 // ─── LESSON CONTENT ───────────────────────────────────────────────────────────
 // Reads:  part.steps[]  →  { heading, body, code, codeNote }
 function LessonContent({ part }) {
@@ -121,12 +120,12 @@ function LessonContent({ part }) {
     </div>
   );
 }
-
+ 
 // ─── CHALLENGE CONTENT ────────────────────────────────────────────────────────
 // Reads:  part.challenges[]  →  { id, question, code, options[], correct, explanation }
 function ChallengeContent({ part, answers, onAnswer, submitted }) {
   const resultRef = useRef(null);
-
+ 
   useEffect(() => {
     if (submitted && resultRef.current) {
       setTimeout(
@@ -135,11 +134,11 @@ function ChallengeContent({ part, answers, onAnswer, submitted }) {
       );
     }
   }, [submitted]);
-
+ 
   // answers keyed by question index (0, 1, 2 …)
   const correctCount = part.challenges.filter((ch, qi) => answers[qi] === ch.correct).length;
   const total = part.challenges.length;
-
+ 
   return (
     <div className="space-y-5">
       {/* intro */}
@@ -154,17 +153,17 @@ function ChallengeContent({ part, answers, onAnswer, submitted }) {
           <strong className="text-amber-400">+{part.xp} XP</strong>.
         </p>
       </div>
-
+ 
       {/* questions */}
       {part.challenges.map((ch, ci) => {
         // Use question index (ci) as key — ch.id can repeat across chapters
         const selected = answers[ci];
         const hasSelected = selected !== undefined;
         const isCorrect = selected === ch.correct;
-
+ 
         return (
           <div key={ch.id} className="rounded-2xl border border-white/10 bg-[#161625] overflow-hidden">
-
+ 
             {/* question header */}
             <div className="flex items-center gap-3 px-5 pt-5">
               <div
@@ -175,7 +174,7 @@ function ChallengeContent({ part, answers, onAnswer, submitted }) {
               </div>
               <p className="text-[0.93rem] font-medium text-white">{ch.question}</p>
             </div>
-
+ 
             {/* optional code snippet */}
             {ch.code && (
               <div className="mx-5 mt-3.5 rounded-lg overflow-hidden border border-white/[0.08] bg-[#08080f]">
@@ -187,7 +186,7 @@ function ChallengeContent({ part, answers, onAnswer, submitted }) {
                 </pre>
               </div>
             )}
-
+ 
             {/* options */}
             <div className="grid grid-cols-2 gap-2 p-5">
               {ch.options.map((opt, oi) => {
@@ -195,7 +194,7 @@ function ChallengeContent({ part, answers, onAnswer, submitted }) {
                 let border = 'border-white/10';
                 let textCol = 'text-white/70';
                 let letterBg = 'bg-[#1e1e32] border-white/10 text-white/40';
-
+ 
                 if (hasSelected) {
                   if (submitted) {
                     if (oi === ch.correct) {
@@ -214,7 +213,7 @@ function ChallengeContent({ part, answers, onAnswer, submitted }) {
                     textCol = 'text-white/30';
                   }
                 }
-
+ 
                 return (
                   <button
                     key={oi}
@@ -233,7 +232,7 @@ function ChallengeContent({ part, answers, onAnswer, submitted }) {
                 );
               })}
             </div>
-
+ 
             {/* explanation after submit */}
             {submitted && hasSelected && (
               <div className={`mx-5 mb-5 px-4 py-3 rounded-lg text-[0.8rem] leading-relaxed border ${isCorrect
@@ -246,7 +245,7 @@ function ChallengeContent({ part, answers, onAnswer, submitted }) {
           </div>
         );
       })}
-
+ 
       {/* result card */}
       {submitted && (
         <div
@@ -276,12 +275,76 @@ function ChallengeContent({ part, answers, onAnswer, submitted }) {
     </div>
   );
 }
-
+ 
+// ─────── CHALLENGE TIMER ──────────────────────────────────────────────────────
+// Returns { timerDisplay, elapsedSeconds, resetTimer }
+// and renders the timer + optional "last time" badge
+ 
+function ChallengeTimer({ isChallenge, isCodeChallenge, isSubmitted, lastTimeTaken }) {
+  const [startTime, setstartTime] = useState(null);
+  const [elapsedTime, setelapsedTime] = useState(0);
+ 
+  const isChallengeRunning = (isChallenge || isCodeChallenge) && !isSubmitted;
+ 
+  // Start timer when challenge begins
+  useEffect(() => {
+    if (isChallengeRunning && !startTime) {
+      setstartTime(new Date());
+    }
+  }, [isChallengeRunning, startTime]);
+ 
+  // Reset timer when challenge is submitted or no longer running
+  useEffect(() => {
+    if (!isChallengeRunning) {
+      setstartTime(null);
+      setelapsedTime(0);
+    }
+  }, [isChallengeRunning]);
+ 
+  // Run the timer interval
+  useEffect(() => {
+    let interval;
+    if (startTime && isChallengeRunning) {
+      interval = setInterval(() => {
+        const currentTime = new Date();
+        const timeDiff = Math.floor((currentTime - startTime) / 1000);
+        setelapsedTime(timeDiff);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [startTime, isChallengeRunning]);
+ 
+  const formatTime = (seconds) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+  if (isChallenge){
+  return (
+    <div className="flex flex-col gap-1">
+      <div className='timer'>
+        {formatTime(elapsedTime)}
+      </div>
+      {/* Show last recorded time below the timer when challenge was previously solved */}
+      {lastTimeTaken !== null && lastTimeTaken !== undefined && (
+        <div
+          className="font-mono text-white/50 text-center leading-tight"
+          title="Your best recorded time for this challenge"
+        >
+          last: {formatTime(lastTimeTaken)}
+        </div>
+      )}
+    </div>
+  );
+};
+}
+ 
 // ─── SIDEBAR PART ITEM ────────────────────────────────────────────────────────
 function SidebarPartItem({ part, index, isActive, isDone, isAccessible, onClick }) {
   const icons = ['📖', '🔢', '⚡', '🏆', '📌', '🔑', '🛠️'];
   const icon = part.codeChallenge ? '</>' : part.isChallengepart ? '🏆' : (icons[index] ?? '📌');
-
+ 
   return (
     <div
       onClick={isAccessible ? onClick : undefined}
@@ -297,7 +360,7 @@ function SidebarPartItem({ part, index, isActive, isDone, isAccessible, onClick 
           style={{ background: part.color, boxShadow: `0 0 8px ${part.glow}` }}
         />
       )}
-
+ 
       {/* icon */}
       <div
         className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center text-sm border transition-all"
@@ -311,7 +374,7 @@ function SidebarPartItem({ part, index, isActive, isDone, isAccessible, onClick 
       >
         {isDone ? '✅' : icon}
       </div>
-
+ 
       {/* label */}
       <div className="flex-1 min-w-0">
         <div className="font-mono text-[0.62rem] uppercase tracking-wider text-white/30 mb-0.5">
@@ -321,7 +384,7 @@ function SidebarPartItem({ part, index, isActive, isDone, isAccessible, onClick 
           {part.title}
         </div>
       </div>
-
+ 
       {/* xp badge or lock */}
       {!isAccessible ? (
         <span className="text-xs text-white/30">🔒</span>
@@ -340,7 +403,7 @@ function SidebarPartItem({ part, index, isActive, isDone, isAccessible, onClick 
     </div>
   );
 }
-
+ 
 // ─── CODE CHALLENGE CONTENT ───────────────────────────────────────────────────
 // Reads:  part.codeChallenge → { prompt, starterCode, testCases[], hint }
 function CodeChallengeContent({ part, submitted, onSubmitCode }) {
@@ -348,17 +411,17 @@ function CodeChallengeContent({ part, submitted, onSubmitCode }) {
   const [results, setResults] = useState(null);
   const [isRunning, setIsRunning] = useState(false);
   const [showHint, setShowHint] = useState(false);
-
+ 
   const challenge = part.codeChallenge;
   if (!challenge) return null;
-
+ 
   // Pick CodeMirror language extension based on the course
   const langExtension = challenge.language === 'python' ? python() : javascript();
-
+ 
   function runTests() {
     setIsRunning(true);
     setResults(null);
-
+ 
     setTimeout(() => {
       const testResults = (challenge.testCases || []).map((tc) => {
         try {
@@ -375,15 +438,15 @@ function CodeChallengeContent({ part, submitted, onSubmitCode }) {
       });
       setResults(testResults);
       setIsRunning(false);
-
+ 
       if (testResults.every((r) => r.passed) && !submitted) {
         onSubmitCode();
       }
     }, 300);
   }
-
+ 
   const allPassed = results && results.every((r) => r.passed);
-
+ 
   return (
     <div className="space-y-5">
       {/* intro */}
@@ -399,7 +462,7 @@ function CodeChallengeContent({ part, submitted, onSubmitCode }) {
           </p>
         </div>
       </div>
-
+ 
       {/* prompt */}
       <div className="rounded-2xl border border-white/10 bg-[#161625] p-5">
         <h3 className="text-lg font-bold text-white mb-3" style={{ fontFamily: "'Syne', sans-serif" }}>
@@ -408,7 +471,7 @@ function CodeChallengeContent({ part, submitted, onSubmitCode }) {
         {challenge.description && (
           <p className="text-sm text-white/50 leading-relaxed mb-4">{challenge.description}</p>
         )}
-
+ 
         {/* hint toggle */}
         {challenge.hint && (
           <button
@@ -424,7 +487,7 @@ function CodeChallengeContent({ part, submitted, onSubmitCode }) {
             {challenge.hint}
           </div>
         )}
-
+ 
         {/* CodeMirror editor */}
         <div className="rounded-xl overflow-hidden border border-white/10">
           <CodeMirror
@@ -442,7 +505,7 @@ function CodeChallengeContent({ part, submitted, onSubmitCode }) {
             }}
           />
         </div>
-
+ 
         {/* run button */}
         <div className="flex items-center gap-3 mt-4">
           <button
@@ -465,18 +528,17 @@ function CodeChallengeContent({ part, submitted, onSubmitCode }) {
           )}
         </div>
       </div>
-
+ 
       {/* test results */}
       {results && (
         <div className="space-y-2">
           {results.map((r, i) => (
             <div
               key={i}
-              className={`rounded-lg border p-3 text-sm font-mono ${
-                r.passed
+              className={`rounded-lg border p-3 text-sm font-mono ${r.passed
                   ? 'bg-emerald-500/[0.07] border-emerald-500/25'
                   : 'bg-red-500/[0.07] border-red-500/25'
-              }`}
+                }`}
             >
               <div className="flex items-center justify-between mb-1">
                 <span className="text-white/70">{r.passed ? '✅' : '❌'} Test {i + 1}</span>
@@ -492,7 +554,7 @@ function CodeChallengeContent({ part, submitted, onSubmitCode }) {
           ))}
         </div>
       )}
-
+ 
       {/* success card */}
       {allPassed && (
         <div className="flex flex-col items-center text-center p-8 rounded-2xl border border-white/10 bg-[#161625]">
@@ -512,12 +574,112 @@ function CodeChallengeContent({ part, submitted, onSubmitCode }) {
     </div>
   );
 }
-
+ 
+// ─── CHALLENGE TIME COMPLETION POPUP ─────────────────────────────────────────
+// Shows immediately after first-time challenge completion with time taken
+function ChallengeTimePopup({ timeTaken, onClose, partColor, partGlow }) {
+  const formatTime = (seconds) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    if (hrs > 0) {
+      return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+ 
+  return (
+    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div
+        className="relative rounded-3xl p-8 text-center max-w-xs w-full mx-4 border"
+        style={{
+          background: 'linear-gradient(145deg, #1a1a2e, #0d0d1a)',
+          borderColor: partColor + '55',
+          boxShadow: `0 0 60px ${partGlow}, 0 0 120px ${partGlow}`,
+          animation: 'timePopupIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards',
+        }}
+      >
+        {/* stopwatch icon */}
+        <div className="text-5xl mb-3" style={{ animation: 'popupBounce 0.5s ease-out 0.1s both' }}>⏱️</div>
+ 
+        <h3
+          className="text-xl font-black text-white mb-1"
+          style={{ fontFamily: "'Syne', sans-serif" }}
+        >
+          Challenge Solved!
+        </h3>
+        <p className="text-white/40 text-sm mb-5">Here's how long it took you</p>
+ 
+        {/* big time display */}
+        <div
+          className="rounded-2xl px-6 py-4 mb-6 border"
+          style={{
+            background: 'rgba(245,158,11,0.07)',
+            borderColor: 'rgba(245,158,11,0.25)',
+          }}
+        >
+          <div className="font-mono text-[0.65rem] uppercase tracking-widest text-white/30 mb-1">Time Taken</div>
+          <div
+            className="font-mono text-4xl font-black tracking-tight"
+            style={{ color: '#F59E0B', textShadow: '0 0 20px rgba(245,158,11,0.4)' }}
+          >
+            {formatTime(timeTaken)}
+          </div>
+        </div>
+ 
+        <button
+          onClick={onClose}
+          className="w-full py-2.5 rounded-xl text-white font-bold text-sm transition-all hover:brightness-110"
+          style={{
+            background: `linear-gradient(135deg, ${partColor}, ${partColor}bb)`,
+            boxShadow: `0 4px 20px ${partGlow}`,
+          }}
+        >
+          Awesome! 🎉
+        </button>
+ 
+        <style>{`
+          @keyframes timePopupIn {
+            0%   { opacity: 0; transform: scale(0.7) translateY(20px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+          }
+          @keyframes popupBounce {
+            0%   { transform: scale(0.3) rotate(-20deg); }
+            60%  { transform: scale(1.2) rotate(10deg); }
+            100% { transform: scale(1) rotate(0deg); }
+          }
+        `}</style>
+      </div>
+    </div>
+  );
+}
+ 
+// ─── localStorage helpers for persisting challenge times ──────────────────────
+// Key format:  "challengeTime:{courseId}:{levelNo}:{partIdx}"
+function getChallengeTimeKey(courseId, levelNo, partIdx) {
+  return `challengeTime:${courseId}:${levelNo}:${partIdx}`;
+}
+ 
+function getSavedChallengeTime(courseId, levelNo, partIdx) {
+  try {
+    const val = localStorage.getItem(getChallengeTimeKey(courseId, levelNo, partIdx));
+    return val !== null ? parseInt(val, 10) : null;
+  } catch {
+    return null;
+  }
+}
+ 
+function saveChallengeTime(courseId, levelNo, partIdx, seconds) {
+  try {
+    localStorage.setItem(getChallengeTimeKey(courseId, levelNo, partIdx), String(seconds));
+  } catch { /* non-critical */ }
+}
+ 
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 export default function LevelPage() {
   const { courseId, levelNo } = useParams();
   const navigate = useNavigate();
-
+ 
   // ── Data ──────────────────────────────────────────────────────────────────
   const courseData = getCourseData(courseId);
   const levelData = getChapterData(courseId, parseInt(levelNo));
@@ -525,7 +687,11 @@ export default function LevelPage() {
   const nextNo = currentNo + 1;
   const prevNo = currentNo - 1;
   const nextLevel = getChapterData(courseId, nextNo);
-
+ 
+  // ── AI State ──────────────────────────────────────────────────────────────
+  const [dynamicLevelData, setDynamicLevelData] = useState(null);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+ 
   // ── State ─────────────────────────────────────────────────────────────────
   const [currentPartIdx, setCurrentPartIdx] = useState(0);
   const [completedParts, setCompletedParts] = useState(new Set());
@@ -537,11 +703,20 @@ export default function LevelPage() {
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [syncError, setSyncError] = useState('');
+ 
+  // ── Challenge timer recording state ───────────────────────────────────────
+  // challengeStartTime: Date | null — when the current challenge timer started
+  // challengeTimePopup: { seconds } | null — drives the "time taken" popup
+  // savedChallengeTimes: { [partIdx]: seconds } — in-memory cache of localStorage times
+  const [challengeStartTime, setChallengeStartTime] = useState(null);
+  const [challengeTimePopup, setChallengeTimePopup] = useState(null);
+  const [savedChallengeTimes, setSavedChallengeTimes] = useState({});
+ 
   const xpBurstKeyRef = useRef(0);
   const savedPartsRef = useRef(new Set());  // track which parts already synced
   const mainRef = useRef(null);
   const apiUrl = import.meta.env.VITE_API_URL || '';
-
+ 
   // ── Sync progress to backend ──────────────────────────────────────────────
   const syncProgress = useCallback(async (partXp) => {
     const token = localStorage.getItem('token');
@@ -582,10 +757,8 @@ export default function LevelPage() {
       }
     }
   }, [apiUrl, courseId, currentNo]);
-
+ 
   // ── Reset all state when the level changes ────────────────────────────────
-  // React Router reuses the same component instance across levels (same route
-  // pattern), so we must manually reset everything when levelNo/courseId changes.
   useEffect(() => {
     setCurrentPartIdx(0);
     setCompletedParts(new Set());
@@ -594,48 +767,67 @@ export default function LevelPage() {
     setSubmitted(false);
     setSidebarOpen(false);
     savedPartsRef.current = new Set();
+    setChallengeStartTime(null);
+    setChallengeTimePopup(null);
+    setSavedChallengeTimes({});
     if (mainRef.current) mainRef.current.scrollTop = 0;
   }, [levelNo, courseId]);
-
+ 
+  // ── Load saved challenge times from localStorage on mount / level change ──
+  useEffect(() => {
+    if (!levelData?.parts) return;
+    const loaded = {};
+    levelData.parts.forEach((p, idx) => {
+      if (p.isChallengepart || p.codeChallenge) {
+        const saved = getSavedChallengeTime(courseId, levelNo, idx);
+        if (saved !== null) loaded[idx] = saved;
+      }
+    });
+    setSavedChallengeTimes(loaded);
+  }, [courseId, levelNo, levelData]);
+ 
   // ── Not found guard ───────────────────────────────────────────────────────
-if (!levelData || !levelData.parts) {
-  return (
-    <div className="h-screen w-screen flex items-center justify-center bg-[#07070f] text-white">
-      <div className="text-center">
-        <p className="text-white/40 text-sm mb-4">Level {levelNo} not found.</p>
-        <button
-          onClick={() => navigate(`/levels/${courseId}`)}
-          className="px-5 py-2 rounded-xl text-white font-bold"
-          style={{ background: courseData.accentColor }}
-        >
-          ← Back to Levels
-        </button>
+  if (!levelData || !levelData.parts) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-[#07070f] text-white">
+        <div className="text-center">
+          <p className="text-white/40 text-sm mb-4">Level {levelNo} not found.</p>
+          <button
+            onClick={() => navigate(`/levels/${courseId}`)}
+            className="px-5 py-2 rounded-xl text-white font-bold"
+            style={{ background: courseData.accentColor }}
+          >
+            ← Back to Levels
+          </button>
+        </div>
       </div>
-    </div>
-  );
-}
-
+    );
+  }
+ 
   // ── Derived ───────────────────────────────────────────────────────────────
   const parts = levelData.parts;
   const totalXP = parts.reduce((s, p) => s + p.xp, 0);
   const xpPct = totalXP > 0 ? Math.round((earnedXP / totalXP) * 100) : 0;
   const part = parts[currentPartIdx];
-  const isChallenge = !!part.isChallengepart;                    // ← from data
-  const isCodeChallenge = !!part.codeChallenge;                  // ← code challenge
+  const isChallenge = !!part.isChallengepart;
+  const isCodeChallenge = !!part.codeChallenge;
   const isSubmitted = submitted || completedParts.has(currentPartIdx);
   const allAnswered = isChallenge
     ? part.challenges.every((_, qi) => answers[qi] !== undefined)
     : false;
-
+ 
+  // Last recorded time for the current part (null if never solved before)
+  const lastTimeTakenForCurrentPart = savedChallengeTimes[currentPartIdx] ?? null;
+ 
   // Bottom-right button label
   const nextLabel =
     isCodeChallenge && !isSubmitted ? 'Skip →'
-    : isChallenge && !isSubmitted ? 'Submit ✓'
-      : currentPartIdx === parts.length - 1 ? 'Next Chapter →'
-        : 'Next Part →';
-
+      : isChallenge && !isSubmitted ? 'Submit ✓'
+        : currentPartIdx === parts.length - 1 ? 'Next Chapter →'
+          : 'Next Part →';
+ 
   const nextEnabled = isChallenge && !isSubmitted ? allAnswered : true;
-
+ 
   // ── Helpers ───────────────────────────────────────────────────────────────
   function isPartAccessible(idx) {
     return (
@@ -645,27 +837,27 @@ if (!levelData || !levelData.parts) {
       idx <= currentPartIdx
     );
   }
-
+ 
   function goToPart(idx) {
     if (idx < 0 || idx >= parts.length) return;
     if (!isPartAccessible(idx)) return;
-
+ 
     setCurrentPartIdx(idx);
-    // Reset answers when changing parts so each part starts fresh
     setAnswers({});
-    // Restore submitted state if this challenge part was already done
     setSubmitted((parts[idx].isChallengepart || parts[idx].codeChallenge) ? completedParts.has(idx) : false);
     setSidebarOpen(false);
+    // Reset challenge start time when navigating to a different part
+    setChallengeStartTime(null);
     if (mainRef.current) mainRef.current.scrollTop = 0;
   }
-
+ 
   function handleAnswer(questionIdx, chosenIdx) {
     setAnswers(prev => {
       if (prev[questionIdx] !== undefined) return prev; // locked once chosen
       return { ...prev, [questionIdx]: chosenIdx };
     });
   }
-
+ 
   function triggerXpBurst(amount) {
     const particles = [...Array(8)].map(() => ({
       fontSize: `${1.2 + Math.random() * 0.8}rem`,
@@ -676,13 +868,38 @@ if (!levelData || !levelData.parts) {
     setXpBurst({ amount, key: ++xpBurstKeyRef.current, particles });
     setTimeout(() => setXpBurst(null), 1400);
   }
-
+ 
+  // ── Record challenge completion time ──────────────────────────────────────
+  // Returns the elapsed seconds since challengeStartTime, records it, shows popup
+  function recordChallengeTime(partIdx) {
+    // Only record on first-time completion (not already saved)
+    const alreadySaved = savedChallengeTimes[partIdx] !== undefined;
+    if (alreadySaved) return;
+ 
+    const elapsedSeconds = challengeStartTime
+      ? Math.floor((new Date() - challengeStartTime) / 1000)
+      : 0;
+ 
+    // Persist to localStorage
+    saveChallengeTime(courseId, levelNo, partIdx, elapsedSeconds);
+ 
+    // Update in-memory cache
+    setSavedChallengeTimes(prev => ({ ...prev, [partIdx]: elapsedSeconds }));
+ 
+    // Show the popup
+    setChallengeTimePopup({ seconds: elapsedSeconds });
+ 
+    // Clear the start time so the timer stops
+    setChallengeStartTime(null);
+  }
+ 
   function handleCodeChallengeComplete() {
     if (!completedParts.has(currentPartIdx)) {
       setSubmitted(true);
       setCompletedParts(prev => new Set([...prev, currentPartIdx]));
       setEarnedXP(prev => prev + part.xp);
       triggerXpBurst(part.xp);
+      recordChallengeTime(currentPartIdx);
       if (!savedPartsRef.current.has(currentPartIdx)) {
         savedPartsRef.current.add(currentPartIdx);
         syncProgress(earnedXP + part.xp);
@@ -692,7 +909,7 @@ if (!levelData || !levelData.parts) {
       }
     }
   }
-
+ 
   function handleNext() {
     if (isCodeChallenge && !isSubmitted) {
       // ── Skip code challenge (user can still go back)
@@ -702,23 +919,23 @@ if (!levelData || !levelData.parts) {
         setAnswers({});
         setSubmitted((parts[nextIdx].isChallengepart || parts[nextIdx].codeChallenge) ? completedParts.has(nextIdx) : false);
         setSidebarOpen(false);
+        setChallengeStartTime(null);
         if (mainRef.current) mainRef.current.scrollTop = 0;
       }
       return;
     }
     if (isChallenge && !isSubmitted) {
-      // ── Submit challenge
+      // ── Submit challenge — record time first, then mark done
       setSubmitted(true);
       if (!completedParts.has(currentPartIdx)) {
         setCompletedParts(prev => new Set([...prev, currentPartIdx]));
         setEarnedXP(prev => prev + part.xp);
         triggerXpBurst(part.xp);
-        // Sync cumulative chapter XP to backend
+        recordChallengeTime(currentPartIdx);
         if (!savedPartsRef.current.has(currentPartIdx)) {
           savedPartsRef.current.add(currentPartIdx);
           syncProgress(earnedXP + part.xp);
         }
-        // Level-up check: show modal when all parts completed
         if (completedParts.size + 1 === parts.length) {
           setTimeout(() => setShowLevelUp(true), 900);
         }
@@ -729,7 +946,6 @@ if (!levelData || !levelData.parts) {
         setCompletedParts(prev => new Set([...prev, currentPartIdx]));
         setEarnedXP(prev => prev + part.xp);
         triggerXpBurst(part.xp);
-        // Sync cumulative chapter XP to backend
         if (!savedPartsRef.current.has(currentPartIdx)) {
           savedPartsRef.current.add(currentPartIdx);
           syncProgress(earnedXP + part.xp);
@@ -740,6 +956,7 @@ if (!levelData || !levelData.parts) {
       setAnswers({});
       setSubmitted((parts[nextIdx].isChallengepart || parts[nextIdx].codeChallenge) ? completedParts.has(nextIdx) : false);
       setSidebarOpen(false);
+      setChallengeStartTime(null);
       if (mainRef.current) mainRef.current.scrollTop = 0;
     } else {
       // ── Last part — go to next chapter or levels list
@@ -747,16 +964,14 @@ if (!levelData || !levelData.parts) {
         setCompletedParts(prev => new Set([...prev, currentPartIdx]));
         setEarnedXP(prev => prev + part.xp);
         triggerXpBurst(part.xp);
-        // Sync cumulative chapter XP to backend
         if (!savedPartsRef.current.has(currentPartIdx)) {
           savedPartsRef.current.add(currentPartIdx);
           syncProgress(earnedXP + part.xp);
         }
-        // Level-up modal before navigating
         setTimeout(() => {
           setShowLevelUp(true);
         }, 900);
-        return; // wait for user to dismiss modal
+        return;
       }
       if (nextLevel) {
         navigate(`/level/${courseId}/${nextNo}`);
@@ -765,15 +980,33 @@ if (!levelData || !levelData.parts) {
         navigate(`/levels/${courseId}`);
       }
     }
+  }
+ 
+  // ── Start challenge timer when landing on a challenge part ────────────────
+  // Watches currentPartIdx + submitted: if we're on an unsolved challenge, start clock
+  useEffect(() => {
+    if (!levelData?.parts) return;
+    const currentPart = levelData.parts[currentPartIdx];
+    const isChallengeType = currentPart?.isChallengepart || currentPart?.codeChallenge;
+    const alreadyDone = completedParts.has(currentPartIdx);
+ 
+    if (isChallengeType && !alreadyDone && !submitted) {
+      // Start the timer for this challenge (only if not already running)
+      setChallengeStartTime(prev => prev === null ? new Date() : prev);
+    } else {
+      // Not a challenge or already done — stop the timer
+      setChallengeStartTime(null);
     }
-
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPartIdx, submitted]);
+ 
   // ── Grid texture ──────────────────────────────────────────────────────────
   const gridBg = {
     backgroundImage:
       'linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px)',
     backgroundSize: '32px 32px',
   };
-
+ 
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <div
@@ -782,7 +1015,7 @@ if (!levelData || !levelData.parts) {
     >
       {/* grid overlay */}
       <div className="fixed inset-0 pointer-events-none z-0" style={gridBg} />
-
+ 
       {/* ── HEADER ─────────────────────────────────────────────────────────── */}
       <header
         className="fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between px-6 border-b border-white/10"
@@ -802,7 +1035,7 @@ if (!levelData || !levelData.parts) {
         >
           Codify
         </button>
-
+ 
         {/* breadcrumb */}
         <div className="hidden md:flex items-center gap-2 text-xs text-white/30 font-mono">
           <button
@@ -823,7 +1056,7 @@ if (!levelData || !levelData.parts) {
           <span className="text-white/20">›</span>
           <span style={{ color: courseData.accentLight }}>Level {levelNo}</span>
         </div>
-
+ 
         <div className="flex items-center gap-4">
           {/* hamburger (mobile) */}
           <button
@@ -835,7 +1068,7 @@ if (!levelData || !levelData.parts) {
             <span className="block w-5 h-0.5 bg-white/40 rounded" />
             <span className="block w-5 h-0.5 bg-white/40 rounded" />
           </button>
-
+ 
           {/* xp pill */}
           <div
             className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-white/10 font-mono text-xs font-bold text-amber-400"
@@ -843,7 +1076,7 @@ if (!levelData || !levelData.parts) {
           >
             ⚡ {earnedXP} XP
           </div>
-
+ 
           {/* avatar */}
           <div
             className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white"
@@ -853,10 +1086,10 @@ if (!levelData || !levelData.parts) {
           </div>
         </div>
       </header>
-
+ 
       {/* ── BODY ───────────────────────────────────────────────────────────── */}
       <div className="fixed top-16 bottom-0 left-0 right-0 flex z-10">
-
+ 
         {/* mobile overlay */}
         {sidebarOpen && (
           <div
@@ -865,7 +1098,7 @@ if (!levelData || !levelData.parts) {
             onClick={() => setSidebarOpen(false)}
           />
         )}
-
+ 
         {/* ── SIDEBAR ──────────────────────────────────────────────────────── */}
         <aside
           className={`
@@ -888,6 +1121,23 @@ if (!levelData || !levelData.parts) {
               />
               Level {levelNo}
             </div>
+ 
+            <div
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-white/10 font-mono text-[0.65rem] uppercase tracking-widest text-white/50 mb-2.5"
+              style={{ background: '#1e1e32' }}
+            >
+              <span
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ background: part.color, boxShadow: `0 0 6px ${part.color}` }}
+              />
+              Time:&nbsp;
+              <ChallengeTimer
+                isChallenge={isChallenge}
+                isCodeChallenge={isCodeChallenge}
+                isSubmitted={isSubmitted}
+                lastTimeTaken={lastTimeTakenForCurrentPart}
+              />
+            </div>
             <h2
               className="text-[1rem] font-bold text-white leading-snug"
               style={{ fontFamily: "'Syne', sans-serif" }}
@@ -898,7 +1148,7 @@ if (!levelData || !levelData.parts) {
               {levelData.difficulty} · {levelData.duration}
             </p>
           </div>
-
+ 
           {/* xp bar */}
           <div className="px-5 py-3.5 border-b border-white/[0.07] shrink-0">
             <div className="flex justify-between items-center mb-2">
@@ -920,7 +1170,7 @@ if (!levelData || !levelData.parts) {
               />
             </div>
           </div>
-
+ 
           {/* parts list */}
           <div className="flex-1 overflow-y-auto p-3" style={{ scrollbarWidth: 'thin' }}>
             {parts.map((p, i) => (
@@ -935,7 +1185,7 @@ if (!levelData || !levelData.parts) {
               />
             ))}
           </div>
-
+ 
           {/* parts progress footer */}
           <div className="px-5 py-3.5 border-t border-white/[0.07] shrink-0">
             <div className="flex justify-between text-[0.72rem] text-white/30 mb-1.5">
@@ -953,7 +1203,7 @@ if (!levelData || !levelData.parts) {
             </div>
           </div>
         </aside>
-
+ 
         {/* ── MAIN CONTENT ─────────────────────────────────────────────────── */}
         <main
           ref={mainRef}
@@ -961,7 +1211,7 @@ if (!levelData || !levelData.parts) {
           style={{ scrollbarWidth: 'thin', scrollbarColor: '#1e1e32 transparent' }}
         >
           <div className="max-w-3xl mx-auto px-5 md:px-8 pt-10 pb-28">
-
+ 
             {/* Sync error banner */}
             {syncError && (
               <div className="mb-4 px-4 py-2.5 rounded-lg bg-red-900/40 border border-red-800/50 text-red-300 text-sm font-semibold flex items-center justify-between">
@@ -969,7 +1219,7 @@ if (!levelData || !levelData.parts) {
                 <button onClick={() => setSyncError('')} className="text-red-400 hover:text-red-200 ml-3 text-lg leading-none">&times;</button>
               </div>
             )}
-
+ 
             {/* part header */}
             <div className="mb-8">
               <div className="flex items-center gap-2 font-mono text-[0.68rem] uppercase tracking-widest text-white/30 mb-4">
@@ -977,7 +1227,7 @@ if (!levelData || !levelData.parts) {
                 <span className="text-white/20">›</span>
                 <span style={{ color: part.color }}>Part {currentPartIdx + 1}</span>
               </div>
-
+ 
               <div className="flex items-start gap-4 flex-wrap">
                 {/* colour bar */}
                 <div
@@ -1005,9 +1255,9 @@ if (!levelData || !levelData.parts) {
                 </div>
               </div>
             </div>
-
+ 
             <div className="h-px bg-white/[0.07] mb-8" />
-
+ 
             {/* lesson, MCQ challenge, or code challenge */}
             {isCodeChallenge ? (
               <CodeChallengeContent
@@ -1028,7 +1278,7 @@ if (!levelData || !levelData.parts) {
           </div>
         </main>
       </div>
-
+ 
       {/* ── BOTTOM NAV ─────────────────────────────────────────────────────── */}
       <div
         className="fixed bottom-0 left-0 right-0 z-30 flex items-center justify-between gap-3 px-5 md:px-8 py-4"
@@ -1044,7 +1294,7 @@ if (!levelData || !levelData.parts) {
         >
           ← Previous
         </button>
-
+ 
         {/* progress dots */}
         <div className="hidden sm:flex items-center gap-1.5">
           {parts.map((p, i) => (
@@ -1058,7 +1308,7 @@ if (!levelData || !levelData.parts) {
             />
           ))}
         </div>
-
+ 
         {/* Submit / Next Part / Next Chapter */}
         <button
           disabled={!nextEnabled}
@@ -1074,7 +1324,7 @@ if (!levelData || !levelData.parts) {
           {nextLabel}
         </button>
       </div>
-
+ 
       {/* ── XP BURST ANIMATION ─────────────────────────────────────────────── */}
       {xpBurst && (
         <div key={xpBurst.key} className="fixed inset-0 pointer-events-none z-100 flex items-center justify-center">
@@ -1098,7 +1348,7 @@ if (!levelData || !levelData.parts) {
           >
             +{xpBurst.amount} XP
           </span>
-
+ 
           <style>{`
             ${xpBurst.particles.map((p, i) => `
               @keyframes xpFloat${i} {
@@ -1116,7 +1366,17 @@ if (!levelData || !levelData.parts) {
           `}</style>
         </div>
       )}
-
+ 
+      {/* ── CHALLENGE TIME POPUP (first-time completion) ────────────────────── */}
+      {challengeTimePopup && (
+        <ChallengeTimePopup
+          timeTaken={challengeTimePopup.seconds}
+          onClose={() => setChallengeTimePopup(null)}
+          partColor={part.color}
+          partGlow={part.glow}
+        />
+      )}
+ 
       {/* ── LEVEL-UP MODAL ─────────────────────────────────────────────────── */}
       {showLevelUp && (
         <div className="fixed inset-0 z-110 flex items-center justify-center bg-black/70 backdrop-blur-sm">
@@ -1164,7 +1424,7 @@ if (!levelData || !levelData.parts) {
             >
               {nextLevel ? 'Continue to Next Chapter →' : 'Back to Levels'}
             </button>
-
+ 
             <style>{`
               @keyframes levelStar {
                 0%   { transform: scale(0) rotate(-30deg); opacity: 0; }

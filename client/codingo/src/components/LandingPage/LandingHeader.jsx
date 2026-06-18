@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { FiBell, FiChevronDown, FiEdit2, FiImage, FiLogOut, FiSearch, FiUser } from 'react-icons/fi';
 import { useLocation, useNavigate } from 'react-router-dom';
+import Dashboard from '../../pages/DashboardPage';
 // import { useEffect, useRef, useState } from 'react';
 // import axios from 'axios';
 // import { FiBell, FiChevronDown, FiEdit2, FiImage, FiLogOut, FiSearch, FiUser } from 'react-icons/fi';
@@ -303,7 +304,7 @@ const LandingHeader = ({ onBack }) => {
             />
           </div>
         </div> */}
-                   <div className="flex-1 max-w-95 mx-auto relative">
+                   {/* <div className="flex-1 max-w-95 mx-auto relative">
                 <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
                 <input
                     value={searchVal}
@@ -312,7 +313,7 @@ const LandingHeader = ({ onBack }) => {
                     className="w-full bg-gray-800/70 border border-white/10 rounded-[10px] py-2 pl-9 pr-4 text-[13px] text-gray-100 placeholder-gray-600 outline-none focus:border-blue-500/40 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.08)] transition-all duration-200"
                     style={{ fontFamily: "'DM Sans',sans-serif" }}
                 />
-            </div>
+            </div> */}
 
             
             {/* <div className="flex items-center gap-1.5 ml-auto shrink-0">
@@ -323,6 +324,7 @@ const LandingHeader = ({ onBack }) => {
         
         <div className="flex items-center gap-3">
           <a className="hover:text-gray-300 font-medium text-gray-400 cursor-pointer hover:scale-110 transition">Contact Us</a>
+          <a onClick={() => navigate('/dashboard')} className="hover:text-gray-300 font-medium text-gray-400 cursor-pointer hover:scale-110 transition">Dashboard</a>
           {!currentUser ? (
             <nav className="flex gap-2 sm:gap-3 items-center text-xs sm:text-sm">
               <button
@@ -395,7 +397,7 @@ const LandingHeader = ({ onBack }) => {
               ) : null}
 
               <div className="hidden sm:flex h-10 px-3 rounded-full bg-gray-800/70 border border-white/10 items-center text-sm text-cyan-300 font-semibold whitespace-nowrap">
-                Streak {streakCount}
+                Streak: {streakCount}
               </div>
 
               <div

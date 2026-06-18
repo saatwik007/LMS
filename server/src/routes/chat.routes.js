@@ -1,0 +1,10 @@
+const express = require('express');
+const router = express.Router();
+const { protect } = require('../middlewares/auth.middleware');
+const chatController = require('../controllers/chat.controller')
+
+router.use(protect);
+
+router.get('/:recipientId', chatController.getConversation);
+
+module.exports = router;

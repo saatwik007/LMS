@@ -25,7 +25,7 @@ const Header = () => {
             <button onClick={ClickLogo} className="logo-glow text-[22px] font-black tracking-tight select-none shrink-0 cursor-pointer" style={{ fontFamily: "'Syne',sans-serif" }}>
                 Codify
             </button>
-            <div className="flex-1 max-w-95 mx-auto relative">
+            {/* <div className="flex-1 max-w-95 mx-auto relative">
                 <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
                 <input
                     value={searchVal}
@@ -34,7 +34,7 @@ const Header = () => {
                     className="w-full bg-gray-800/70 border border-white/10 rounded-[10px] py-2 pl-9 pr-4 text-[13px] text-gray-100 placeholder-gray-600 outline-none focus:border-blue-500/40 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.08)] transition-all duration-200"
                     style={{ fontFamily: "'DM Sans',sans-serif" }}
                 />
-            </div>
+            </div> */}
 
             {/* <div className="flex items-center gap-1.5 ml-auto shrink-0">
                 {["Courses", "Community"].map(l => (

@@ -5245,32 +5245,24 @@ for item in items:
             },
           ],
         },
-        {
-          id: 4,
-          title: "Chapter 5 Boss: The Password Cracker",
-          heading: "Code It. Break the System.",
-          xp: 40,
-          type: "coding_test",
-          isChallengepart: true,
-          color: "#FFD43B",
-          glow: "rgba(255,212,59,0.35)",
-          instructions:
-            "You are writing a login script.\n\n1. You have a list called 'attempts' with password guesses.\n2. The correct password is 'admin123'.\n3. Loop through each attempt.\n4. If the attempt matches, print 'Access Granted' and STOP the loop.\n5. If it does not match, print 'Access Denied'.",
-          startingCode: `attempts = ["password", "123456", "admin123", "qwerty"]
-real_password = "admin123"
-
-# Write your loop here:
-`,
-          expectedOutput: `Access Denied\nAccess Denied\nAccess Granted`,
-          solutionCode: `attempts = ["password", "123456", "admin123", "qwerty"]
-real_password = "admin123"
-
-for guess in attempts:
-    if guess == real_password:
-        print("Access Granted")
-        break
-    else:
-        print("Access Denied")`,
+         {
+          id: 5,
+          title: "Code Challenge",
+          subtitle: "Work with variables",
+          xp: 50,
+          color: "#8B5CF6",
+          glow: "rgba(139,92,246,0.4)",
+          codeChallenge: {
+            prompt: "Write a function called swapCase that takes a string and swaps casing.",
+            description: "Given a string, return a new string where every uppercase letter becomes lowercase, and every lowercase letter becomes uppercase. For example: swapCase(\"Hello\") → \"hELLO\"",
+            starterCode: `function swapCase(str) {\n  // write your code here\n}`,
+            hint: "Loop through each character. Use char === char.toUpperCase() to detect uppercase. Build a result string.",
+            testCases: [
+              { call: 'swapCase("Hello")', expected: "hELLO", label: 'swapCase("Hello")' },
+              { call: 'swapCase("JavaScript")', expected: "jAVAsCRIPT", label: 'swapCase("JavaScript")' },
+              { call: 'swapCase("abc")', expected: "ABC", label: 'swapCase("abc")' },
+            ],
+          },
         },
       ],
     },
