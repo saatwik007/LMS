@@ -2,139 +2,38 @@ import gsap from "gsap";
 import { useEffect, useRef, useState } from "react";
 import { Badge, VoiceNote } from "../../pages/commentsModal";
 import { ReplyCard } from "./ReplyCard";
+import axios from "axios";
+import { setCommentLiked, setCommentLikedCount, setLocalCommentReplies, setRepliesOpen, setReplyText } from "../../redux/slices/feedSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { formatTimeAgo, getAuthHeaders } from "../../utilites/communityHelper";
+import { FaHeart, FaRegHeart, FaTrash } from "react-icons/fa";
 
 const SELF_GRADIENT = "linear-gradient(135deg,#7c6aff,#22d3a0)";
 
 /* ─── Sample data ─── */
 const INITIAL_COMMENTS = [
-  {
-    id: "c1",
-    name: "Aryan Mehta",
-    initials: "AR",
-    avatarIdx: 0,
-    badge: { label: "MOD", type: "mod" },
-    date: "May 3, 2025 · 11:24 AM",
-    body: `Just dropped a new async handler using <code class="inline-code">Promise.allSettled()</code> — it's honestly a game changer for batch API calls where you don't want one failure to block the rest. Highly recommend refactoring anything that uses <code class="inline-code">Promise.all()</code> for non-critical parallel tasks. 🔥`,
-    likes: 24,
-    liked: false,
-    replies: [
-      {
-        id: "r1a",
-        name: "Kriti Sharma",
-        initials: "KS",
-        avatarIdx: 4,
-        date: "May 3, 2025 · 11:51 AM",
-        body: `Yes!! Switched to this last week. Also pairs perfectly with <code class="inline-code">AbortController</code> for timeout control 🧠`,
-        likes: 8,
-        liked: false,
-      },
-      {
-        id: "r1b",
-        name: "Pranav V.",
-        initials: "PV",
-        avatarIdx: 2,
-        date: "May 3, 2025 · 1:10 PM",
-        body: "Added this pattern to our internal toolkit doc. Thanks for the tip 🛠",
-        likes: 4,
-        liked: false,
-      },
-    ],
-  },
-  {
-    id: "c2",
-    name: "Sneha Singh",
-    initials: "SS",
-    avatarIdx: 1,
-    badge: { label: "PRO", type: "pro" },
-    date: "May 3, 2025 · 2:05 PM",
-    body: `Hot take: Most devs are sleeping on CSS <code class="inline-code">container queries</code>. Media queries are tied to the viewport — container queries respond to the parent element's size. Your components finally become truly reusable without layout hacks. CSS is genuinely incredible in 2025 😤`,
-    likes: 41,
-    liked: false,
-    replies: [
-      {
-        id: "r2a",
-        name: "Raghav D.",
-        initials: "RD",
-        avatarIdx: 3,
-        date: "May 3, 2025 · 3:45 PM",
-        body: "Already using it in production. The component portability improvement is real. No more breakpoint spaghetti 🎉",
-        likes: 11,
-        liked: false,
-      },
-    ],
-  },
-  {
-    id: "c3",
-    name: "Nikhil Patel",
-    initials: "NP",
-    avatarIdx: 2,
-    badge: null,
-    date: "May 3, 2025 · 4:30 PM",
-    voiceNote: { duration: "0:47" },
-    body: `Recorded my thought on why <code class="inline-code">Zustand</code> beats Redux for small-mid scale React apps. Less boilerplate, no provider wrapping, selector-based subscriptions just work. Full breakdown above 👆`,
-    likes: 18,
-    liked: false,
-    replies: [],
-  },
-  {
-    id: "c4",
-    name: "Riya Desai",
-    initials: "RD",
-    avatarIdx: 3,
-    badge: null,
-    date: "May 4, 2025 · 9:12 AM",
-    image: "https://opengraph.githubassets.com/1/vercel/next.js",
-    body: "Next.js 15.3 just dropped and the Turbopack build speed improvements are insane 🚀 Our CI pipeline went from 4m 20s to under 90 seconds. Anyone else migrated yet?",
-    likes: 37,
-    liked: false,
-    replies: [],
-  },
-  {
-    id: "c5",
-    name: "Karan Shah",
-    initials: "KS",
-    avatarIdx: 4,
-    badge: null,
-    date: "May 4, 2025 · 10:48 AM",
-    body: `Question for the thread — does anyone have a solid pattern for handling optimistic UI updates with rollback on error? Using React Query but the mutation rollback feels clunky when you have nested dependent queries. 🤔`,
-    likes: 9,
-    liked: false,
-    replies: [],
-  },
-  {
-    id: "c6",
-    name: "Meera Agarwal",
-    initials: "MA",
-    avatarIdx: 5,
-    badge: { label: "PRO", type: "pro" },
-    date: "May 4, 2025 · 12:30 PM",
-    body: `PSA: Stop using <code class="inline-code">any</code> in TypeScript. Even if you're in a rush, use <code class="inline-code">unknown</code> and narrow it down. It takes 2 minutes and saves hours of runtime debugging. Your future self and your teammates will thank you 💯`,
-    likes: 53,
-    liked: false,
-    replies: [],
-  },
-  {
-    id: "c7",
-    name: "Vikram Rao",
-    initials: "VR",
-    avatarIdx: 0,
-    badge: null,
-    date: "May 4, 2025 · 2:00 PM",
-    body: `Reminder that <code class="inline-code">git bisect</code> exists and it's magic 🪄 Binary search through your commit history to find exactly which commit introduced a bug. Saved me 3 hours today tracking down a regression.`,
-    likes: 29,
-    liked: false,
-    replies: [],
-  },
 ];
 
 /* ─── Comment Card ─── */
-export const CommentCard = ({ comment, onLike, onReplyLike, onAddReply }) => {
-  const [repliesOpen, setRepliesOpen] = useState(comment.replies.length > 0);
+export const CommentCard = ({ postId, comment }) => {
+  const commentId = comment.id
+  const apiUrl = import.meta.env.VITE_API_URL || '';
+  // const [repliesOpen, setRepliesOpen] = useState(comment.replies);
+  const heartAnim = useSelector(state => state.feed.heartAnim[comment.id] ?? false);
+  const localCommentReplies = useSelector(state => state.feed.localCommentReplies[commentId] ?? comment.replies ?? [])
+  const repliesOpen = useSelector(state => state.feed.repliesOpen[commentId] ?? true);
+  const replyText = useSelector(state => state.feed.replyText[commentId] ?? '')
+  const commentReplying = useSelector(state => state.feed.commentReplying[commentId] ?? false);
+  const isCommentLiked = useSelector(state => state.feed.isCommentLiked[commentId] ?? comment.isLikedByCurrentUser ?? false);
+  const commentLikedCount = useSelector(state => state.feed.commentLikedCount[commentId] ?? 0);
+  const submittingReply = useSelector(state => state.feed.submittingReply[commentId] ?? false);
+  const isLiked = useSelector(state => state.feed.commentLiked[comment.id] ?? comment.isLikedByCurrentUser ?? false);
+  const currentCount = useSelector(state => state.feed.commentLiked[comment.id] ?? comment.likedCount ?? 0);
   const [replyInputOpen, setReplyInputOpen] = useState(false);
-  const [replyText, setReplyText] = useState("");
   const cardRef = useRef(null);
   const repliesRef = useRef(null);
   const replyWrapRef = useRef(null);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     if (cardRef.current) {
@@ -147,17 +46,102 @@ export const CommentCard = ({ comment, onLike, onReplyLike, onAddReply }) => {
   }, []);
 
   function handleToggleReply() {
-    const opening = !replyInputOpen;
-    setReplyInputOpen(opening);
-    if (opening) setRepliesOpen(true);
+    setReplyInputOpen(true);
+    dispatch(setRepliesOpen(true));
   }
 
-  function handlePostReply() {
+  const handleCommentReply = async () => {
     if (!replyText.trim()) return;
-    onAddReply(comment.id, replyText.trim());
-    setReplyText("");
-    setReplyInputOpen(false);
-  }
+    try {
+      const res = await axios.post(
+        `${apiUrl}/api/community/posts/${postId}/${commentId}/commentReplies`,
+        { content: replyText.trim() },
+        { withCredentials: true, headers: getAuthHeaders() }
+      );
+      dispatch(setReplyText({ commentId, value: '' }));
+      dispatch(setLocalCommentReplies({}))
+    } catch (error) {
+      console.error('Comment reply error:', error)
+    }
+  };
+
+  const getCommentReplies = async () => {
+    try {
+      const res = await axios.get(
+        `${apiUrl}/api/community/posts/${postId}`,
+        { withCredentials: true, headers: getAuthHeaders() }
+      )
+      const repliesMap = res.data.post.comments.reduce((acc, comment) => {
+        acc[comment.id] = comment.replies || [];
+        return acc;
+      }, {});
+
+      const finalReplies = repliesMap[commentId];
+      console.log('finalreplies:', finalReplies)
+
+      const repliesAuthorMap = finalReplies.reduce((acc, replies) => {
+        acc[replies.id] = replies.author.username || [];
+        return acc;
+      })
+
+      console.log('repliesAuthor:', repliesAuthorMap)
+
+      // console.log('first reply:', repliesMap[commentId][0]?.content)
+
+      const allContents = repliesMap[commentId].map(reply => reply.content);
+
+      console.log('all reply contents:', allContents);
+
+      // console.log(res.data.post.comment.{...replies})
+      dispatch(setLocalCommentReplies({ commentId, replies: finalReplies }));
+    } catch (error) {
+      console.error('Comment Fetching problem:', error)
+    }
+  };
+
+  useEffect(() => {
+    getCommentReplies();
+  }, [postId]);
+
+  // useEffect(() => {
+  //   if (comment.replies?.length > 0) {
+  //     dispatch(setLocalCommentReplies({ commentId, replies: comment.replies }));
+  //   }
+  // })
+
+  const handleDeleteComment = async () => {
+    try {
+      await axios.delete(
+        `${apiUrl}/api/community/posts/${postId}/comments/${commentId}`,
+        { withCredentials: true, headers: getAuthHeaders() }
+      );
+    } catch (err) {
+      console.error('Delete comment error:', err);
+      alert('You can only delete your posted comment!')
+    }
+  };
+
+
+  /* ─── Like ─── */
+  const handleCommentLike = async () => {
+    const commentId = comment.id
+    // optimistic update
+    dispatch(setCommentLiked({ commentId, value: !isLiked }));
+    dispatch(setCommentLikedCount({ commentId, value: isLiked ? currentCount - 1 : currentCount + 1 }));
+
+    try {
+      await axios.post(
+        `${apiUrl}/api/community/posts/${postId}/${commentId}/likeComment`,
+        {},
+        { withCredentials: true, headers: getAuthHeaders() }
+      );
+    } catch (error) {
+      dispatch(setCommentLiked({ commentId, value: isLiked }));
+      dispatch(setCommentLikedCount({ commentId, value: commentLikedCount }));
+
+      console.error('Comment like error', error);
+    };
+  };
 
   return (
     <div
@@ -169,40 +153,50 @@ export const CommentCard = ({ comment, onLike, onReplyLike, onAddReply }) => {
       <div className="flex items-center gap-2.5 mb-2.5">
         {/* <Avatar initials={comment.initials} gradientIdx={comment.avatarIdx} size={36} /> */}
         <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <span className="font-sans-coder font-bold coder-text" style={{ fontSize: 13 }}>{comment.name}</span>
-            <Badge badge={comment.badge} />
+          <div className="flex justify-between font-mono-coder items-center gap-2">
+            <span className="font-sans-coder font-bold coder-text" style={{ fontSize: 13 }}>{comment.author.username}</span>
+            {/* <Badge badge={comment.badge} /> */}
+            <button onClick={handleDeleteComment} className="cursor-pointer">
+              <FaTrash />
+            </button>
           </div>
-          <div className="coder-text3 font-mono-coder" style={{ fontSize: 10, marginTop: 1 }}>{comment.date}</div>
+          <div className="text-gray-400 font-mono-coder" style={{ fontSize: 10, marginTop: 1 }}>{formatTimeAgo(comment?.createdAt)}</div>
         </div>
       </div>
 
       {/* Voice Note */}
-      {comment.voiceNote && <VoiceNote duration={comment.voiceNote.duration} />}
+      {/* {comment.voiceNote && <VoiceNote duration={comment.voiceNote.duration} />} */}
 
       {/* Image */}
-      {comment.image && (
+      {/* {comment.image && (
         <div className="mb-3 rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)", maxWidth: 320 }}>
           <img src={comment.image} alt="attachment" className="w-full block" onError={e => e.target.parentElement.style.display = "none"} />
         </div>
-      )}
+      )} */}
 
       {/* Body */}
       <div
         className="font-mono-coder coder-text mb-3"
         style={{ fontSize: 13, lineHeight: 1.7 }}
-        dangerouslySetInnerHTML={{ __html: comment.body }}
-      />
+      // dangerouslySetInnerHTML={{ __html: comment.content }}
+      >{comment.content}</div>
 
       {/* Footer */}
       <div className="flex items-center gap-1.5">
-        <button
-          onClick={() => onLike(comment.id)}
-          className={`like-btn flex items-center gap-1 rounded-lg px-2.5 py-1 font-mono-coder transition-all border border-transparent coder-text3 ${comment.liked ? "liked" : ""}`}
-          style={{ fontSize: 11, cursor: "pointer", background: "none" }}
+        <button type="button" onClick={handleCommentLike} style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          background: 'none', border: 'none', cursor: 'pointer',
+          color: isCommentLiked ? '#ed0202' : '#2e4460',
+          fontFamily: "'DM Mono', monospace", fontSize: 13, fontWeight: 500,
+          padding: '8px 12px', borderRadius: 10,
+          transition: 'all 0.15s',
+          transform: heartAnim ? 'scale(1.25)' : 'scale(1)',
+        }}
+          onMouseEnter={e => !isCommentLiked && (e.currentTarget.style.color = '#fb7185')}
+          onMouseLeave={e => !isCommentLiked && (e.currentTarget.style.color = '#2e4460')}
         >
-          <span>♥</span>
-          <span>{comment.likes}</span>
+          {isCommentLiked ? <FaHeart /> : <FaRegHeart />}
+          <span>{commentLikedCount}</span>
         </button>
 
         <button
@@ -213,29 +207,37 @@ export const CommentCard = ({ comment, onLike, onReplyLike, onAddReply }) => {
           ↩ Reply
         </button>
 
-        {comment.replies.length > 0 && (
+        {comment.replies && (
           <button
-            onClick={() => setRepliesOpen(o => !o)}
+            onClick={setRepliesOpen}
             className="flex items-center gap-1 rounded-lg px-2.5 py-1 font-mono-coder transition-all border border-transparent coder-accent2 action-btn-hover"
             style={{ fontSize: 11, cursor: "pointer", background: "none", marginLeft: "auto" }}
           >
-            {repliesOpen ? "▾" : "▸"} {comment.replies.length} {comment.replies.length === 1 ? "reply" : "replies"}
+            {/* {repliesOpen ? "▾" : "▸"} {comment.replies.length} {comment.replies.length === 1 ? "reply" : "replies"} */}
           </button>
         )}
       </div>
 
       {/* Replies */}
-      {repliesOpen && comment.replies.length > 0 && (
+      {repliesOpen && (
         <div
-          ref={repliesRef}
+          // ref={repliesRef}
           className="mt-3 pt-3 flex flex-col gap-2.5"
           style={{ borderTop: "1px solid var(--border)" }}
         >
-          {comment.replies.map(r => (
-            <ReplyCard key={r.id} reply={r} onLike={(rid) => onReplyLike(comment.id, rid)} />
+          {/* reply mapping */}
+          {localCommentReplies?.map(reply => (
+            // <div key={reply.id}>
+            //   {/* <pre>{JSON.stringify(reply.author, null, 2)}</pre>  ← see exact shape */}
+            //   <div className="mb-4">{reply.author?.username}</div>
+            //   <div>{reply.content}</div>
+            // </div>
+            <ReplyCard
+              reply={reply} />
           ))}
         </div>
       )}
+
 
       {/* Reply Input */}
       {replyInputOpen && (
@@ -250,12 +252,12 @@ export const CommentCard = ({ comment, onLike, onReplyLike, onAddReply }) => {
             style={{ fontSize: 12, lineHeight: 1.6, minHeight: 40 }}
             placeholder="Write a reply..."
             value={replyText}
-            onChange={e => setReplyText(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handlePostReply(); }}
+            onChange={e => dispatch(setReplyText({ commentId: comment.id, value: e.target.value }))}
+            // onKeyDown={e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handlePostReply(); }}
             autoFocus
           />
           <button
-            onClick={handlePostReply}
+            onClick={handleCommentReply}
             className="text-white rounded-lg px-3 py-1.5 font-mono-coder transition-opacity hover:opacity-85"
             style={{ fontSize: 11, background: "var(--accent)", border: "none", cursor: "pointer" }}
           >

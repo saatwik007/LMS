@@ -1,5 +1,23 @@
 const mongoose = require('mongoose');
 
+const replySchema = new mongoose.Schema({
+  author: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  content: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: 500
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+}, {_id: true});
+
 const commentSchema = new mongoose.Schema({
   author: { 
     type: mongoose.Schema.Types.ObjectId, 
@@ -12,10 +30,16 @@ const commentSchema = new mongoose.Schema({
     trim: true,
     maxlength: 500
   },
+  likes: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: []
+  }],
   createdAt: { 
     type: Date, 
     default: Date.now 
-  }
+  },
+  replies: [replySchema]
 }, { _id: true });
 
 const postSchema = new mongoose.Schema({
@@ -54,4 +78,5 @@ postSchema.index({ author: 1, createdAt: -1 });
 postSchema.index({ likes: 1 });
 
 const Post = mongoose.model('Post', postSchema);
-module.exports = Post;
+const Comment = mongoose.model('Comment', commentSchema);
+module.exports = {Post, Comment};
