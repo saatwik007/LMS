@@ -3,19 +3,32 @@ const nodemailer = require('nodemailer');
 let cachedTransporter = null;
 
 /**
- * Returns true when SMTP credentials are configured via environment variables.
+ * Returns true when an email provider is configured via environment variables.
+ * Supports the Mailtrap sending API (MAILTRAP_TOKEN) or classic SMTP.
  */
 function isMailConfigured() {
-  return Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+  return Boolean(
+    process.env.MAILTRAP_TOKEN ||
+    (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS)
+  );
 }
 
 /**
  * Lazily builds and caches a nodemailer transporter from environment variables.
- * Returns null when SMTP is not configured.
+ * Prefers the Mailtrap sending API when MAILTRAP_TOKEN is set, otherwise falls
+ * back to SMTP. Returns null when nothing is configured.
  */
 function getTransporter() {
   if (!isMailConfigured()) return null;
   if (cachedTransporter) return cachedTransporter;
+
+  if (process.env.MAILTRAP_TOKEN) {
+    const { MailtrapTransport } = require('mailtrap');
+    cachedTransporter = nodemailer.createTransport(
+      MailtrapTransport({ token: process.env.MAILTRAP_TOKEN })
+    );
+    return cachedTransporter;
+  }
 
   const port = Number(process.env.SMTP_PORT) || 587;
   cachedTransporter = nodemailer.createTransport({
@@ -40,7 +53,12 @@ async function sendOtpEmail(to, otp) {
   const transporter = getTransporter();
   if (!transporter) return { sent: false };
 
-  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+  const fromName = process.env.MAIL_FROM_NAME || 'Codify';
+  const fromAddress =
+    process.env.MAIL_FROM_ADDRESS ||
+    process.env.SMTP_FROM ||
+    process.env.SMTP_USER ||
+    'hello@demomailtrap.co';
   const html = `
     <div style="font-family:Arial,Helvetica,sans-serif;max-width:480px;margin:0 auto;padding:24px;background:#0f1419;border-radius:16px;color:#e5e7eb">
       <h2 style="margin:0 0 8px;color:#22d3ee">Codify password reset</h2>
@@ -50,11 +68,12 @@ async function sendOtpEmail(to, otp) {
     </div>`;
 
   await transporter.sendMail({
-    from: `"Codify" <${from}>`,
+    from: { address: fromAddress, name: fromName },
     to,
     subject: 'Your Codify password reset code',
     text: `Your Codify password reset code is ${otp}. It expires in 10 minutes.`,
-    html
+    html,
+    category: 'Password Reset'
   });
 
   return { sent: true };
