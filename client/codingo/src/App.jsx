@@ -25,7 +25,7 @@ import LandingHeader from './components/LandingPage/LandingHeader.jsx';
 import AppSidebar from './components/Layout/AppSidebar.jsx';
 import LevelPage from './pages/LevelPage.jsx';
 import Messages from './pages/messages.jsx';
-import Comments from './pages/commentsModal.jsx';
+import Comments from './pages/CommentsModal.jsx';
 
 function ProtectedRoute({ children }) {
   const [isChecking, setIsChecking] = useState(true);

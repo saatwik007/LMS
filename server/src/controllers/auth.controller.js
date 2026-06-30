@@ -7,6 +7,7 @@ const fs = require('fs/promises');
 const mongoose = require('mongoose');
 const crypto = require('crypto');
 const { checkAndAwardBadges } = require('./badge.controller');
+const { sendOtpEmail } = require('../utils/mailer');
 
 const PROFILE_PICS_DIR = path.join(__dirname, '..', '..', 'uploads', 'profile-pics');
 const MAX_PROCESSED_IMAGE_BYTES = 450 * 1024;
@@ -405,21 +406,30 @@ async function forgotPassword(req, res) {
 
     const user = await userModel.findOne({ email: email.toLowerCase().trim() });
     // Always return success to prevent email enumeration
-    if (!user) return res.status(200).json({ message: 'If that email exists, a reset token has been generated.' });
+    if (!user) return res.status(200).json({ message: 'If that email exists, an OTP has been sent.' });
 
-    // Generate a secure hex token and store its SHA-256 digest for deterministic lookup
-    const plainToken = crypto.randomBytes(32).toString('hex');
-    const tokenDigest = crypto.createHash('sha256').update(plainToken).digest('hex');
-
-    user.resetToken = tokenDigest;
-    user.resetTokenExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 min
+    // 6-digit cryptographically-random OTP; store only its SHA-256 digest
+    const otp = String(crypto.randomInt(100000, 1000000));
+    user.resetToken = crypto.createHash('sha256').update(otp).digest('hex');
+    user.resetTokenExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+    user.resetOtpAttempts = 0;
     await user.save();
 
-    console.log(`[DEV] Password reset token for ${email}: ${plainToken}`);
+    console.log(`[DEV] Password reset OTP for ${email}: ${otp}`);
+
+    // Send the OTP via email when SMTP is configured; never fail the request on email errors.
+    let emailSent = false;
+    try {
+      const result = await sendOtpEmail(user.email, otp);
+      emailSent = result.sent;
+    } catch (mailError) {
+      console.error(`[MAIL] Failed to send reset OTP to ${email}:`, mailError.message);
+    }
 
     return res.status(200).json({
-      message: 'If that email exists, a reset token has been generated.',
-      resetToken: process.env.NODE_ENV !== 'production' ? plainToken : undefined
+      message: 'If that email exists, an OTP has been sent.',
+      // Only expose the OTP in the response outside production (so dev works without SMTP).
+      otp: process.env.NODE_ENV !== 'production' && !emailSent ? otp : undefined
     });
   } catch (error) {
     return res.status(500).json({ message: error.message });
@@ -428,28 +438,42 @@ async function forgotPassword(req, res) {
 
 async function resetPassword(req, res) {
   try {
-    const { token, newPassword } = req.body;
-    if (!token || !newPassword) {
-      return res.status(400).json({ message: 'Token and new password are required.' });
+    const { email, otp, newPassword } = req.body;
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ message: 'Email, OTP and new password are required.' });
     }
     if (newPassword.length < 6) {
       return res.status(400).json({ message: 'Password must be at least 6 characters.' });
     }
 
-    // Deterministic lookup: hash the incoming token and query directly
-    const tokenDigest = crypto.createHash('sha256').update(token).digest('hex');
     const user = await userModel.findOne({
-      resetToken: tokenDigest,
+      email: email.toLowerCase().trim(),
       resetTokenExpiry: { $gt: new Date() }
     });
+    if (!user || !user.resetToken) {
+      return res.status(400).json({ message: 'Invalid or expired OTP.' });
+    }
 
-    if (!user) {
-      return res.status(400).json({ message: 'Invalid or expired reset token.' });
+    // Lock after too many wrong attempts
+    if (user.resetOtpAttempts >= 5) {
+      user.resetToken = null;
+      user.resetTokenExpiry = null;
+      user.resetOtpAttempts = 0;
+      await user.save();
+      return res.status(429).json({ message: 'Too many attempts. Please request a new OTP.' });
+    }
+
+    const otpDigest = crypto.createHash('sha256').update(String(otp)).digest('hex');
+    if (otpDigest !== user.resetToken) {
+      user.resetOtpAttempts += 1;
+      await user.save();
+      return res.status(400).json({ message: 'Invalid or expired OTP.' });
     }
 
     user.password = await bcrypt.hash(newPassword, 10);
     user.resetToken = null;
     user.resetTokenExpiry = null;
+    user.resetOtpAttempts = 0;
     await user.save();
 
     return res.status(200).json({ message: 'Password has been reset successfully.' });

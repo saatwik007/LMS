@@ -1,6 +1,6 @@
 import gsap from "gsap";
 import { useEffect, useRef, useState } from "react";
-import { Badge, VoiceNote } from "../../pages/commentsModal";
+import { Badge, VoiceNote } from "../../pages/CommentsModal";
 import { ReplyCard } from "./ReplyCard";
 import axios from "axios";
 import { setCommentLiked, setCommentLikedCount, setLocalCommentReplies, setRepliesOpen, setReplyText } from "../../redux/slices/feedSlice";

@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const apiUrl = import.meta.env.VITE_API_URL || '';
 
-  const [token, setToken] = useState('');
+  const [email, setEmail] = useState(location.state?.email || '');
+  const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -24,12 +26,16 @@ export default function ResetPasswordPage() {
       setError('Password must be at least 6 characters.');
       return;
     }
+    if (otp.length !== 6) {
+      setError('Enter the 6-digit OTP sent to your email.');
+      return;
+    }
     setLoading(true);
     try {
-      await axios.post(`${apiUrl}/api/auth/user/reset-password`, { token, newPassword });
+      await axios.post(`${apiUrl}/api/auth/user/reset-password`, { email, otp, newPassword });
       setDone(true);
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid or expired token.');
+      setError(err.response?.data?.message || 'Invalid or expired OTP.');
     } finally {
       setLoading(false);
     }
@@ -51,7 +57,7 @@ export default function ResetPasswordPage() {
               Reset Password
             </h1>
             <p className="text-center text-sm text-gray-400 mb-6">
-              Paste your reset token and choose a new password
+              Enter the OTP sent to your email and choose a new password
             </p>
 
             {error && (
@@ -62,11 +68,21 @@ export default function ResetPasswordPage() {
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-3">
               <input
-                className="w-full bg-[#141b24] border border-[#1f2a38] text-white text-sm p-3.5 rounded-lg font-mono placeholder-gray-500 outline-none focus:border-cyan-500 transition"
+                className="w-full bg-[#141b24] border border-[#1f2a38] text-white text-base p-3.5 rounded-lg font-semibold placeholder-gray-500 outline-none focus:border-cyan-500 transition"
+                type="email"
+                placeholder="Email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <input
+                className="w-full bg-[#141b24] border border-[#1f2a38] text-white text-center text-2xl tracking-[0.5em] font-mono p-3.5 rounded-lg placeholder-gray-600 outline-none focus:border-cyan-500 transition"
                 type="text"
-                placeholder="Paste your reset token here"
-                value={token}
-                onChange={(e) => setToken(e.target.value.trim())}
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="------"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 required
               />
               <input

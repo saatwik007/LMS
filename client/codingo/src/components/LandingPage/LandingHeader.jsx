@@ -323,8 +323,8 @@ const LandingHeader = ({ onBack }) => {
             </div> */}
         
         <div className="flex items-center gap-3">
-          <a className="hover:text-gray-300 font-medium text-gray-400 cursor-pointer hover:scale-110 transition">Contact Us</a>
-          <a onClick={() => navigate('/dashboard')} className="hover:text-gray-300 font-medium text-gray-400 cursor-pointer hover:scale-110 transition">Dashboard</a>
+          <a className="hidden md:block hover:text-gray-300 font-medium text-gray-400 cursor-pointer hover:scale-110 transition">Contact Us</a>
+          <a onClick={() => navigate('/dashboard')} className="hidden md:block hover:text-gray-300 font-medium text-gray-400 cursor-pointer hover:scale-110 transition">Dashboard</a>
           {!currentUser ? (
             <nav className="flex gap-2 sm:gap-3 items-center text-xs sm:text-sm">
               <button

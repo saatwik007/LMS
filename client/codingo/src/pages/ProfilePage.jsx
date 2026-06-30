@@ -506,7 +506,7 @@ export default function ProfilePage() {
           <div className="flex flex-wrap gap-4">
             <div>
               <label className="text-xs text-gray-400 uppercase tracking-wide mb-2 block">Status</label>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {['All', 'Earned', 'Locked'].map((status) => (
                   <button
                     key={status}
@@ -525,7 +525,7 @@ export default function ProfilePage() {
             </div>
             <div>
               <label className="text-xs text-gray-400 uppercase tracking-wide mb-2 block">Rarity</label>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {['All', 'Common', 'Rare', 'Epic', 'Legendary'].map((rarity) => (
                   <button
                     key={rarity}

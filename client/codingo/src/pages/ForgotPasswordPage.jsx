@@ -22,7 +22,7 @@ export default function ForgotPasswordPage() {
     try {
       const res = await axios.post(`${apiUrl}/api/auth/user/forgot-password`, { email });
       dispatch(setSent(true));
-      if (res.data?.resetToken) dispatch(setDevToken(res.data.resetToken));
+      if (res.data?.otp) dispatch(setDevToken(res.data.otp));
     } catch (err) {
       dispatch(setError(err.response?.data?.message || 'Something went wrong.'));
     } finally {
@@ -44,7 +44,7 @@ export default function ForgotPasswordPage() {
           Forgot Password
         </h1>
         <p className="text-center text-sm text-gray-400 mb-6">
-          Enter your email and we'll generate a reset token
+          Enter your email and we'll send you a one-time code (OTP)
         </p>
 
         {error && (
@@ -68,25 +68,25 @@ export default function ForgotPasswordPage() {
               type="submit"
               disabled={loading}
             >
-              {loading ? 'Sending...' : 'Send Reset Token'}
+              {loading ? 'Sending...' : 'Send OTP'}
             </button>
           </form>
         ) : (
           <div className="text-center space-y-4">
             <div className="text-emerald-400 text-5xl mb-2">✉️</div>
             <p className="text-sm text-gray-300">
-              If an account exists for <span className="text-cyan-400">{email}</span>, a reset token has been generated.
+              If an account exists for <span className="text-cyan-400">{email}</span>, a one-time code (OTP) has been sent.
             </p>
 
             {devToken && (
               <div className="p-4 rounded-lg bg-amber-900/30 border border-amber-800/40">
-                <p className="text-xs text-amber-300 font-bold mb-1">Dev Mode — Your Reset Token:</p>
-                <p className="font-mono text-amber-200 text-xs break-all select-all">{devToken}</p>
+                <p className="text-xs text-amber-300 font-bold mb-1">Dev Mode — Your OTP:</p>
+                <p className="font-mono text-amber-200 text-2xl tracking-[0.4em] break-all select-all">{devToken}</p>
               </div>
             )}
 
             <button
-              onClick={() => navigate('/reset-password')}
+              onClick={() => navigate('/reset-password', { state: { email } })}
               className="w-full py-3 rounded-lg text-base font-extrabold bg-linear-to-r from-cyan-400 via-emerald-400 to-cyan-500 text-gray-950 hover:opacity-90 transition"
             >
               Go to Reset Password →

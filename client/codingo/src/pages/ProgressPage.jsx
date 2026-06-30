@@ -189,7 +189,7 @@ export default function ProgressPage() {
               {weeklyXp.map((week, i) => {
                 const pct = maxWeeklyXp > 0 ? (week.xp / maxWeeklyXp) * 100 : 0;
                 return (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-1 group">
+                  <div key={i} className="flex-1 min-w-0 flex flex-col items-center gap-1 group">
                     <div className="relative w-full flex justify-center">
                       {/* Tooltip */}
                       <div className="absolute -top-10 hidden group-hover:flex bg-[#0f1419] border border-[#2a3a4a] rounded-lg px-2 py-1 text-xs text-cyan-300 whitespace-nowrap z-10 shadow-lg">

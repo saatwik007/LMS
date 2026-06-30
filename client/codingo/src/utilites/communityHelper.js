@@ -1,10 +1,6 @@
-import axios from "axios";
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { useDispatch } from "react-redux";
+import api from "../lib/api";
 import { setError, setImage, setImagePreview } from "../redux/slices/postSlice";
-
-const apiUrl = import.meta.env.VITE_API_URL || '';
-const dispatch = useDispatch;
 
 export const getAuthHeaders = () => {
   const token = localStorage.getItem('token');
@@ -33,7 +29,9 @@ export const formatTimeAgo = (date) => {
   return new Date(date).toLocaleDateString();
 }
 
- export const handleImageSelect = (e) => {
+// Redux thunk: validate the selected file and update post composer state.
+// Dispatch from a component with: dispatch(handleImageSelect(e)).
+export const handleImageSelect = (e) => (dispatch) => {
     const file = e.target.files[0];
     if (!file) return;
     if (file.size > 3 * 1024 * 1024) { dispatch(setError('Image must be < 3MB')); return; }
@@ -49,10 +47,7 @@ export const fetchPosts = createAsyncThunk(
   'feed/fetchPosts',
   async (pageNum, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${apiUrl}/api/community/feed?page=${pageNum}&limit=10`, {
-        withCredentials: true,
-        headers: getAuthHeaders(),
-      });
+      const res = await api.get(`/api/community/feed?page=${pageNum}&limit=10`);
 
       const newPosts = res.data.posts || [];
 
@@ -71,9 +66,7 @@ export const fetchPosts = createAsyncThunk(
   'feed/handleLike',
   async (postId, { rejectWithValue }) => {
     try {
-      const res = await axios.post(`${apiUrl}/api/community/posts/${postId}/like`, {}, {
-        withCredentials: true, headers: getAuthHeaders(),
-      });
+      const res = await api.post(`/api/community/posts/${postId}/like`, {});
       return{
           postId,
           likesCount: res.data.likesCount,

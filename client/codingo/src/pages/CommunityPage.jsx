@@ -22,7 +22,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setContent, setError, setFocused, setImage, setImagePreview, setIsPosting } from '../redux/slices/postSlice';
 import { setHeartAnim, setLikeCount, setLiked, setPage, setPosts, setSelectedPost, setShowModal } from '../redux/slices/feedSlice';
 import { fetchPosts, getAuthHeaders, handleLike, getStoredUser, handleImageSelect, formatTimeAgo } from '../utilites/communityHelper';
-import Comments from './commentsModal';
+import Comments from './CommentsModal';
 /* ─── Helpers ─────────────────────────────────────────────────── */
 
 const AVATAR_PALETTE = [
@@ -176,7 +176,7 @@ function PostComposer({ onPostCreated }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <input ref={fileInputRef} type="file"
                 accept="image/jpeg,image/png,image/webp,image/jpg"
-                onChange={handleImageSelect} style={{ display: 'none' }}
+                onChange={(e) => dispatch(handleImageSelect(e))} style={{ display: 'none' }}
                 id="post-image-input"
               />
               <label htmlFor="post-image-input" style={{
@@ -522,23 +522,21 @@ export default function CommunityPage() {
             fontFamily: "'Plus Jakarta Sans', sans-serif",
             padding: '0',
             position: 'relative',
+            overflow: 'hidden',
           }}>
             {/* Ambient top glow */}
             <div style={{
-              position: 'fixed', top: -180, left: '30%',
+              position: 'absolute', top: -180, left: '30%',
               width: 500, height: 400, borderRadius: '50%',
+              maxWidth: '100%',
               background: 'radial-gradient(circle, #00e5ff08 0%, transparent 70%)',
               pointerEvents: 'none', zIndex: 0,
             }} />
 
-            <div style={{
-              maxWidth: 1100, margin: '0 auto',
-              padding: '28px 20px 60px',
-              display: 'grid',
-              gridTemplateColumns: '1fr 300px',
-              gap: 24,
-              position: 'relative', zIndex: 1,
-            }}>
+            <div
+              className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 max-w-275 mx-auto px-4 sm:px-5 pt-6 sm:pt-7 pb-16"
+              style={{ position: 'relative', zIndex: 1 }}
+            >
 
               {/* ── Left: main feed ──────────────────────────────── */}
               <div>
@@ -637,7 +635,7 @@ export default function CommunityPage() {
               </div>
 
               {/* ── Right: sidebar ───────────────────────────────── */}
-              <div style={{ position: 'sticky', top: 28, alignSelf: 'start' }}>
+              <div className="hidden lg:block" style={{ position: 'sticky', top: 28, alignSelf: 'start' }}>
                 {/* Mini stats */}
                 <div style={{
                   background: '#0b1420', border: '1px solid #1a2535', borderRadius: 16,

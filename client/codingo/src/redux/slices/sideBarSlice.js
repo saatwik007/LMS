@@ -4,7 +4,7 @@ const sideBarSlice = createSlice({
     name: 'sideBar',
     initialState: {
         isDesktopCollapsed: true,
-        isMobileMenuOpen: true,
+        isMobileMenuOpen: false,
     },
     reducers: {
         setDesktopCollapsed: (state, action) => {
