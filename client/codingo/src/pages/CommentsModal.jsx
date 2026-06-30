@@ -2,9 +2,11 @@ import { useState, useRef, useEffect } from "react";
 import { gsap } from "gsap";
 import { ReplyCard } from "../components/Comments/ReplyCard";
 import { CommentCard } from "../components/Comments/CommentCard";
-import { setShowModal } from "../redux/slices/feedSlice";
-import { useDispatch } from "react-redux";
+import { setCommentLiked, setCommentLikedCount, setCommentText, setHeartAnim, setIsCommenting, setCommentReplying, setLikeCount, setLiked, setShowModal, setPosts } from "../redux/slices/feedSlice";
+import { useDispatch, useSelector } from "react-redux";
 import { FaWindowClose } from "react-icons/fa";
+import axios from "axios";
+import { getAuthHeaders } from "../utilites/communityHelper";
 
 /* ─── CSS Variables & base styles injected once ─── */
 if (!document.getElementById("coder-styles")) {
@@ -102,6 +104,7 @@ if (!document.getElementById("coder-styles")) {
   document.head.appendChild(style);
 }
 
+
 /* ─── Avatar gradient map ─── */
 const AV_GRADIENTS = [
   "linear-gradient(135deg,#7c6aff,#a78bfa)",
@@ -113,139 +116,9 @@ const AV_GRADIENTS = [
 ];
 const SELF_GRADIENT = "linear-gradient(135deg,#7c6aff,#22d3a0)";
 
-/* ─── Sample data ─── */
-const INITIAL_COMMENTS = [
-  {
-    id: "c1",
-    name: "Aryan Mehta",
-    initials: "AR",
-    avatarIdx: 0,
-    badge: { label: "MOD", type: "mod" },
-    date: "May 3, 2025 · 11:24 AM",
-    body: `Just dropped a new async handler using <code class="inline-code">Promise.allSettled()</code> — it's honestly a game changer for batch API calls where you don't want one failure to block the rest. Highly recommend refactoring anything that uses <code class="inline-code">Promise.all()</code> for non-critical parallel tasks. 🔥`,
-    likes: 24,
-    liked: false,
-    replies: [
-      {
-        id: "r1a",
-        name: "Kriti Sharma",
-        initials: "KS",
-        avatarIdx: 4,
-        date: "May 3, 2025 · 11:51 AM",
-        body: `Yes!! Switched to this last week. Also pairs perfectly with <code class="inline-code">AbortController</code> for timeout control 🧠`,
-        likes: 8,
-        liked: false,
-      },
-      {
-        id: "r1b",
-        name: "Pranav V.",
-        initials: "PV",
-        avatarIdx: 2,
-        date: "May 3, 2025 · 1:10 PM",
-        body: "Added this pattern to our internal toolkit doc. Thanks for the tip 🛠",
-        likes: 4,
-        liked: false,
-      },
-    ],
-  },
-  {
-    id: "c2",
-    name: "Sneha Singh",
-    initials: "SS",
-    avatarIdx: 1,
-    badge: { label: "PRO", type: "pro" },
-    date: "May 3, 2025 · 2:05 PM",
-    body: `Hot take: Most devs are sleeping on CSS <code class="inline-code">container queries</code>. Media queries are tied to the viewport — container queries respond to the parent element's size. Your components finally become truly reusable without layout hacks. CSS is genuinely incredible in 2025 😤`,
-    likes: 41,
-    liked: false,
-    replies: [
-      {
-        id: "r2a",
-        name: "Raghav D.",
-        initials: "RD",
-        avatarIdx: 3,
-        date: "May 3, 2025 · 3:45 PM",
-        body: "Already using it in production. The component portability improvement is real. No more breakpoint spaghetti 🎉",
-        likes: 11,
-        liked: false,
-      },
-    ],
-  },
-  {
-    id: "c3",
-    name: "Nikhil Patel",
-    initials: "NP",
-    avatarIdx: 2,
-    badge: null,
-    date: "May 3, 2025 · 4:30 PM",
-    voiceNote: { duration: "0:47" },
-    body: `Recorded my thought on why <code class="inline-code">Zustand</code> beats Redux for small-mid scale React apps. Less boilerplate, no provider wrapping, selector-based subscriptions just work. Full breakdown above 👆`,
-    likes: 18,
-    liked: false,
-    replies: [],
-  },
-  {
-    id: "c4",
-    name: "Riya Desai",
-    initials: "RD",
-    avatarIdx: 3,
-    badge: null,
-    date: "May 4, 2025 · 9:12 AM",
-    image: "https://opengraph.githubassets.com/1/vercel/next.js",
-    body: "Next.js 15.3 just dropped and the Turbopack build speed improvements are insane 🚀 Our CI pipeline went from 4m 20s to under 90 seconds. Anyone else migrated yet?",
-    likes: 37,
-    liked: false,
-    replies: [],
-  },
-  {
-    id: "c5",
-    name: "Karan Shah",
-    initials: "KS",
-    avatarIdx: 4,
-    badge: null,
-    date: "May 4, 2025 · 10:48 AM",
-    body: `Question for the thread — does anyone have a solid pattern for handling optimistic UI updates with rollback on error? Using React Query but the mutation rollback feels clunky when you have nested dependent queries. 🤔`,
-    likes: 9,
-    liked: false,
-    replies: [],
-  },
-  {
-    id: "c6",
-    name: "Meera Agarwal",
-    initials: "MA",
-    avatarIdx: 5,
-    badge: { label: "PRO", type: "pro" },
-    date: "May 4, 2025 · 12:30 PM",
-    body: `PSA: Stop using <code class="inline-code">any</code> in TypeScript. Even if you're in a rush, use <code class="inline-code">unknown</code> and narrow it down. It takes 2 minutes and saves hours of runtime debugging. Your future self and your teammates will thank you 💯`,
-    likes: 53,
-    liked: false,
-    replies: [],
-  },
-  {
-    id: "c7",
-    name: "Vikram Rao",
-    initials: "VR",
-    avatarIdx: 0,
-    badge: null,
-    date: "May 4, 2025 · 2:00 PM",
-    body: `Reminder that <code class="inline-code">git bisect</code> exists and it's magic 🪄 Binary search through your commit history to find exactly which commit introduced a bug. Saved me 3 hours today tracking down a regression.`,
-    likes: 29,
-    liked: false,
-    replies: [],
-  },
-];
-
 const EMOJIS = ["😂", "🔥", "💀", "🚀", "👀", "✅", "❌", "💯", "🤔", "⚡", "🎉", "🛠", "👾", "🐛", "📦", "🧠"];
 
 const VN_BARS = [8, 18, 12, 24, 10, 20, 14, 8, 22, 16, 10, 18];
-
-function formatDate(d) {
-  return (
-    d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) +
-    " · " +
-    d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
-  );
-}
 
 /* ─── Avatar ─── */
 // export function Avatar({ initials, gradientIdx, size = 36, self = false }) {
@@ -313,15 +186,16 @@ export function VoiceNote({ duration }) {
 }
 
 /* ─── Main Component ─── */
-export default function Comments() {
-  const [comments, setComments] = useState(INITIAL_COMMENTS);
-  const [mainText, setMainText] = useState("");
+export default function Comments({ post, onComment }) {
+  const apiUrl = import.meta.env.VITE_API_URL || '';
   const [pendingFiles, setPendingFiles] = useState([]);
+  const [localComments, setLocalComments] = useState(post.comments);
   const [hasVoice, setHasVoice] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recSeconds, setRecSeconds] = useState(0);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [voiceDuration, setVoiceDuration] = useState(0);
+  const commentText = useSelector(state => state.feed.commentText[post.id] ?? '');
 
   const dispatch = useDispatch();
   const mainInputRef = useRef(null);
@@ -330,6 +204,30 @@ export default function Comments() {
   const inputAreaRef = useRef(null);
   const threadRef = useRef(null);
   const emojiPanelRef = useRef(null);
+
+  const handleComment = async () => {
+    if (!commentText.trim()) return;
+    dispatch(setIsCommenting({ postId: post.id, value: true }));
+    try {
+      const res = await axios.post(
+        `${apiUrl}/api/community/posts/${post.id}/comments`,
+        { content: commentText.trim() },
+        { withCredentials: true, headers: getAuthHeaders() }
+      );
+      console.log('res:', res.data.comment.content)
+
+      setLocalComments(prev => [...prev, res.data.comment]);
+      // dispatch(setPosts(prev => prev.map(p => p.id === post.id ? res.data.post : p)));
+
+      dispatch(setCommentText({ postId: post.id, value: '' }));
+      if (onComment) onComment(post.id);
+      console.log('new comment:', res);
+    } catch (err) {
+      console.error('Comment error:', err);
+    } finally {
+      dispatch(setIsCommenting({ postId: post.id, value: false }));
+    }
+  };
 
   /* Page-load GSAP stagger */
   useEffect(() => {
@@ -352,6 +250,8 @@ export default function Comments() {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  if (!post) return null;
 
   /* ─── Recording ─── */
   function startRecording() {
@@ -389,8 +289,8 @@ export default function Comments() {
   function insertEmoji(em) {
     const inp = mainInputRef.current;
     const pos = inp.selectionStart;
-    const next = mainText.slice(0, pos) + em + mainText.slice(pos);
-    setMainText(next);
+    const next = commentText.slice(0, pos) + em + commentText.slice(pos);
+    dispatch(setCommentText(next));
     setEmojiOpen(false);
     setTimeout(() => {
       inp.focus();
@@ -398,85 +298,24 @@ export default function Comments() {
     }, 0);
   }
 
-  /* ─── Like ─── */
-  function handleLike(cid) {
-    setComments(cs =>
-      cs.map(c =>
-        c.id === cid
-          ? { ...c, liked: !c.liked, likes: c.liked ? c.likes - 1 : c.likes + 1 }
-          : c
-      )
-    );
-  }
-  function handleReplyLike(cid, rid) {
-    setComments(cs =>
-      cs.map(c =>
-        c.id === cid
-          ? {
-            ...c,
-            replies: c.replies.map(r =>
-              r.id === rid ? { ...r, liked: !r.liked, likes: r.liked ? r.likes - 1 : r.likes + 1 } : r
-            ),
-          }
-          : c
-      )
-    );
-  }
-
-  /* ─── Add Reply ─── */
-  function handleAddReply(cid, text) {
-    const newReply = {
-      id: `r_${Date.now()}`,
-      name: "You",
-      initials: "Y",
-      avatarIdx: Math.floor(Math.random() * AV_GRADIENTS.length),
-      date: formatDate(new Date()),
-      body: text,
-      likes: 0,
-      liked: false,
-      self: true,
-    };
-    setComments(cs =>
-      cs.map(c => c.id === cid ? { ...c, replies: [...c.replies, newReply] } : c)
-    );
-  }
-
-  /* ─── Post Comment ─── */
-  function postComment() {
-    if (!mainText.trim() && !pendingFiles.length && !hasVoice) return;
-    const newComment = {
-      id: `c_${Date.now()}`,
-      name: "You",
-      initials: "Y",
-      avatarIdx: 0,
-      badge: null,
-      date: formatDate(new Date()),
-      body: mainText,
-      likes: 0,
-      liked: false,
-      replies: [],
-      image: pendingFiles[0]?.url || null,
-      voiceNote: hasVoice ? { duration: fmtTime(voiceDuration) } : null,
-      self: true,
-    };
-    setComments(cs => [newComment, ...cs]);
-    setMainText("");
-    setPendingFiles([]);
-    setHasVoice(false);
-    setVoiceDuration(0);
-  }
-
   const showPreviewBar = pendingFiles.length > 0 || hasVoice;
 
   return (
-     <div className="coder-bg max-w-5xl mt-3 mx-auto transition-all font-mono-coder coder-text max-h-180 overflow-scroll">
-      <div className="p-2 cursor-pointer sticky top-0" onClick={() => dispatch(setShowModal(false))}>
-      <FaWindowClose />
-      </div>
-      <div>
-        
-      </div>
-      <div className="max-w-3xl mx-auto px-5 py-10 pb-20">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{ background: "rgba(0, 0, 0, 0.65)", backdropFilter: "blur(2px)" }}
+      onClick={() => dispatch(setShowModal(false))} // click outside to close
+    >
+      {/* Modal panel — stop click propagation so clicking inside doesn't close */}
+      <div
+        className=" font-mono-coder coder-bg mt-15 w-[90vw] max-w-[900px] max-h-[90vh] overflow-y-auto rounded-[16px] border border-[var(--border)] coder-text relative"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Close button */}
+        <div className="p-2 cursor-pointer sticky top-0 z-10" onClick={() => dispatch(setShowModal(false))}>
+          <FaWindowClose />
+        </div>
+        <div className="max-w-3xl mx-auto px-5 py-10 pb-20">
           {/* ─── INPUT AREA ─── */}
           <div
             ref={inputAreaRef}
@@ -490,9 +329,9 @@ export default function Comments() {
                 className="flex-1 bg-transparent border-none outline-none coder-text font-mono-coder resize-none"
                 style={{ fontSize: 13, lineHeight: 1.6, minHeight: 60 }}
                 placeholder="add your comment"
-                value={mainText}
-                onChange={e => setMainText(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) postComment(); }}
+                value={commentText}
+                onChange={e => dispatch(setCommentText({ postId: post.id, value: e.target.value }))}
+                onKeyDown={e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)); }}
               />
             </div>
 
@@ -610,7 +449,7 @@ export default function Comments() {
 
               {/* Send */}
               <button
-                onClick={postComment}
+                onClick={handleComment}
                 className="ml-auto text-white font-mono-coder font-semibold rounded-lg px-4 py-1.5 transition-all hover:opacity-90 hover:-translate-y-px active:translate-y-0"
                 style={{
                   fontSize: 12,
@@ -634,18 +473,18 @@ export default function Comments() {
           </div>
 
           {/* ─── COMMENT THREAD ─── */}
-          <div ref={threadRef} className="flex flex-col gap-3.5 min-h-screen overflow-y-scroll">
-            {comments.map(c => (
+          <div ref={threadRef} className="flex flex-col gap-3.5">
+            {[...localComments].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map(c => (
               <CommentCard
                 key={c.id}
                 comment={c}
-                onLike={handleLike}
-                onReplyLike={handleReplyLike}
-                onAddReply={handleAddReply}
+                onComment={handleComment}
+                postId={post.id}
               />
             ))}
           </div>
         </div>
       </div>
+    </div>
   );
 }

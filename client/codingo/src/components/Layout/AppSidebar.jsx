@@ -72,25 +72,11 @@ export default function AppSidebar() {
         <div
         onMouseEnter={() => dispatch(setDesktopCollapsed(false))}
         onMouseLeave={() => dispatch(setDesktopCollapsed(true))}
-        // onMouseEnter={() => dispatch(setMobileMenuOpen(false))}
-        // onMouseLeave={() => dispatch(setMobileMenuOpen(true))}
           className={`sticky top-14 h-[calc(100vh-3.5rem)] bg-[#1a2332] border-r border-[#2a3a4a] py-4 transition-all duration-200 ${
             isDesktopCollapsed ? 'w-20 px-2' : 'w-50 px-2'
           }`}
         >
           <div className="flex items-center justify-center mb-6">
-            {/* {isDesktopCollapsed ? null : (
-              <div className="text-xl font-extrabold text-cyan-400 pl-2">Codify</div>
-            )} */}
-            {/* <button
-              type="button"
-              onClick={() => dispatch(setDesktopCollapsed(!isDesktopCollapsed))}
-              className="h-9 w-9 rounded-lg text-cyan-300 hover:bg-[#243547] transition grid place-items-center"
-              aria-label="Toggle sidebar"
-              title="Toggle sidebar"
-            >
-              <FaBars />
-            </button> */}
           </div>
 
           <nav className="space-y-1">

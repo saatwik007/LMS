@@ -1,4 +1,4 @@
-const Post = require('../models/post.model');
+const { Post, Comment } = require('../models/post.model');
 const User = require('../models/user.model');
 const sharp = require('sharp');
 const path = require('path');
@@ -27,7 +27,7 @@ async function createPost(req, res) {
     if (req.file && req.file.buffer) {
       try {
         const uploadsDir = path.join(__dirname, '..', '..', 'uploads', 'post-images');
-        
+
         // Ensure directory exists
         try {
           await fs.access(uploadsDir);
@@ -53,7 +53,7 @@ async function createPost(req, res) {
     }
 
     const post = await Post.create(postData);
-    
+
     // Populate author details
     await post.populate('author', 'username profilePic league level totalXp');
 
@@ -101,6 +101,7 @@ async function getFeed(req, res) {
     const posts = await Post.find(filter)
       .populate('author', 'username profilePic league level totalXp')
       .populate('comments.author', 'username profilePic')
+      .populate('comments.replies.author', 'username profilePic')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
@@ -123,18 +124,37 @@ async function getFeed(req, res) {
       likes: post.likes.map(id => String(id)),
       comments: post.comments.map(comment => ({
         id: String(comment._id),
+        postId: String(post._id),                          // ✅ postId belongs here, not inside author
         author: {
           id: String(comment.author._id),
           username: comment.author.username,
           profilePic: comment.author.profilePic || ''
         },
         content: comment.content,
-        createdAt: comment.createdAt
+        createdAt: comment.createdAt,
+        likesCount: comment.likes?.length || 0,             // ✅ added
+        isLikedByCurrentUser: comment.likes?.some(           // ✅ added
+          id => String(id) === currentUserId
+        ) ?? false,
+        replies: comment.replies?.map(reply => ({            // ✅ this was completely missing
+          id: String(reply._id),
+          author: {
+            id: String(reply.author._id),
+            username: reply.author.username,
+            profilePic: reply.author.profilePic || ''
+          },
+          content: reply.content,
+          createdAt: reply.createdAt,
+        })) || []
       })),
       likesCount: post.likes.length,
       commentsCount: post.comments.length,
       isLikedByCurrentUser: post.likes.some(id => String(id) === currentUserId),
       createdAt: post.createdAt,
+      likesCount: post.comments.likes?.length || 0,
+      isLikedByCurrentUser: post.comments.likes?.some(
+        id => String(id) === currentUserId
+      ) ?? false,
       updatedAt: post.updatedAt
     }));
 
@@ -162,11 +182,19 @@ async function getPost(req, res) {
     const post = await Post.findById(postId)
       .populate('author', 'username profilePic league level totalXp')
       .populate('comments.author', 'username profilePic')
+      .populate('comments.likes', '_id')
+      .populate('comments.replies.author', 'username profilePic')
       .lean();
 
     if (!post || !post.isActive) {
       return res.status(404).json({ message: 'Post not found' });
     }
+    const replies = post.comments.reduce((acc, comment) => {
+      acc[String(comment._id)] = comment.replies || [];
+      return acc;
+    }, {});
+
+    console.log("response", replies)
 
     const currentUserId = String(req.user.id);
 
@@ -191,7 +219,16 @@ async function getPost(req, res) {
           profilePic: comment.author.profilePic || ''
         },
         content: comment.content,
-        createdAt: comment.createdAt
+        createdAt: comment.createdAt,
+        replies: comment.replies?.map(reply => ({
+          id: String(reply._id),
+          author: {
+            id: String(reply.author._id),
+            username: reply.author.username,
+          },
+          content: reply.content,
+          createdAt: reply.createdAt,
+        })) || []
       })),
       likesCount: post.likes.length,
       commentsCount: post.comments.length,
@@ -312,13 +349,17 @@ async function addComment(req, res) {
       message: 'Comment added',
       comment: {
         id: String(newComment._id),
+        postId: String(post._id),
         author: {
           id: String(newComment.author._id),
           username: newComment.author.username,
           profilePic: newComment.author.profilePic || ''
         },
         content: newComment.content,
-        createdAt: newComment.createdAt
+        createdAt: newComment.createdAt,
+        likesCount: 0,                     // ✅ added
+        isLikedByCurrentUser: false,       // ✅ added
+        replies: []                        // ✅ added
       },
       commentsCount: post.comments.length
     });
@@ -328,13 +369,129 @@ async function addComment(req, res) {
   }
 }
 
+// Add a reply to a comment
+async function commentReply(req, res) {
+  try {
+    const { postId, commentId } = req.params;
+    const { content } = req.body;
+
+    console.log('body:', req.body);           // ✅ if this doesn't print, wrong function is running
+    console.log('originalUrl:', req.originalUrl);
+    console.log('params-2:', req.params);
+
+    if (!content || content.trim().length === 0) {
+      return res.status(400).json({ message: 'Type something to post' })
+    }
+
+    if (content.length > 500) {
+      return res.status(404).json({ message: 'Maximum type limit 500 characters' })
+    }
+
+    const post = await Post.findById(postId);
+    const comment = post.comments.id(commentId);
+
+    if (!post || !post.isActive) {
+      return res.status(400).json({ message: 'Post not found' })
+    }
+
+    const reply = {
+      author: req.user.id,
+      content: content.trim(),
+      createdAt: new Date()
+    }
+
+    comment.replies.push(reply);
+    await post.save();
+
+    const savedPost = await Post.findById(postId).populate(
+      'comments.replies.author',
+      'username profilePicture'
+    );
+
+    const savedComment = savedPost.comments.id(commentId);
+    const savedReply = savedComment.replies[savedComment.replies.length - 1];
+
+    return res.status(201).json({
+      message: 'Reply saved successfully',
+      reply: savedReply
+    });
+  } catch (error) {
+    if (error.name === 'CastError') {
+      return res.status(400).json({ message: 'Invalid post or comment Id' });
+    };
+    return res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
+
+// Like comment
+async function likeComment(req, res) {
+  try {
+    const { postId, commentId } = req.params;
+    const userId = req.user.id;
+    const userIdString = String(userId);
+
+    const post = await Post.findById(postId);
+
+
+    if (!post || !post.isActive) {
+      return res.status(404).json({ message: 'post not found' })
+    }
+    const comment = post.comments.id(commentId);
+
+    if (!comment) {
+      return res.status(404).json({ message: 'comment not found' });
+    };
+
+    if (!comment.likes) comment.likes = [];
+
+    const commentLike = comment.likes.findIndex(id => String(id) === userIdString);
+    // Unlike post if liked
+    if (commentLike > -1) {
+      comment.likes.splice(commentLike, 1);
+      await post.save();
+      return res.status(200).json({
+        message: 'Comment disliked',
+        likesCount: comment.likes.length,
+        isLiked: false
+      });
+    } else {
+      // Add like
+      comment.likes.push(userId);
+      await post.save();
+
+      if (String(comment.author !== userIdString)) {
+        const liker = await User.findById(userId).select('username');
+        await User.findByIdAndUpdate(comment.author, {
+          $push: {
+            notifications: {
+              title: 'Comment like',
+              detail: `${liker.username} liked your comment`
+            }
+          }
+        });
+      }
+
+      console.log('comment liked')
+      return res.status(200).json({
+        message: 'Comment liked',
+        likesCount: comment.likes.length,
+        isLiked: true
+      });
+    };
+  } catch (error) {
+    console.error('Comment like error:', error);
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 // Delete a post (author only)
 async function deletePost(req, res) {
   try {
     const postId = req.params.postId;
     const userId = req.user.id;
-
+    console.log('DeletePost1', postId, userId);
     const post = await Post.findById(postId);
+    console.log('DeletePost2', postId, userId, post);
 
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
@@ -364,6 +521,8 @@ async function deleteComment(req, res) {
     const userId = req.user.id;
 
     const post = await Post.findById(postId);
+
+    console.log("DeleteComment", JSON.stringify(req.params.commentId), postId, commentId, userId, post)
 
     if (!post || !post.isActive) {
       return res.status(404).json({ message: 'Post not found' });
@@ -431,7 +590,7 @@ async function getUserPosts(req, res) {
       content: post.content,
       image: post.image,
       likes: post.likes.map(id => String(id)),
-      comments: post.comments.map(comment => ({
+      comments: post.comments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map(comment => ({
         id: String(comment._id),
         author: {
           id: String(comment.author._id),
@@ -472,5 +631,7 @@ module.exports = {
   addComment,
   deletePost,
   deleteComment,
-  getUserPosts
+  getUserPosts,
+  commentReply,
+  likeComment
 };

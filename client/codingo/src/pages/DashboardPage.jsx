@@ -258,7 +258,6 @@ export default function Dashboard() {
   const displayName = useMemo(() => {
     return getUserDisplayName(currentUser);
   }, [currentUser]);
-  console.log('current user:' ,currentUser)
 
   useEffect(() => {
     const now = new Date();

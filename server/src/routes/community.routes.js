@@ -7,7 +7,9 @@ const {
   addComment,
   deletePost,
   deleteComment,
-  getUserPosts
+  getUserPosts,
+  commentReply,
+  likeComment
 } = require('../controllers/community.controller');
 const { protect } = require('../middlewares/auth.middleware');
 const { profileImageUpload } = require('../middlewares/upload.middleware');
@@ -34,6 +36,12 @@ router.post('/posts/:postId/like', protect, toggleLike);
 
 // Add a comment
 router.post('/posts/:postId/comments', protect, addComment);
+
+// Like a comment 
+router.post('/posts/:postId/:commentId/likeComment', protect, likeComment);
+
+// Add a comment reply
+router.post('/posts/:postId/:commentId/commentReplies', protect, commentReply);
 
 // Delete a comment
 router.delete('/posts/:postId/comments/:commentId', protect, deleteComment);

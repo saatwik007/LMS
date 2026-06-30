@@ -1,5 +1,6 @@
 import gsap from "gsap";
 import { useEffect, useRef } from "react";
+import { formatTimeAgo } from "../../utilites/communityHelper";
 
 /* ─── Reply Card ─── */
  export const ReplyCard = ({ reply, onLike }) => {
@@ -16,16 +17,16 @@ import { useEffect, useRef } from "react";
       style={{ background: "var(--surface2)", borderLeft: "2px solid var(--border2)" }}
     >
       <div className="flex-1">
-        <div className="font-sans-coder font-bold coder-text" style={{ fontSize: 12 }}>{reply.name}</div>
-        <div className="coder-text3 font-mono-coder" style={{ fontSize: 10, marginTop: 1 }}>{reply.date}</div>
+        <div className="font-sans-coder font-bold coder-text" style={{ fontSize: 12 }}>{reply.username}</div>
+        <div className="coder-text3 font-mono-coder" style={{ fontSize: 10, marginTop: 1 }}>{formatTimeAgo(reply.createdAt)}</div>
         <div
           className="coder-text2 font-mono-coder mt-1"
           style={{ fontSize: 12, lineHeight: 1.6 }}
-          dangerouslySetInnerHTML={{ __html: reply.body }}
+          dangerouslySetInnerHTML={{ __html: reply.content }}
         />
         <div className="flex items-center gap-1 mt-1.5">
           <button
-            onClick={() => onLike(reply.id)}
+            // onClick={() => onLike(reply.id)}
             className={`like-btn flex items-center gap-1 rounded-lg px-2 py-1 font-mono-coder transition-all border border-transparent coder-text3`}
             style={{ fontSize: 11, cursor: "pointer", background: "none" }}
           >

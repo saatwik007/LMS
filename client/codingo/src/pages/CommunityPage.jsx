@@ -20,12 +20,9 @@ import { Navigate, useNavigate } from 'react-router-dom';
 // import Comments from './LandinPageExperimental';
 import { useDispatch, useSelector } from 'react-redux';
 import { setContent, setError, setFocused, setImage, setImagePreview, setIsPosting } from '../redux/slices/postSlice';
-import { setCommentText, setHeartAnim, setIsCommenting, setLikeCount, setLiked, setPage, setPosts, setShowModal } from '../redux/slices/feedSlice';
-import { fetchPosts, getAuthHeaders, handleLike, getStoredUser, handleImageSelect } from '../utilites/communityHelper';
+import { setHeartAnim, setLikeCount, setLiked, setPage, setPosts, setSelectedPost, setShowModal } from '../redux/slices/feedSlice';
+import { fetchPosts, getAuthHeaders, handleLike, getStoredUser, handleImageSelect, formatTimeAgo } from '../utilites/communityHelper';
 import Comments from './commentsModal';
-import { setSearchQuery, } from '../redux/slices/friendsSlice';
-import { searchUsers } from './FriendsPage';
-
 /* ─── Helpers ─────────────────────────────────────────────────── */
 
 const AVATAR_PALETTE = [
@@ -51,19 +48,6 @@ function AvatarInitial({ name, size = 44 }) {
       {initial}
     </div>
   );
-}
-
-function formatTimeAgo(date) {
-  const diff = Date.now() - new Date(date);
-  const s = Math.floor(diff / 1000);
-  const m = Math.floor(s / 60);
-  const h = Math.floor(m / 60);
-  const d = Math.floor(h / 24);
-  if (s < 60) return 'just now';
-  if (m < 60) return `${m}m`;
-  if (h < 24) return `${h}h`;
-  if (d < 7) return `${d}d`;
-  return new Date(date).toLocaleDateString();
 }
 
 function LeagueBadge({ league }) {
@@ -242,7 +226,7 @@ function PostComposer({ onPostCreated }) {
 }
 
 /* ─── Post Card ───────────────────────────────────────────────── */
-function PostCard({ post, currentUserId, onLike, onReplyLike, onAddReply, onComment, onDelete, index }) {
+function PostCard({ post, currentUserId, onLike, onDelete, index }) {
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL || '';
   const imageUrl = post.image?.startsWith('/')
@@ -252,8 +236,6 @@ function PostCard({ post, currentUserId, onLike, onReplyLike, onAddReply, onComm
   const dispatch = useDispatch();
   const liked = useSelector(state => state.feed.liked[post.id] ?? post.isLikedByCurrentUser ?? false);
   const likeCount = useSelector(state => state.feed.likeCounts[post.id] ?? post.likesCount ?? 0);
-  const commentText = useSelector(state => state.feed.commentText[post.id] ?? '');
-  const isCommenting = useSelector(state => state.feed.isCommenting[post.id] ?? false);
   const heartAnim = useSelector(state => state.feed.heartAnim[post.id] ?? false);
   const showComments = useSelector(state => state.feed.showComments[post.id] ?? false);
 
@@ -264,42 +246,30 @@ function PostCard({ post, currentUserId, onLike, onReplyLike, onAddReply, onComm
     dispatch(onLike(post.id));
   };
 
-  const handleComment = async () => {
-    if (!commentText.trim()) return;
-    dispatch(setIsCommenting({ postId: post.id, value: true }));
-    try {
-      await axios.post(
-        `${apiUrl}/api/community/posts/${post.id}/comments`,
-        { content: commentText.trim() },
-        { withCredentials: true, headers: getAuthHeaders() }
-      );
-      dispatch(setCommentText({ postId: post.id, value: '' }));
-      if (onComment) onComment(post.id);
-    } catch (err) {
-      console.error('Comment error:', err);
-    } finally {
-      dispatch(setIsCommenting({ postId: post.id, value: false }));
-    }
-  };
+  // const handleComment = async () => {
+  //   if (!commentText.trim()) return;
+  //   dispatch(setIsCommenting({ postId: post.id, value: true }));
+  //   try {
+  //     await axios.post(
+  //       `${apiUrl}/api/community/posts/${post.id}/comments`,
+  //       { content: commentText.trim() },
+  //       { withCredentials: true, headers: getAuthHeaders() }
+  //     );
+  //     dispatch(setCommentText({ postId: post.id, value: '' }));
+  //     if (onComment) onComment(post.id);
+  //   } catch (err) {
+  //     console.error('Comment error:', err);
+  //   } finally {
+  //     dispatch(setIsCommenting({ postId: post.id, value: false }));
+  //   }
+  // };
 
   const handleCommentModal = () => {
     if (post.comments.length > 0) {
+      dispatch(setSelectedPost(post)); // ← save this specific post
       dispatch(setShowModal(true));
     }
   }
-
-  const handleDeleteComment = async (commentId) => {
-    try {
-      await axios.delete(
-        `${apiUrl}/api/community/posts/${post.id}/comments/${commentId}`,
-        { withCredentials: true, headers: getAuthHeaders() }
-      );
-      if (onComment) onComment(post.id);
-    } catch (err) {
-      console.error('Delete comment error:', err);
-    }
-  };
-
   const isOwn = post.author.id === currentUserId;
 
   return (
@@ -347,7 +317,7 @@ function PostCard({ post, currentUserId, onLike, onReplyLike, onAddReply, onComm
                 </span> */}
                   <span style={{ color: '#1a2535', fontSize: 10 }}>•</span>
                   <span style={{ fontSize: 11, color: '#2e4460', fontFamily: "'DM Mono', monospace" }}>
-                    {formatTimeAgo(post.createdAt)} Ago
+                    {formatTimeAgo(post.createdAt)} 
                   </span>
                 </div>
               </div>
@@ -475,6 +445,8 @@ function TrendingTopics() {
 
 /* ─── Main Page ───────────────────────────────────────────────── */
 export default function CommunityPage() {
+  const showModal = useSelector(state => state.feed.showModal);
+  const selectedPost = useSelector(state => state.feed.selectedPost);
   const posts = useSelector(state => state.feed.posts);
   const page = useSelector(state => state.feed.page);
   const hasMore = useSelector(state => state.feed.hasMore);
@@ -485,13 +457,13 @@ export default function CommunityPage() {
   const apiUrl = import.meta.env.VITE_API_URL || '';
   const currentUser = getStoredUser();
   const currentUserId = currentUser?.id || currentUser?._id || '';
-  const showModal = useSelector(state => state.feed.showModal);
-  const searchQuery = useSelector(state => state.friends.searchQuery);
-  const focused = useSelector(state => state.post.focused);
-  const searchResults = useSelector(state => state.friends.searchResults);
-const isSearching = useSelector(state => state.friends.isSearching);
+  // const showModal = useSelector(state => state.feed.showModal);
+  // const searchQuery = useSelector(state => state.friends.searchQuery);
+  // const focused = useSelector(state => state.post.focused);
+  // const searchResults = useSelector(state => state.friends.searchResults);
+  // const isSearching = useSelector(state => state.friends.isSearching);
   const dispatch = useDispatch();
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   useEffect(() => { dispatch(fetchPosts(1)); }, [dispatch]);
 
   useEffect(() => {
@@ -534,13 +506,13 @@ const isSearching = useSelector(state => state.friends.isSearching);
   //   console.log('Search results:', data);
   //   dispatch(setSearchResults(data));
   // }
- const searchButton = () => {
-  if (searchQuery?.trim()) {
-    dispatch(searchUsers(searchQuery)); // Dispatch as async action
-  }
-}
+  // const searchButton = () => {
+  //   if (searchQuery?.trim()) {
+  //     dispatch(searchUsers(searchQuery)); // Dispatch as async action
+  //   }
+  // }
   return (
-  <div>
+    <div>
       {!showModal ? (
         <div>
           <div style={{
@@ -596,7 +568,7 @@ const isSearching = useSelector(state => state.friends.isSearching);
                     </p>
                   </div>
                 </div>
-                
+
                 {/* Composer */}
                 <PostComposer onPostCreated={handlePostCreated} />
 
@@ -736,7 +708,8 @@ const isSearching = useSelector(state => state.friends.isSearching);
         </div>
       ) : (
         <>
-          <Comments />
+          <Comments
+            post={selectedPost} />
         </>
       )}
     </div>

@@ -1,6 +1,5 @@
 import axios from "axios";
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { setPosts } from "../redux/slices/feedSlice";
 import { useDispatch } from "react-redux";
 import { setError, setImage, setImagePreview } from "../redux/slices/postSlice";
 
@@ -19,6 +18,19 @@ export const getStoredUser = () => {
   } catch {
     return null;
   }
+};
+
+export const formatTimeAgo = (date) => {
+  const diff = Date.now() - new Date(date);
+  const s = Math.floor(diff / 1000);
+  const m = Math.floor(s / 60);
+  const h = Math.floor(m / 60);
+  const d = Math.floor(h / 24);
+  if (s < 60) return 'just now';
+  if (m < 60) return `${m}m`;
+  if (h < 24) return `${h}h`;
+  if (d < 7) return `${d}d`;
+  return new Date(date).toLocaleDateString();
 }
 
  export const handleImageSelect = (e) => {

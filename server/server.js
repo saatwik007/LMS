@@ -1,10 +1,11 @@
 require('dotenv').config();
 const app = require('./src/app');
+const mongoose = require('mongoose');
 const connectDB = require('./src/db/db');
 const { startMonthlyRewardJob, startWeeklyChallengeReminder } = require('./src/jobs/scheduler');
 const { reconcileUserLeagues } = require('./src/jobs/reconciliation');
 const { ensureDefaultBadges } = require('./src/controllers/badge.controller');
-const Message = require('./src/models/messagesmodel');
+const Message = require('./src/models/messages.model');
 const http = require('http');
 const WebSocket = require('ws');
 
@@ -73,12 +74,14 @@ const clients = new Map();
 
             // Save to DB
             const saved = await Message.create({
-              senderId: senderId,
-              recipientId: recipientId,
+              senderId: new mongoose.Types.ObjectId(senderId),
+              recipientId: new mongoose.Types.ObjectId(recipientId),
               content: text,
-              type: msg.type || 'chat_message',
-              timestamp: new Date()
+              type: 'chat_message',
+              timestamp: new Date(),
+              delivered: false
             });
+            console.log('💾 Saved message:', saved.senderId, typeof saved.senderId);
 
             // Build Payload
             const payload = JSON.stringify({
@@ -122,11 +125,16 @@ const clients = new Map();
         }
       })
     });
+    const sample = await Message.findOne({}).lean();
     server.listen(PORT, () => {
       console.log(`🚀 Server running with WebSockets + MongoDB on port ${PORT}`);
+      console.log('Sample message from DB:', sample);
+      console.log('senderId type:', typeof sample?.senderId, sample?.senderId);
     })
   } catch (err) {
     console.error('❌ Server failed to start:', err);
     process.exit(1);
+    console.error('❌ Error:', err.message); // ← will now show the real error
+    console.error(err.stack);
   }
 })();

@@ -19,7 +19,7 @@ export const fetchContacts = createAsyncThunk('chat/fetchContacts', async (_, { 
     return (res.data.friends || []).map(f => ({
       id: f._id,
       name: f.username,
-      initials: f.username ? f.username.slice(0,2).toUpperCase() : '?',
+      initials: f.username ? f.username.slice(0, 2).toUpperCase() : '?',
       color: '#6C63FF',
       lastMsg: '',
       time: '',
@@ -50,7 +50,11 @@ const chatSlice = createSlice({
       if (!state.messages[contactId]) state.messages[contactId] = [];
       state.messages[contactId].push(message);
     },
-    setContacts: (state, action) => { state.contacts = action.payload; if (!state.activeContactId && action.payload.length) state.activeContactId = action.payload[0].id; }
+    setContacts: (state, action) => { state.contacts = action.payload; if (!state.activeContactId && action.payload.length) state.activeContactId = action.payload[0].id; },
+    clearMessages: (state, action) => {
+      const { contactId } = action.payload;
+      state.messages[contactId] = [];
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(fetchContacts.fulfilled, (state, action) => {
@@ -60,5 +64,5 @@ const chatSlice = createSlice({
   }
 });
 
-export const { setActiveContact, setInputText, setSearchQuery, addMessage, setContacts } = chatSlice.actions;
+export const { setActiveContact, setInputText, setSearchQuery, addMessage, setContacts, clearMessages } = chatSlice.actions;
 export default chatSlice.reducer;
