@@ -3,11 +3,17 @@ const User = require('../models/user.model');
 const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs').promises;
+const { uploadBufferToDrive } = require('../utils/driveUpload');
+const { deleteFileFromDrive } = require('../utils/driveUpload');
 
 // Create a new post
 async function createPost(req, res) {
+  console.log("req.file:", req.file);
+  console.log("req.body:", req.body);
+  console.log("content-type header:", req.headers['content-type']);
   try {
     const { content } = req.body;
+    console.log("req:", req.file)
 
     if (!content || content.trim().length === 0) {
       return res.status(400).json({ message: 'Post content is required' });
@@ -25,27 +31,22 @@ async function createPost(req, res) {
 
     // Handle image upload if present
     if (req.file && req.file.buffer) {
+
       try {
-        const uploadsDir = path.join(__dirname, '..', '..', 'uploads', 'post-images');
-
-        // Ensure directory exists
-        try {
-          await fs.access(uploadsDir);
-        } catch {
-          await fs.mkdir(uploadsDir, { recursive: true });
-        }
-
         const timestamp = Date.now();
         const fileName = `post-${req.user.id}-${timestamp}.webp`;
-        const filePath = path.join(uploadsDir, fileName);
 
         // Process and save image
-        await sharp(req.file.buffer)
-          .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
+        const processedImageBuffer = await sharp(req.file.buffer)
+          .resize({ width: 800, height: 800, fit: 'inside' })
           .webp({ quality: 85 })
-          .toFile(filePath);
+          .toBuffer();
 
-        postData.image = `/uploads/post-images/${fileName}`;
+          // Upload to Google Drive
+        const { publicUrl, fileId } = await uploadBufferToDrive(processedImageBuffer, fileName);
+        postData.image = publicUrl;
+        postData.driveFileId = fileId; // Store the Drive file ID in the post document
+
       } catch (imageError) {
         console.error('Image processing error:', imageError);
         return res.status(500).json({ message: 'Failed to process image' });
@@ -84,7 +85,38 @@ async function createPost(req, res) {
     console.error('Create post error:', error);
     return res.status(500).json({ message: error.message });
   }
-}
+};
+
+async function deletePost(fileId) {
+  if (!fileId) return;
+  try{
+    const post = await Post.findById(req.params.id);
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+    
+    if (post.user.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Unauthorized to delete this post' });
+    };
+
+    if(post.driveFileId) {
+      try {
+        await deleteFileFromDrive(post.driveFileId);
+      } catch (err) {
+        console.error('Error deleting drive file:', err);
+        return res.status(500).json({ message: 'Failed to delete drive file' });
+      }
+    };
+
+    await Post.findByIdAndDelete(req.params.id);
+    return res.status(200).json({ message: 'Post and associated drive file deleted successfully' });
+
+  } catch (error) {
+    console.error('Error deleting drive file:', error);
+    return res.status(500).json({ message: 'Failed to delete drive file' });
+  }
+
+};
 
 // Get feed with pagination
 async function getFeed(req, res) {
@@ -194,8 +226,6 @@ async function getPost(req, res) {
       return acc;
     }, {});
 
-    console.log("response", replies)
-
     const currentUserId = String(req.user.id);
 
     const formattedPost = {
@@ -304,6 +334,16 @@ async function addComment(req, res) {
     const postId = req.params.postId;
     const { content } = req.body;
 
+    const hasComment = content && content.trim().length > 0;
+    const hasVoiceNote = req.file?.feildname === 'voiceNote';
+    const hasImage = req.file?.feildname === 'image'
+
+    console.log('req:', req.file)
+
+    if (!hasComment && !hasImage && !hasVoiceNote) {
+      return res.status(400).json({ message: 'Comment must have content, image, or voice note' });
+    }
+
     if (!content || content.trim().length === 0) {
       return res.status(400).json({ message: 'Comment content is required' });
     }
@@ -374,10 +414,6 @@ async function commentReply(req, res) {
   try {
     const { postId, commentId } = req.params;
     const { content } = req.body;
-
-    console.log('body:', req.body);           // ✅ if this doesn't print, wrong function is running
-    console.log('originalUrl:', req.originalUrl);
-    console.log('params-2:', req.params);
 
     if (!content || content.trim().length === 0) {
       return res.status(400).json({ message: 'Type something to post' })
@@ -471,7 +507,6 @@ async function likeComment(req, res) {
         });
       }
 
-      console.log('comment liked')
       return res.status(200).json({
         message: 'Comment liked',
         likesCount: comment.likes.length,
@@ -485,33 +520,31 @@ async function likeComment(req, res) {
 };
 
 // Delete a post (author only)
-async function deletePost(req, res) {
-  try {
-    const postId = req.params.postId;
-    const userId = req.user.id;
-    console.log('DeletePost1', postId, userId);
-    const post = await Post.findById(postId);
-    console.log('DeletePost2', postId, userId, post);
+// async function deletePost(req, res) {
+//   try {
+//     const postId = req.params.postId;
+//     const userId = req.user.id;
+//     const post = await Post.findById(postId);
 
-    if (!post) {
-      return res.status(404).json({ message: 'Post not found' });
-    }
+//     if (!post) {
+//       return res.status(404).json({ message: 'Post not found' });
+//     }
 
-    // Check if user is the author
-    if (String(post.author) !== String(userId)) {
-      return res.status(403).json({ message: 'You can only delete your own posts' });
-    }
+//     // Check if user is the author
+//     if (String(post.author) !== String(userId)) {
+//       return res.status(403).json({ message: 'You can only delete your own posts' });
+//     }
 
-    // Soft delete
-    post.isActive = false;
-    await post.save();
+//     // Soft delete
+//     post.isActive = false;
+//     await post.save();
 
-    return res.status(200).json({ message: 'Post deleted successfully' });
-  } catch (error) {
-    console.error('Delete post error:', error);
-    return res.status(500).json({ message: error.message });
-  }
-}
+//     return res.status(200).json({ message: 'Post deleted successfully' });
+//   } catch (error) {
+//     console.error('Delete post error:', error);
+//     return res.status(500).json({ message: error.message });
+//   }
+// }
 
 // Delete a comment (author only)
 async function deleteComment(req, res) {
@@ -521,8 +554,6 @@ async function deleteComment(req, res) {
     const userId = req.user.id;
 
     const post = await Post.findById(postId);
-
-    console.log("DeleteComment", JSON.stringify(req.params.commentId), postId, commentId, userId, post)
 
     if (!post || !post.isActive) {
       return res.status(404).json({ message: 'Post not found' });
@@ -633,5 +664,6 @@ module.exports = {
   deleteComment,
   getUserPosts,
   commentReply,
-  likeComment
+  likeComment,
+  deletePost
 };

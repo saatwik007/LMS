@@ -21,8 +21,8 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { setContent, setError, setFocused, setImage, setImagePreview, setIsPosting } from '../redux/slices/postSlice';
 import { setHeartAnim, setLikeCount, setLiked, setPage, setPosts, setSelectedPost, setShowModal } from '../redux/slices/feedSlice';
-import { fetchPosts, getAuthHeaders, handleLike, getStoredUser, handleImageSelect, formatTimeAgo } from '../utilites/communityHelper';
-import Comments from './CommentsModal';
+import { fetchPosts, getAuthHeaders, handleLike, getStoredUser, formatTimeAgo } from '../utilites/communityHelper';
+import Comments from './commentsModal';
 /* ─── Helpers ─────────────────────────────────────────────────── */
 
 const AVATAR_PALETTE = [
@@ -87,6 +87,21 @@ function PostComposer({ onPostCreated }) {
   const imagePreview = useSelector(state => state.post.imagePreview);
   const isPosting = useSelector(state => state.post.isPosting);
   const error = useSelector(state => state.post.error);
+
+  const handleImageSelect = (e) => {
+    try {const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) { dispatch(setError('Image must be < 3MB')); return; }
+    if (!['image/jpeg', 'image/png', 'image/webp', 'image/jpg'].includes(file.type)) {
+      dispatch(setError('Only JPEG, PNG, WEBP allowed')); return;
+    }
+    dispatch(setImage(file));
+    dispatch(setImagePreview(URL.createObjectURL(file)));
+    dispatch(setError(''));
+  } catch (error) {
+    console.error('Error selecting image:', error);
+  }
+  };
 
   const removeImage = () => {
     dispatch(setImage(null));
@@ -246,24 +261,6 @@ function PostCard({ post, currentUserId, onLike, onDelete, index }) {
     dispatch(onLike(post.id));
   };
 
-  // const handleComment = async () => {
-  //   if (!commentText.trim()) return;
-  //   dispatch(setIsCommenting({ postId: post.id, value: true }));
-  //   try {
-  //     await axios.post(
-  //       `${apiUrl}/api/community/posts/${post.id}/comments`,
-  //       { content: commentText.trim() },
-  //       { withCredentials: true, headers: getAuthHeaders() }
-  //     );
-  //     dispatch(setCommentText({ postId: post.id, value: '' }));
-  //     if (onComment) onComment(post.id);
-  //   } catch (err) {
-  //     console.error('Comment error:', err);
-  //   } finally {
-  //     dispatch(setIsCommenting({ postId: post.id, value: false }));
-  //   }
-  // };
-
   const handleCommentModal = () => {
     if (post.comments.length > 0) {
       dispatch(setSelectedPost(post)); // ← save this specific post
@@ -317,7 +314,7 @@ function PostCard({ post, currentUserId, onLike, onDelete, index }) {
                 </span> */}
                   <span style={{ color: '#1a2535', fontSize: 10 }}>•</span>
                   <span style={{ fontSize: 11, color: '#2e4460', fontFamily: "'DM Mono', monospace" }}>
-                    {formatTimeAgo(post.createdAt)} 
+                    {formatTimeAgo(post.createdAt)}
                   </span>
                 </div>
               </div>
