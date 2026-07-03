@@ -82,7 +82,7 @@ export const CommentCard = ({ postId, comment }) => {
       const repliesAuthorMap = finalReplies.reduce((acc, replies) => {
         acc[replies.id] = replies.author.username || [];
         return acc;
-      })
+      }, {});
 
       console.log('repliesAuthor:', repliesAuthorMap)
 
