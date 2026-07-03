@@ -17,7 +17,7 @@ import { formatTimeAgo } from "../../utilites/communityHelper";
       style={{ background: "var(--surface2)", borderLeft: "2px solid var(--border2)" }}
     >
       <div className="flex-1">
-        <div className="font-sans-coder font-bold coder-text" style={{ fontSize: 12 }}>{reply.username}</div>
+        <div className="font-sans-coder font-bold coder-text" style={{ fontSize: 12 }}>{reply.author.username}</div>
         <div className="coder-text3 font-mono-coder" style={{ fontSize: 10, marginTop: 1 }}>{formatTimeAgo(reply.createdAt)}</div>
         <div
           className="coder-text2 font-mono-coder mt-1"
