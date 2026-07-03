@@ -19,10 +19,11 @@ import {
 import { Navigate, useNavigate } from 'react-router-dom';
 // import Comments from './LandinPageExperimental';
 import { useDispatch, useSelector } from 'react-redux';
-import { setContent, setError, setFocused, setImage, setImagePreview, setIsPosting } from '../redux/slices/postSlice';
+import { setContent, setError, setFocused, setImagePreview, setIsPosting } from '../redux/slices/postSlice';
 import { setHeartAnim, setLikeCount, setLiked, setPage, setPosts, setSelectedPost, setShowModal } from '../redux/slices/feedSlice';
 import { fetchPosts, getAuthHeaders, handleLike, getStoredUser, formatTimeAgo } from '../utilites/communityHelper';
 import Comments from './commentsModal';
+import { useState } from 'react';
 /* ─── Helpers ─────────────────────────────────────────────────── */
 
 const AVATAR_PALETTE = [
@@ -83,10 +84,11 @@ function PostComposer({ onPostCreated }) {
   const dispatch = useDispatch();
   const content = useSelector(state => state.post.content);
   const focused = useSelector(state => state.post.focused);
-  const image = useSelector(state => state.post.image);
+  // const image = useSelector(state => state.post.image);
   const imagePreview = useSelector(state => state.post.imagePreview);
   const isPosting = useSelector(state => state.post.isPosting);
   const error = useSelector(state => state.post.error);
+  const [selectedImageFile, setSelectedImageFile] = useState(null);
 
   const handleImageSelect = (e) => {
     try {const file = e.target.files[0];
@@ -95,7 +97,7 @@ function PostComposer({ onPostCreated }) {
     if (!['image/jpeg', 'image/png', 'image/webp', 'image/jpg'].includes(file.type)) {
       dispatch(setError('Only JPEG, PNG, WEBP allowed')); return;
     }
-    dispatch(setImage(file));
+    setSelectedImageFile(file);
     dispatch(setImagePreview(URL.createObjectURL(file)));
     dispatch(setError(''));
   } catch (error) {
@@ -104,7 +106,7 @@ function PostComposer({ onPostCreated }) {
   };
 
   const removeImage = () => {
-    dispatch(setImage(null));
+    setSelectedImageFile(null);
     dispatch(setImagePreview(null));
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -117,12 +119,12 @@ function PostComposer({ onPostCreated }) {
     try {
       const formData = new FormData();
       formData.append('content', content.trim());
-      if (image) formData.append('image', image);
+      if (selectedImageFile) formData.append('image', selectedImageFile);
       const res = await axios.post(`${apiUrl}/api/community/posts`, formData, {
         withCredentials: true,
         headers: { ...getAuthHeaders() },
       });
-      dispatch(setContent('')); dispatch(setFocused(false)); dispatch(setImage(null)); dispatch(setImagePreview(null));
+      dispatch(setContent('')); dispatch(setFocused(false)); dispatch(setSelectedImageFile(null)); dispatch(setImagePreview(null));
       if (fileInputRef.current) fileInputRef.current.value = '';
       if (onPostCreated) onPostCreated(res.data.post);
     } catch (err) {
@@ -244,9 +246,23 @@ function PostComposer({ onPostCreated }) {
 function PostCard({ post, currentUserId, onLike, onDelete, index }) {
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL || '';
+
+  function getDisplayImageUrl(imageUrl) {
+  if (!imageUrl) return '';
+
+  // Convert old uc?id= format to thumbnail format
+  const match = imageUrl.match(/[?&]id=([^&]+)/);
+  if (match && imageUrl.includes('uc?id=')) {
+    const fileId = match[1];
+    return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+  }
+
+  return imageUrl; // already in new format, or non-Drive URL, leave as-is
+}
+
   const imageUrl = post.image?.startsWith('/')
     ? `${apiUrl}${post.image}`
-    : post.image;
+    : getDisplayImageUrl(post.image);
 
   const dispatch = useDispatch();
   const liked = useSelector(state => state.feed.liked[post.id] ?? post.isLikedByCurrentUser ?? false);

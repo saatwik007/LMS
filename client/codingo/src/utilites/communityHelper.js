@@ -1,6 +1,7 @@
+import axios from "axios";
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import api from "../lib/api";
-import { setError, setImage, setImagePreview } from "../redux/slices/postSlice";
+import { useDispatch } from "react-redux";
+// import { setError, setImage, setImagePreview } from "../redux/slices/postSlice";
 
 const apiUrl = import.meta.env.VITE_API_URL || '';
 // const dispatch = useDispatch();

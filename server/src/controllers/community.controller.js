@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs').promises;
 const { uploadBufferToDrive } = require('../utils/driveUpload');
 const { deleteFileFromDrive } = require('../utils/driveUpload');
+const { streamFileFromDrive } = require('../utils/driveUpload');
 
 // Create a new post
 async function createPost(req, res) {
@@ -42,9 +43,9 @@ async function createPost(req, res) {
           .webp({ quality: 85 })
           .toBuffer();
 
-          // Upload to Google Drive
+        // Upload to Google Drive
         const { publicUrl, fileId } = await uploadBufferToDrive(processedImageBuffer, fileName);
-        postData.image = publicUrl;
+        postData.image = `/api/community/posts/image/${fileId}`;
         postData.driveFileId = fileId; // Store the Drive file ID in the post document
 
       } catch (imageError) {
@@ -87,19 +88,19 @@ async function createPost(req, res) {
   }
 };
 
-async function deletePost(fileId) {
+async function deletePost(req, res, fileId) {
   if (!fileId) return;
-  try{
+  try {
     const post = await Post.findById(req.params.id);
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
-    
+
     if (post.user.toString() !== req.user.id) {
       return res.status(403).json({ message: 'Unauthorized to delete this post' });
     };
 
-    if(post.driveFileId) {
+    if (post.driveFileId) {
       try {
         await deleteFileFromDrive(post.driveFileId);
       } catch (err) {
@@ -203,6 +204,16 @@ async function getFeed(req, res) {
   } catch (error) {
     console.error('Get feed error:', error);
     return res.status(500).json({ message: error.message });
+  }
+};
+
+
+async function getPostImage(req, res) {
+  try {
+    await streamFileFromDrive(req.params.fileId, res);
+  } catch (err) {
+    console.error('Image proxy error:', err);
+    return res.status(404).json({ message: 'Image not found' });
   }
 }
 
@@ -657,6 +668,7 @@ async function getUserPosts(req, res) {
 module.exports = {
   createPost,
   getFeed,
+  getPostImage,
   getPost,
   toggleLike,
   addComment,
