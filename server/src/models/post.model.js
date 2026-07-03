@@ -26,9 +26,16 @@ const commentSchema = new mongoose.Schema({
   },
   content: { 
     type: String, 
-    required: true,
     trim: true,
     maxlength: 500
+  },
+  image: {
+    type: String,
+    default: '',
+  },
+  voiceNote: {
+    url: {type: String, default: ''},
+    duration: {type: Number, default: 0}
   },
   likes: [{
     type: mongoose.Schema.Types.ObjectId,
@@ -58,6 +65,10 @@ const postSchema = new mongoose.Schema({
   image: { 
     type: String, 
     default: '' 
+  },
+  driveFileId: {
+    type: String,
+    default: ''
   },
   likes: [{
     type: mongoose.Schema.Types.ObjectId,

@@ -2,6 +2,9 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../lib/api";
 import { setError, setImage, setImagePreview } from "../redux/slices/postSlice";
 
+const apiUrl = import.meta.env.VITE_API_URL || '';
+// const dispatch = useDispatch();
+
 export const getAuthHeaders = () => {
   const token = localStorage.getItem('token');
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -68,10 +71,10 @@ export const fetchPosts = createAsyncThunk(
     try {
       const res = await api.post(`/api/community/posts/${postId}/like`, {});
       return{
-          postId,
-          likesCount: res.data.likesCount,
-          isLiked: res.data.isLiked,
-        }
+        postId,
+        likesCount: res.data.likesCount,
+        isLiked: res.data.isLiked,
+      }
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || 'Failed to like post');
     }
