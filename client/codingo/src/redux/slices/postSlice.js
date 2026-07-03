@@ -5,7 +5,7 @@ const postSlice = createSlice({
     initialState: {
         content: '',
         focused: false,
-        image: null,
+        // image: null,
         imagePreview: null,
         isPosting: false,
         error: '',
@@ -17,9 +17,9 @@ const postSlice = createSlice({
         setFocused: (state, action) => {
             state.focused = action.payload;
         },
-        setImage: (state, action) => {
-            state.image = action.payload;
-        },
+        // setImage: (state, action) => {
+        //     state.image = action.payload;
+        // },
         setImagePreview: (state, action) => {
             state.imagePreview = action.payload;
         },
@@ -39,5 +39,5 @@ const postSlice = createSlice({
         },
     },
 });
- export const { setContent, setFocused, setImage, setImagePreview, setIsPosting, setError, resetPost } = postSlice.actions;
+ export const { setContent, setFocused, setImagePreview, setIsPosting, setError, resetPost } = postSlice.actions;
  export default postSlice.reducer;

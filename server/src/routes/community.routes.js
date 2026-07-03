@@ -9,7 +9,8 @@ const {
   deleteComment,
   getUserPosts,
   commentReply,
-  likeComment
+  likeComment,
+  getPostImage
 } = require('../controllers/community.controller');
 const { protect } = require('../middlewares/auth.middleware');
 const { profileImageUpload } = require('../middlewares/upload.middleware');
@@ -18,6 +19,8 @@ const router = express.Router();
 
 // Get feed (paginated)
 router.get('/feed', protect, getFeed);
+
+router.get('/posts/image/:fileId', getPostImage);
 
 // Create a new post (with optional image)
 router.post('/posts', protect, profileImageUpload, createPost);
