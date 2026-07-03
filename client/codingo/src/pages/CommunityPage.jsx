@@ -278,10 +278,8 @@ function PostCard({ post, currentUserId, onLike, onDelete, index }) {
   };
 
   const handleCommentModal = () => {
-    if (post.comments.length > 0) {
       dispatch(setSelectedPost(post)); // ← save this specific post
       dispatch(setShowModal(true));
-    }
   }
   const isOwn = post.author.id === currentUserId;
 
@@ -470,13 +468,7 @@ export default function CommunityPage() {
   const apiUrl = import.meta.env.VITE_API_URL || '';
   const currentUser = getStoredUser();
   const currentUserId = currentUser?.id || currentUser?._id || '';
-  // const showModal = useSelector(state => state.feed.showModal);
-  // const searchQuery = useSelector(state => state.friends.searchQuery);
-  // const focused = useSelector(state => state.post.focused);
-  // const searchResults = useSelector(state => state.friends.searchResults);
-  // const isSearching = useSelector(state => state.friends.isSearching);
   const dispatch = useDispatch();
-  // const navigate = useNavigate();
   useEffect(() => { dispatch(fetchPosts(1)); }, [dispatch]);
 
   useEffect(() => {
