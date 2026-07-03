@@ -12,8 +12,12 @@ async function createPost(req, res) {
   console.log("req.file:", req.file);
   console.log("req.body:", req.body);
   console.log("content-type header:", req.headers['content-type']);
+  console.log("req.file:", req.file);
+  console.log("req.body:", req.body);
+  console.log("content-type header:", req.headers['content-type']);
   try {
     const { content } = req.body;
+    console.log("req:", req.file)
     console.log("req:", req.file)
 
     if (!content || content.trim().length === 0) {
@@ -33,6 +37,7 @@ async function createPost(req, res) {
     // Handle image upload if present
     if (req.file && req.file.buffer) {
 
+
       try {
         const timestamp = Date.now();
         const fileName = `post-${req.user.id}-${timestamp}.webp`;
@@ -40,7 +45,10 @@ async function createPost(req, res) {
         // Process and save image
         const processedImageBuffer = await sharp(req.file.buffer)
           .resize({ width: 800, height: 800, fit: 'inside' })
+        const processedImageBuffer = await sharp(req.file.buffer)
+          .resize({ width: 800, height: 800, fit: 'inside' })
           .webp({ quality: 85 })
+          .toBuffer();
           .toBuffer();
 
         // Upload to Google Drive
@@ -355,6 +363,16 @@ async function addComment(req, res) {
       return res.status(400).json({ message: 'Comment must have content, image, or voice note' });
     }
 
+    const hasComment = content && content.trim().length > 0;
+    const hasVoiceNote = req.file?.feildname === 'voiceNote';
+    const hasImage = req.file?.feildname === 'image'
+
+    console.log('req:', req.file)
+
+    if (!hasComment && !hasImage && !hasVoiceNote) {
+      return res.status(400).json({ message: 'Comment must have content, image, or voice note' });
+    }
+
     if (!content || content.trim().length === 0) {
       return res.status(400).json({ message: 'Comment content is required' });
     }
@@ -540,7 +558,20 @@ async function likeComment(req, res) {
 //     if (!post) {
 //       return res.status(404).json({ message: 'Post not found' });
 //     }
+// async function deletePost(req, res) {
+//   try {
+//     const postId = req.params.postId;
+//     const userId = req.user.id;
+//     const post = await Post.findById(postId);
 
+//     if (!post) {
+//       return res.status(404).json({ message: 'Post not found' });
+//     }
+
+//     // Check if user is the author
+//     if (String(post.author) !== String(userId)) {
+//       return res.status(403).json({ message: 'You can only delete your own posts' });
+//     }
 //     // Check if user is the author
 //     if (String(post.author) !== String(userId)) {
 //       return res.status(403).json({ message: 'You can only delete your own posts' });
@@ -549,7 +580,16 @@ async function likeComment(req, res) {
 //     // Soft delete
 //     post.isActive = false;
 //     await post.save();
+//     // Soft delete
+//     post.isActive = false;
+//     await post.save();
 
+//     return res.status(200).json({ message: 'Post deleted successfully' });
+//   } catch (error) {
+//     console.error('Delete post error:', error);
+//     return res.status(500).json({ message: error.message });
+//   }
+// }
 //     return res.status(200).json({ message: 'Post deleted successfully' });
 //   } catch (error) {
 //     console.error('Delete post error:', error);
@@ -676,6 +716,8 @@ module.exports = {
   deleteComment,
   getUserPosts,
   commentReply,
+  likeComment,
+  deletePost
   likeComment,
   deletePost
 };

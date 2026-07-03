@@ -38,7 +38,7 @@ async function uploadBufferToDrive(buffer, fileName, mimeType = 'image/webp') {
         requestBody: { role: 'reader', type: 'anyone' },
     });
 
-    const publicUrl = `https://drive.google.com/Boomerang/uc?id=${fileId}`;
+    const publicUrl = `https://drive.google.com/uc?id=${fileId}`;
 
     return { fileId, publicUrl };
 };
@@ -58,21 +58,4 @@ async function deleteFileFromDrive(fileId) {
     }
 };
 
-async function streamFileFromDrive(fileId, res) {
-  const fileStream = await drive.files.get(
-    { fileId, alt: 'media' },
-    { responseType: 'stream' }
-  );
-
-  res.setHeader('Content-Type', 'image/webp');
-  res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-
-  fileStream.data
-    .on('error', (err) => {
-      console.error('Drive stream error:', err);
-      if (!res.headersSent) res.status(500).end();
-    })
-    .pipe(res);
-}
-
-module.exports = { uploadBufferToDrive, deleteFileFromDrive, streamFileFromDrive };
+module.exports = { uploadBufferToDrive, deleteFileFromDrive };

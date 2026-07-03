@@ -331,6 +331,7 @@ function PostCard({ post, currentUserId, onLike, onDelete, index }) {
                   <span style={{ color: '#1a2535', fontSize: 10 }}>•</span>
                   <span style={{ fontSize: 11, color: '#2e4460', fontFamily: "'DM Mono', monospace" }}>
                     {formatTimeAgo(post.createdAt)}
+                    {formatTimeAgo(post.createdAt)}
                   </span>
                 </div>
               </div>

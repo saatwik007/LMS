@@ -6,6 +6,9 @@ import { useDispatch } from "react-redux";
 const apiUrl = import.meta.env.VITE_API_URL || '';
 // const dispatch = useDispatch();
 
+const apiUrl = import.meta.env.VITE_API_URL || '';
+// const dispatch = useDispatch();
+
 export const getAuthHeaders = () => {
   const token = localStorage.getItem('token');
   return token ? { Authorization: `Bearer ${token}` } : {};
