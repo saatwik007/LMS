@@ -3,19 +3,7 @@ import axios from 'axios';
 import { FiBell, FiChevronDown, FiEdit2, FiImage, FiLogOut, FiSearch, FiUser } from 'react-icons/fi';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Dashboard from '../../pages/DashboardPage';
-// import { useEffect, useRef, useState } from 'react';
-// import axios from 'axios';
-// import { FiBell, FiChevronDown, FiEdit2, FiImage, FiLogOut, FiSearch, FiUser } from 'react-icons/fi';
-// import { useLocation, useNavigate } from 'react-router-dom';
 
-// function getStoredUser() {
-//   try {
-//     const raw = localStorage.getItem('user');
-//     return raw ? JSON.parse(raw) : null;
-//   } catch {
-//     return null;
-//   }
-  
 function getStoredUser() {
   try {
     const raw = localStorage.getItem('user');
@@ -29,16 +17,33 @@ const LandingHeader = ({ onBack }) => {
   const location = useLocation();
   // const location = useLocation();
   const navigate = useNavigate();
- 
+
+  const [dashboardMode, setDashboardMode] = useState(
+  localStorage.getItem('dashboardMode') || 'community'
+);
+
+
+const setModeAndNavigate = (mode) => {
+  setDashboardMode(mode);
+  localStorage.setItem('dashboardMode', mode);
+  window.dispatchEvent(new Event('dashboardModeChanged')); // <-- add this
+  navigate(mode === 'community' ? '/community' : '/dashboard');
+};
+
+
+  useEffect(() => {
+    localStorage.setItem('dashboardMode', dashboardMode);
+    }, [dashboardMode]);
+
   const handleRegister = () => {
     navigate("/Register");
   }
 
-   useEffect(() => {
-          const fn = () => setScrolled(window.scrollY> 20);
-          window.addEventListener("scroll", fn);
-          return () => window.removeEventListener("scroll", fn);
-        }, []);
+  useEffect(() => {
+    const fn = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", fn);
+    return () => window.removeEventListener("scroll", fn);
+  }, []);
   const apiUrl = import.meta.env.VITE_API_URL || '';
   const [searchVal, setSearchVal] = useState('');
   const [scrolled, setScrolled] = useState(false);
@@ -48,12 +53,17 @@ const LandingHeader = ({ onBack }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const imageInputRef = useRef(null);
+  
 
   const MAX_IMAGE_UPLOAD_BYTES = 3 * 1024 * 1024;
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem('token');
-    return token ? { Authorization: `Bearer ${token}` } : {};
+    if (token) {
+      console.log('[AUTH] Using token from localStorage');
+      return { Authorization: `Bearer ${token}` };
+    }
+    return {};
   };
 
   useEffect(() => {
@@ -61,6 +71,9 @@ const LandingHeader = ({ onBack }) => {
 
     const syncUser = async () => {
       try {
+        const token = localStorage.getItem('token');
+        console.log('[SYNC USER] Token exists:', !!token);
+
         const response = await axios.get(`${apiUrl}/api/auth/user/me`, {
           withCredentials: true,
           headers: getAuthHeaders()
@@ -70,12 +83,14 @@ const LandingHeader = ({ onBack }) => {
 
         if (response.data?.user) {
           const user = response.data.user;
+          console.log('[SYNC USER] Success:', { id: user.id, email: user.email });
           setCurrentUser(user);
           setNotifications(user.notifications || []);
           localStorage.setItem('user', JSON.stringify(user));
         }
-      } catch {
+      } catch (error) {
         if (!isMounted) return;
+        console.error('[SYNC USER] Error:', error.response?.status, error.response?.data?.message);
         const localUser = getStoredUser();
         if (!localUser) {
           setCurrentUser(null);
@@ -279,52 +294,37 @@ const LandingHeader = ({ onBack }) => {
   return (
     <div className="sticky top-0 z-50 bg-gray-900/90 backdrop-blur border-b border-white/5">
       <div className="relative flex justify-between items-center gap-2 px-3 sm:px-4 lg:px-9 py-3 bg-gray-900 w-full">
-   {/* <div className={`fixed top-0 left-0 right-0 z-50 flex items-center gap-5 px-8 border-b border-white/[0.07] transition-all duration-300 ${scrolled ? "bg-gray-900/95 backdrop-blur-xl shadow-[0_4px_40px_rgba(0,0,0,0.65)]" : "bg-gray-900/80 backdrop-blur-lg"}`} style={{ height: 62 }}> */}
-{/* <div className="flex justify-between items-center lg:px-9 pt-4 pb-4 bg-gray-900 w-full"> */}
         <div className="flex items-center justify-center">
-          {/* <button onClick={handleLogoClick} className="text-xl sm:text-2xl font-black tracking-tight select-none" style={{ color: '#60a5fa', textShadow: '0 0 18px #3b82f6, 0 0 40px #1d4ed8' }}>
-          Codify
-        </button> */}
-              <button onClick={handleLogoClick} className="logo-glow text-[22px] font-black tracking-tight select-none shrink-0 cursor-pointer" style={{ fontFamily: "'Syne',sans-serif" }}>
-                Codify
-            </button>
+          <button onClick={handleLogoClick} className="logo-glow text-[22px] font-black tracking-tight select-none shrink-0 cursor-pointer" style={{ fontFamily: "'Syne',sans-serif" }}>
+            Codify
+          </button>
         </div>
-{/* 
-        <div className="hidden sm:flex flex-1 justify-center px-2">
-          <div className="relative w-full max-w-md">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-              <FiSearch className="w-4 h-4" />
-              <FiSearch className="w-4 h-4" />
-            </span>
-            <input
-              value={searchVal}
-              onChange={(e) => setSearchVal(e.target.value)}  
-              placeholder="Search languages, topics..."
-              className="w-full bg-gray-800/60 border border-white/10 rounded-full pl-9 pr-4 py-2 text-sm text-gray-200 placeholder-gray-500 outline-none focus:border-blue-500/50 transition"
-            />
-          </div>
-        </div> */}
-                   {/* <div className="flex-1 max-w-95 mx-auto relative">
-                <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
-                <input
-                    value={searchVal}
-                    placeholder="Search courses, topics..."
-                    onChange={e => setSearchVal(e.target.value)}
-                    className="w-full bg-gray-800/70 border border-white/10 rounded-[10px] py-2 pl-9 pr-4 text-[13px] text-gray-100 placeholder-gray-600 outline-none focus:border-blue-500/40 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.08)] transition-all duration-200"
-                    style={{ fontFamily: "'DM Sans',sans-serif" }}
-                />
-            </div> */}
+<div className="flex items-center bg-gray-800 rounded-lg p-1 border border-white/10">
+  <button
+    type="button"
+    onClick={() => setModeAndNavigate('community')}
+    className={`px-3 py-1 text-xs rounded-md transition ${
+      dashboardMode === 'community' ? 'bg-cyan-500 text-black font-semibold' : 'text-gray-300'
+    }`}
+  >
+    Community
+  </button>
 
-            
-            {/* <div className="flex items-center gap-1.5 ml-auto shrink-0">
-                <nav className="md:flex gap-4 items-center text-sm ">
-                    <a className="hover:text-gray-300 font-medium text-gray-400 cursor-pointer hover:scale-110 transition">Contact Us</a>
-                </nav>
-            </div> */}
-        
+  <button
+    type="button"
+    onClick={() => setModeAndNavigate('lms')}
+    className={`px-3 py-1 text-xs rounded-md transition ${
+      dashboardMode === 'lms' ? 'bg-cyan-500 text-black font-semibold' : 'text-gray-300'
+    }`}
+  >
+    LMS
+  </button>
+</div>
+
+
         <div className="flex items-center gap-3">
           <a className="hidden md:block hover:text-gray-300 font-medium text-gray-400 cursor-pointer hover:scale-110 transition">Contact Us</a>
-          <a onClick={() => navigate('/dashboard')} className="hidden md:block hover:text-gray-300 font-medium text-gray-400 cursor-pointer hover:scale-110 transition">Dashboard</a>
+          <a onClick={() => navigate(dashboardMode === 'community' ? '/community' : '/dashboard')} className="hidden md:block hover:text-gray-300 font-medium text-gray-400 cursor-pointer hover:scale-110 transition">Dashboard</a>
           {!currentUser ? (
             <nav className="flex gap-2 sm:gap-3 items-center text-xs sm:text-sm">
               <button

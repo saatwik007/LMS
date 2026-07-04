@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   FaBars,
   FaChartLine,
@@ -18,21 +18,44 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { setDesktopCollapsed, setMobileMenuOpen } from '../../redux/slices/sideBarSlice';
 
-const navItems = [
-  { key: 'dashboard', label: 'Dashboard', icon: FaRegStar, to: '/dashboard', match: ['/dashboard'] },
-  { key: 'learn', label: 'Learn', icon: FaGraduationCap, to: '/learn', match: ['/learn', '/levels', '/language'] },
+// const navItems = [
+//   // { key: 'dashboard', label: 'Dashboard', icon: FaRegStar, to: '/dashboard', match: ['/dashboard'] },
+//   { key: 'learn', label: 'Learn', icon: FaGraduationCap, to: '/learn', match: ['/learn', '/levels', '/language'] },
+//   { key: 'community', label: 'Community', icon: FaUsers, to: '/community', match: ['/community'] },
+//   { key: 'friends', label: 'Friends', icon: FaUserFriends, to: '/friends', match: ['/friends'] },
+//   { key: 'messages', label: 'Messages', icon: FaFacebookMessenger, to: '/messages', match: ['/messages'] },
+//   { key: 'challenges', label: 'Challenges', icon: FaFlagCheckered, to: '/challenges', match: ['/challenges'] },
+//   { key: 'leaderboards', label: 'Leaderboards', icon: FaTrophy, to: '/leaderboard', match: ['/leaderboard'] },
+//   { key: 'profile', label: 'Profile', icon: FaMedal, to: '/profile', match: ['/profile'] },
+//   { key: 'progress', label: 'Progress', icon: FaChartLine, to: '/progress', match: ['/progress'] },
+//   { key: 'more', label: 'More', icon: FaEllipsisH, to: '/dashboard', match: [] }
+// ];
+
+const communityNavItems = [
+  // { key: 'dashboard', label: 'Dashboard', icon: FaRegStar, to: '/community', match: ['/community'] },
   { key: 'community', label: 'Community', icon: FaUsers, to: '/community', match: ['/community'] },
   { key: 'friends', label: 'Friends', icon: FaUserFriends, to: '/friends', match: ['/friends'] },
   { key: 'messages', label: 'Messages', icon: FaFacebookMessenger, to: '/messages', match: ['/messages'] },
+  // { key: 'leaderboards', label: 'Leaderboards', icon: FaTrophy, to: '/leaderboard', match: ['/leaderboard'] },
+  // { key: 'profile', label: 'Profile', icon: FaMedal, to: '/profile', match: ['/profile'] },
+];
+
+const lmsNavItems = [
+  { key: 'dashboard', label: 'Dashboard', icon: FaRegStar, to: '/dashboard', match: ['/dashboard'] },
+  { key: 'learn', label: 'Learn', icon: FaGraduationCap, to: '/learn', match: ['/learn', '/levels', '/language'] },
+  // { key: 'community', label: 'Community', icon: FaUsers, to: '/community', match: ['/community'] },
+  // { key: 'friends', label: 'Friends', icon: FaUserFriends, to: '/friends', match: ['/friends'] },
+  // { key: 'messages', label: 'Messages', icon: FaFacebookMessenger, to: '/messages', match: ['/messages'] },
   { key: 'challenges', label: 'Challenges', icon: FaFlagCheckered, to: '/challenges', match: ['/challenges'] },
   { key: 'leaderboards', label: 'Leaderboards', icon: FaTrophy, to: '/leaderboard', match: ['/leaderboard'] },
   { key: 'profile', label: 'Profile', icon: FaMedal, to: '/profile', match: ['/profile'] },
   { key: 'progress', label: 'Progress', icon: FaChartLine, to: '/progress', match: ['/progress'] },
-  { key: 'more', label: 'More', icon: FaEllipsisH, to: '/dashboard', match: [] }
+  // { key: 'more', label: 'More', icon: FaEllipsisH, to: '/dashboard', match: [] }
 ];
 
 function SidebarItem({ item, isActive, collapsed, onClick, iconOnly = false }) {
   const Icon = item.icon;
+
   return (
     <button
       type="button"
@@ -66,6 +89,22 @@ export default function AppSidebar() {
 
   const isActiveItem = (item) => item.match.some((routePrefix) => location.pathname.startsWith(routePrefix));
 
+    const [dashboardMode, setDashboardMode] = useState(
+  localStorage.getItem('dashboardMode') || 'community'
+);
+useEffect(() => {
+  const syncMode = () =>
+    setDashboardMode(localStorage.getItem('dashboardMode') || 'community');
+
+  window.addEventListener('storage', syncMode);
+  window.addEventListener('dashboardModeChanged', syncMode); // custom event for same tab
+  return () => {
+    window.removeEventListener('storage', syncMode);
+    window.removeEventListener('dashboardModeChanged', syncMode);
+  };
+}, []);
+const navItems = dashboardMode === 'community' ? communityNavItems : lmsNavItems;
+console.log('Current dashboardMode:', dashboardMode, 'Nav items:', navItems.map(item => item.key));
   return (
     <>
       <aside className="hidden lg:block shrink-0">

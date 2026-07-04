@@ -42,7 +42,7 @@ const res = await axios.post(`${apiUrl}/api/auth/user/login`, {
       window.dispatchEvent(new Event("auth:user-updated"));
       setLoading(false);
       // Redirect on success
-      navigate("/dashboard", { replace: true });
+      navigate("/community", { replace: true });
     } catch (err) {
       setErrorMsg(
         err.response?.data?.message ||
