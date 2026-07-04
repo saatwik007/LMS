@@ -58,4 +58,24 @@ async function deleteFileFromDrive(fileId) {
     }
 };
 
-module.exports = { uploadBufferToDrive, deleteFileFromDrive };
+async function streamFileFromDrive(fileId, res) {
+    try {
+        const file = await drive.files.get(
+            { fileId, alt: 'media' },
+            { responseType: 'stream' }
+        );
+
+        res.setHeader('Content-Type', file.headers['content-type'] || 'image/webp');
+        file.data.pipe(res);
+
+        file.data.on('error', (err) => {
+            console.error('Stream error:', err);
+            res.status(500).json({ message: 'Failed to stream file' });
+        });
+    } catch (err) {
+        console.error('Stream from Drive error:', err);
+        throw err;
+    }
+}
+
+module.exports = { uploadBufferToDrive, deleteFileFromDrive, streamFileFromDrive };
