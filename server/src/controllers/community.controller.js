@@ -361,16 +361,6 @@ async function addComment(req, res) {
       return res.status(400).json({ message: 'Comment must have content, image, or voice note' });
     }
 
-    const hasComment = content && content.trim().length > 0;
-    const hasVoiceNote = req.file?.feildname === 'voiceNote';
-    const hasImage = req.file?.feildname === 'image'
-
-    console.log('req:', req.file)
-
-    if (!hasComment && !hasImage && !hasVoiceNote) {
-      return res.status(400).json({ message: 'Comment must have content, image, or voice note' });
-    }
-
     if (!content || content.trim().length === 0) {
       return res.status(400).json({ message: 'Comment content is required' });
     }
@@ -714,8 +704,5 @@ module.exports = {
   deleteComment,
   getUserPosts,
   commentReply,
-  likeComment,
-  deletePost
-  likeComment,
-  deletePost
+  likeComment
 };
