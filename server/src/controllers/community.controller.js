@@ -96,15 +96,18 @@ async function createPost(req, res) {
   }
 };
 
-async function deletePost(req, res, fileId) {
-  if (!fileId) return;
+async function deletePost(req, res) {
+  console.log('Deleting post with ID:', req.params.postId);
   try {
-    const post = await Post.findById(req.params.id);
+    const post = await Post.findById(req.params.postId);
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
+    console.log(Post.findById(req.params.postId));
+    console.log('Post user:', String(post.author));
+    console.log('Current user:', req.user.id);
 
-    if (post.user.toString() !== req.user.id) {
+    if (String(post.author) !== req.user.id) {
       return res.status(403).json({ message: 'Unauthorized to delete this post' });
     };
 
@@ -113,11 +116,10 @@ async function deletePost(req, res, fileId) {
         await deleteFileFromDrive(post.driveFileId);
       } catch (err) {
         console.error('Error deleting drive file:', err);
-        return res.status(500).json({ message: 'Failed to delete drive file' });
       }
     };
 
-    await Post.findByIdAndDelete(req.params.id);
+    await Post.findByIdAndDelete(req.params.postId);
     return res.status(200).json({ message: 'Post and associated drive file deleted successfully' });
 
   } catch (error) {
@@ -192,10 +194,6 @@ async function getFeed(req, res) {
       commentsCount: post.comments.length,
       isLikedByCurrentUser: post.likes.some(id => String(id) === currentUserId),
       createdAt: post.createdAt,
-      likesCount: post.comments.likes?.length || 0,
-      isLikedByCurrentUser: post.comments.likes?.some(
-        id => String(id) === currentUserId
-      ) ?? false,
       updatedAt: post.updatedAt
     }));
 
@@ -334,6 +332,9 @@ async function toggleLike(req, res) {
           }
         });
       }
+
+      console.log('post liked');
+      console.log('post.likes:', post.likes);
 
       return res.status(200).json({
         message: 'Post liked',
