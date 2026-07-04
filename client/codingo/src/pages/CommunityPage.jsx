@@ -22,7 +22,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setContent, setError, setFocused, setImagePreview, setIsPosting } from '../redux/slices/postSlice';
 import { setHeartAnim, setLikeCount, setLiked, setPage, setPosts, setSelectedPost, setShowModal } from '../redux/slices/feedSlice';
 import { fetchPosts, getAuthHeaders, handleLike, getStoredUser, formatTimeAgo } from '../utilites/communityHelper';
-import Comments from './commentsModal';
+import Comments from './CommentsModal';
 import { useState } from 'react';
 /* ─── Helpers ─────────────────────────────────────────────────── */
 
