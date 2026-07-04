@@ -45,10 +45,7 @@ async function createPost(req, res) {
         // Process and save image
         const processedImageBuffer = await sharp(req.file.buffer)
           .resize({ width: 800, height: 800, fit: 'inside' })
-        const processedImageBuffer = await sharp(req.file.buffer)
-          .resize({ width: 800, height: 800, fit: 'inside' })
           .webp({ quality: 85 })
-          .toBuffer();
           .toBuffer();
 
         // Upload to Google Drive
