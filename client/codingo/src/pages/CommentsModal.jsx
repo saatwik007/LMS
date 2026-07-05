@@ -301,21 +301,25 @@ export default function Comments({ post, onComment }) {
   const showPreviewBar = pendingFiles.length > 0 || hasVoice;
 
   return (
+ <div
+    className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6"
+    style={{
+      background: "rgba(0, 0, 0, 0.18)",
+      // no blur
+    }}
+    onClick={() => dispatch(setShowModal(false))}
+  >
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ background: "rgba(0, 0, 0, 0.65)", backdropFilter: "blur(2px)" }}
-      onClick={() => dispatch(setShowModal(false))} // click outside to close
+      className="font-mono-coder w-full max-w-[900px] max-h-[90vh] overflow-hidden rounded-[24px] border border-white/10 coder-text relative shadow-[0_25px_80px_rgba(0,0,0,0.28)]"
+      style={{
+        background: "rgba(10, 12, 18, 0.94)",
+      }}
+      onClick={e => e.stopPropagation()}
     >
-      {/* Modal panel — stop click propagation so clicking inside doesn't close */}
-      <div
-        className=" font-mono-coder coder-bg mt-15 w-[90vw] max-w-[900px] max-h-[90vh] overflow-y-auto rounded-[16px] border border-[var(--border)] coder-text relative"
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Close button */}
-        <div className="p-2 cursor-pointer sticky top-0 z-10" onClick={() => dispatch(setShowModal(false))}>
-          <FaWindowClose />
-        </div>
-        <div className="max-w-3xl mx-auto px-5 py-10 pb-20">
+      <div className="sticky top-0 z-10 flex justify-end p-3">
+        <FaWindowClose className="text-xl cursor-pointer hover:opacity-80" />
+      </div>
+      <div className="max-w-3xl mx-auto px-5 py-4 pb-20">
           {/* ─── INPUT AREA ─── */}
           <div
             ref={inputAreaRef}
@@ -323,7 +327,6 @@ export default function Comments({ post, onComment }) {
             style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
           >
             <div className="flex gap-3 items-start">
-              {/* <Avatar initials="Y" size={36} self /> */}
               <textarea
                 ref={mainInputRef}
                 className="flex-1 bg-transparent border-none outline-none coder-text font-mono-coder resize-none"
@@ -331,7 +334,6 @@ export default function Comments({ post, onComment }) {
                 placeholder="add your comment"
                 value={commentText}
                 onChange={e => dispatch(setCommentText({ postId: post.id, value: e.target.value }))}
-                onKeyDown={e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)); }}
               />
             </div>
 
@@ -383,7 +385,6 @@ export default function Comments({ post, onComment }) {
               className="flex items-center gap-2 mt-3 pt-3"
               style={{ borderTop: "1px solid var(--border)" }}
             >
-              {/* Image Upload */}
               <label
                 className="attach-btn-hover flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 coder-text2 font-mono-coder transition-all cursor-pointer"
                 style={{ fontSize: 13, background: "var(--surface2)", border: "1px solid var(--border)" }}
@@ -393,7 +394,6 @@ export default function Comments({ post, onComment }) {
                 <input type="file" accept="image/*,image/gif" className="hidden" onChange={handleFile} />
               </label>
 
-              {/* Emoji */}
               <div className="relative" ref={emojiPanelRef}>
                 <button
                   className="attach-btn-hover flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 coder-text2 font-mono-coder transition-all"
@@ -407,7 +407,8 @@ export default function Comments({ post, onComment }) {
                   <div
                     className="absolute z-50 rounded-xl p-2.5"
                     style={{
-                      bottom: 42, left: 0,
+                      bottom: 42,
+                      left: 0,
                       background: "var(--surface2)",
                       border: "1px solid var(--border2)",
                       boxShadow: "0 8px 30px rgba(0,0,0,0.5)",
@@ -431,7 +432,6 @@ export default function Comments({ post, onComment }) {
                 )}
               </div>
 
-              {/* Voice */}
               <button
                 onClick={toggleRecording}
                 className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-mono-coder transition-all ${isRecording ? "rec-pulse" : "attach-btn-hover"}`}
@@ -447,7 +447,6 @@ export default function Comments({ post, onComment }) {
                 🎙 <span style={{ fontSize: 11 }}>{isRecording ? "REC..." : "VOICE"}</span>
               </button>
 
-              {/* Send */}
               <button
                 onClick={handleComment}
                 className="ml-auto text-white font-mono-coder font-semibold rounded-lg px-4 py-1.5 transition-all hover:opacity-90 hover:-translate-y-px active:translate-y-0"
@@ -464,7 +463,6 @@ export default function Comments({ post, onComment }) {
             </div>
           </div>
 
-          {/* ─── COMMENTS LABEL ─── */}
           <div
             className="font-sans-coder font-bold coder-text3 uppercase tracking-widest mb-4"
             style={{ fontSize: 12, letterSpacing: "1.5px" }}
@@ -472,7 +470,6 @@ export default function Comments({ post, onComment }) {
             — Comments
           </div>
 
-          {/* ─── COMMENT THREAD ─── */}
           <div ref={threadRef} className="flex flex-col gap-3.5">
             {[...localComments].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map(c => (
               <CommentCard
