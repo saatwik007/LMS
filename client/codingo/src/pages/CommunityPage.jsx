@@ -15,6 +15,7 @@ import {
   FaBolt,
   FaTerminal,
   FaCross,
+  FaClock,
 } from 'react-icons/fa';
 import { Navigate, useNavigate } from 'react-router-dom';
 // import Comments from './LandinPageExperimental';
@@ -24,6 +25,7 @@ import { setHeartAnim, setLikeCount, setLiked, setPage, setPosts, setSelectedPos
 import { fetchPosts, getAuthHeaders, handleLike, getStoredUser, formatTimeAgo } from '../utilites/communityHelper';
 import Comments from './CommentsModal';
 import { useState } from 'react';
+import ParticleCanvas from '../components/LandingPage/ParticleCanvas';
 /* ─── Helpers ─────────────────────────────────────────────────── */
 
 const AVATAR_PALETTE = [
@@ -91,18 +93,19 @@ function PostComposer({ onPostCreated }) {
   const [selectedImageFile, setSelectedImageFile] = useState(null);
 
   const handleImageSelect = (e) => {
-    try {const file = e.target.files[0];
-    if (!file) return;
-    if (file.size > 3 * 1024 * 1024) { dispatch(setError('Image must be < 3MB')); return; }
-    if (!['image/jpeg', 'image/png', 'image/webp', 'image/jpg'].includes(file.type)) {
-      dispatch(setError('Only JPEG, PNG, WEBP allowed')); return;
+    try {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.size > 3 * 1024 * 1024) { dispatch(setError('Image must be < 3MB')); return; }
+      if (!['image/jpeg', 'image/png', 'image/webp', 'image/jpg'].includes(file.type)) {
+        dispatch(setError('Only JPEG, PNG, WEBP allowed')); return;
+      }
+      setSelectedImageFile(file);
+      dispatch(setImagePreview(URL.createObjectURL(file)));
+      dispatch(setError(''));
+    } catch (error) {
+      console.error('Error selecting image:', error);
     }
-    setSelectedImageFile(file);
-    dispatch(setImagePreview(URL.createObjectURL(file)));
-    dispatch(setError(''));
-  } catch (error) {
-    console.error('Error selecting image:', error);
-  }
   };
 
   const removeImage = () => {
@@ -135,36 +138,26 @@ function PostComposer({ onPostCreated }) {
   };
 
   return (
-    <div style={{
-      background: '#0b1420',
-      border: `1px solid ${focused ? '#00e5ff33' : '#1a2535'}`,
-      borderRadius: 20,
-      padding: '20px 20px 16px',
-      marginBottom: 8,
-      transition: 'border-color 0.2s ease',
-    }}>
-      <div style={{ display: 'flex', gap: 14 }}>
-        {currentUser?.username
-          ? <AvatarInitial name={currentUser.username} size={44} />
-          : <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#1a2535', flexShrink: 0 }} />
-        }
-        <div style={{ flex: 1 }}>
+    <div
+      className={`bg-[#2B2B2B] z-10 rounded-[20px] px-[20px] pt-[20px] pb-[16px] mb-[8px] transition-colors duration-200 ease-in-out ${focused ? "border border-[#aaaaaa]" : "border border-[#2B2B2B]"
+        }`}
+    >
+      <div className="flex gap-[14px]">
+        {currentUser?.username ? (
+          <AvatarInitial name={currentUser.username} size={44} />
+        ) : (
+          <div className="w-[44px] h-[44px] rounded-full bg-[#1a2535] flex-shrink-0" />
+        )}
+        <div className="flex-1">
           <textarea
             value={content}
-            onChange={e => dispatch(setContent(e.target.value))}
+            onChange={(e) => dispatch(setContent(e.target.value))}
             onFocus={() => dispatch(setFocused(true))}
             onBlur={() => dispatch(setFocused(false))}
             placeholder="Share what you're building, learning, or breaking... 🚀"
             maxLength={2000}
             rows={focused || content ? 4 : 2}
-            style={{
-              width: '100%', background: 'transparent',
-              border: 'none', outline: 'none', resize: 'none',
-              color: '#e8f0fe', fontSize: 15,
-              fontFamily: "'Plus Jakarta Sans', sans-serif",
-              lineHeight: 1.6, caretColor: '#00e5ff',
-              transition: 'height 0.2s ease',
-            }}
+            className="w-full bg-transparent border-none outline-none resize-none text-[#e8f0fe] text-[15px] font-['Plus_Jakarta_Sans'] leading-[1.6] caret-[#00e5ff] transition-[height] duration-200 ease-in-out"
           />
 
           {imagePreview && (
@@ -190,22 +183,28 @@ function PostComposer({ onPostCreated }) {
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             paddingTop: 12, borderTop: '1px solid #1a2535',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <input ref={fileInputRef} type="file"
+            <div className="flex items-center gap-[8px]">
+              <input
+                ref={fileInputRef}
+                type="file"
                 accept="image/jpeg,image/png,image/webp,image/jpg"
-                onChange={(e) => dispatch(handleImageSelect(e))} style={{ display: 'none' }}
+                onChange={(e) => dispatch(handleImageSelect(e))}
+                className="hidden"
                 id="post-image-input"
               />
-              <label htmlFor="post-image-input" style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '7px 14px', background: '#0f1825', border: '1px solid #1a2535',
-                borderRadius: 10, cursor: 'pointer', color: '#4a6080', fontSize: 13,
-                fontWeight: 600, transition: 'all 0.15s',
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
-              }}>
-                <FaImage style={{ fontSize: 13 }} /> Image
+              <label
+                htmlFor="post-image-input"
+                className="flex items-center gap-[6px] px-[14px] py-[7px] bg-[#404040] rounded-[10px] cursor-pointer text-[#aaaaaa] text-[13px] font-semibold font-['Plus_Jakarta_Sans'] transition-all duration-150"
+                onMouseEnter={(e) => {
+                  e.target.style.color = "#ffffff";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.color = "#aaaaaa";
+                }}
+              >
+                <FaImage className="text-[13px]" /> Image
               </label>
-              <span style={{ fontSize: 11, color: '#2e4460', fontFamily: "'DM Mono', monospace" }}>
+              <span className="text-[11px] text-[#aaaaaa] font-['DM_Mono']">
                 {content.length}/2000
               </span>
             </div>
@@ -214,17 +213,10 @@ function PostComposer({ onPostCreated }) {
               type="button"
               onClick={handlePost}
               disabled={!content.trim() || isPosting}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 7,
-                padding: '8px 20px',
-                background: content.trim() ? 'linear-gradient(135deg, #00b4cc, #00e5ff)' : '#1a2535',
-                border: 'none', borderRadius: 10,
-                color: content.trim() ? '#000' : '#2e4460',
-                fontWeight: 800, fontSize: 13, cursor: content.trim() ? 'pointer' : 'not-allowed',
-                fontFamily: "'Syne', sans-serif", letterSpacing: 0.3,
-                transition: 'all 0.2s ease',
-                boxShadow: content.trim() ? '0 4px 16px #00e5ff33' : 'none',
-              }}
+              className={`flex items-center gap-[7px] px-[20px] py-[8px] border-none rounded-[10px] font-['Syne'] font-extrabold text-[13px] tracking-[0.3px] transition-all duration-200 ease-in-out ${content.trim()
+                  ? "bg-gradient-to-br from-[#00b4cc] to-[#00e5ff] text-black cursor-pointer shadow-[0_4px_16px_#00e5ff33]"
+                  : "bg-[#404040] text-[#aaaaaa] cursor-not-allowed"
+                }`}
             >
               {isPosting
                 ? <><div style={{
@@ -248,17 +240,17 @@ function PostCard({ post, currentUserId, onLike, onDelete, index }) {
   const apiUrl = import.meta.env.VITE_API_URL || '';
 
   function getDisplayImageUrl(imageUrl) {
-  if (!imageUrl) return '';
+    if (!imageUrl) return '';
 
-  // Convert old uc?id= format to thumbnail format
-  const match = imageUrl.match(/[?&]id=([^&]+)/);
-  if (match && imageUrl.includes('uc?id=')) {
-    const fileId = match[1];
-    return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+    // Convert old uc?id= format to thumbnail format
+    const match = imageUrl.match(/[?&]id=([^&]+)/);
+    if (match && imageUrl.includes('uc?id=')) {
+      const fileId = match[1];
+      return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+    }
+
+    return imageUrl; // already in new format, or non-Drive URL, leave as-is
   }
-
-  return imageUrl; // already in new format, or non-Drive URL, leave as-is
-}
 
   const imageUrl = post.image?.startsWith('/')
     ? `${apiUrl}${post.image}`
@@ -278,32 +270,28 @@ function PostCard({ post, currentUserId, onLike, onDelete, index }) {
   };
 
   const handleCommentModal = () => {
-      dispatch(setSelectedPost(post)); // ← save this specific post
-      dispatch(setShowModal(true));
+    dispatch(setSelectedPost(post)); // ← save this specific post
+    dispatch(setShowModal(true));
   }
   const isOwn = post.author.id === currentUserId;
 
   return (
     <>
-      <article style={{
-        background: '#0b1420',
-        border: '1px solid #1a2535',
-        borderRadius: 20,
-        overflow: 'hidden',
-        animation: 'fadeUp 0.4s ease both',
-        animationDelay: `${Math.min(index * 0.06, 0.4)}s`,
-        transition: 'border-color 0.2s ease',
-      }}
-        onMouseEnter={e => e.currentTarget.style.borderColor = '#243040'}
-        onMouseLeave={e => e.currentTarget.style.borderColor = '#1a2535'}
+      <ParticleCanvas />
+      <article
+        className="bg-[#2B2B2B] z-10 rounded-[20px] overflow-hidden transition-colors duration-200 ease-in-out"
+      // onMouseEnter={e => e.currentTarget.style.borderColor = '#313131'}
+      // onMouseLeave={e => e.currentTarget.style.borderColor = '#2B2B2B'}
       >
         {/* Card body */}
-        <div style={{ padding: '20px 20px 0' }}>
+        <div className="px-[20px] pt-[20px]">
           {/* Author row */}
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
+          <div className="flex items-start justify-between mb-[14px]">
             <div
-              style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
-              onClick={() => post.author.id && navigate(`/profile/${post.author.id}`)}
+              className="flex items-center gap-[12px] cursor-pointer"
+              onClick={() =>
+                post.author.id && navigate(`/profile/${post.author.id}`)
+              }
             >
               {post.author.profilePic
                 ? <img src={post.author.profilePic} alt={post.author.username}
@@ -311,38 +299,29 @@ function PostCard({ post, currentUserId, onLike, onDelete, index }) {
                 : <AvatarInitial name={post.author.username} size={44} />
               }
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <span style={{
-                    fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, color: '#e8f0fe',
-                  }}>
+                <div className="flex items-center gap-[8px] flex-wrap">
+                  <span className="font-['Syne'] font-bold text-[15px] text-[#e8f0fe]">
                     {post.author.username}
                   </span>
-                  {/* <LeagueBadge league={post.author.league} /> */}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                  {/* <span style={{
-                  fontSize: 11, color: '#2e4460',
-                  fontFamily: "'DM Mono', monospace",
-                }}>
-                  Lv.{post.author.level}
-                </span> */}
-                  <span style={{ color: '#1a2535', fontSize: 10 }}>•</span>
-                  <span style={{ fontSize: 11, color: '#2e4460', fontFamily: "'DM Mono', monospace" }}>
-                    {formatTimeAgo(post.createdAt)}
+
+                <div className="flex items-center gap-[6px] mt-[2px]">
+                  <span className="text-[#aaaaaa] text-[10px]"><FaClock /></span>
+                  <span className="text-[12px] text-[#919191] font-['DM_Mono']">
                     {formatTimeAgo(post.createdAt)}
                   </span>
                 </div>
               </div>
+
             </div>
 
             {isOwn && (
-              <button type="button" onClick={() => onDelete(post.id)} style={{
-                background: 'none', border: 'none', color: '#2e4460',
-                cursor: 'pointer', fontSize: 13, padding: 6, borderRadius: 8,
-                transition: 'color 0.15s',
-              }}
-                onMouseEnter={e => e.target.style.color = '#f87171'}
-                onMouseLeave={e => e.target.style.color = '#2e4460'}
+              <button
+                type="button"
+                onClick={() => onDelete(post.id)}
+                className="bg-none border-none text-[#aaaaaa] cursor-pointer text-[13px] p-[6px] rounded-[8px] transition-colors duration-150"
+                onMouseEnter={(e) => (e.target.style.color = "#f87171")}
+                onMouseLeave={(e) => (e.target.style.color = "#aaaaaa")}
               >
                 <FaTrash />
               </button>
@@ -350,63 +329,60 @@ function PostCard({ post, currentUserId, onLike, onDelete, index }) {
           </div>
 
           {/* Content */}
-          <p style={{
-            color: '#c8d8ee', fontSize: 15, lineHeight: 1.7,
-            fontFamily: "'Plus Jakarta Sans', sans-serif",
-            whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-            marginBottom: post.image ? 16 : 0,
-          }}>
+          <p
+            className="text-[#c8d8ee] text-[15px] leading-[1.7] font-['Plus_Jakarta_Sans'] whitespace-pre-wrap break-words"
+            style={{ marginBottom: post.image ? "16px" : "0px" }}
+          >
             {post.content}
           </p>
+
         </div>
 
         {/* Image */}
         {post.image && (
-          <div style={{ padding: '0 0 0 0', marginTop: 4 }}>
-            <img src={imageUrl} alt="Post"
-              style={{
-                width: '100%', maxHeight: 400, objectFit: 'cover',
-                borderTop: '1px solid #1a2535', borderBottom: '1px solid #1a2535',
-                display: 'block',
-              }}
+          <div className="p-0 mt-[4px]">
+            <img
+              src={imageUrl}
+              alt="Post"
+              className="w-full max-h-[400px] object-cover border-t border-b border-[#1a2535] block"
             />
-          </div>)}
+          </div>
+        )}
 
         {/* Action bar */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 4,
-          padding: '10px 16px',
-          borderTop: post.image ? 'none' : '1px solid #131e2e',
-        }}>
+        <div
+          className={`flex items-center gap-[4px] px-[16px] py-[10px]
+            }`}
+        >
           {/* Like */}
-          <button type="button" onClick={handleLikeClick} style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: liked ? '#f87171' : '#2e4460',
-            fontFamily: "'DM Mono', monospace", fontSize: 13, fontWeight: 500,
-            padding: '8px 12px', borderRadius: 10,
-            transition: 'all 0.15s',
-            transform: heartAnim ? 'scale(1.25)' : 'scale(1)',
-          }}
-            onMouseEnter={e => !liked && (e.currentTarget.style.color = '#fb7185')}
-            onMouseLeave={e => !liked && (e.currentTarget.style.color = '#2e4460')}
+          <button
+            type="button"
+            onClick={handleLikeClick}
+            className={`flex items-center gap-[6px] bg-none border-none cursor-pointer font-['DM_Mono'] text-[13px] font-medium px-[12px] py-[8px] rounded-[10px] transition-all duration-150`}
+            style={{
+              color: liked ? "#f87171" : "#aaaaaa",
+              transform: heartAnim ? "scale(1.25)" : "scale(1)",
+            }}
+            onMouseEnter={(e) => !liked && (e.currentTarget.style.color = "#fb7185")}
+            onMouseLeave={(e) => !liked && (e.currentTarget.style.color = "#aaaaaa")}
           >
-            {liked ? <FaHeart style={{ fontSize: 15 }} /> : <FaRegHeart style={{ fontSize: 15 }} />}
+            {liked ? (
+              <FaHeart style={{ fontSize: 15 }} />
+            ) : (
+              <FaRegHeart style={{ fontSize: 15 }} />
+            )}
             <span>{likeCount}</span>
           </button>
 
 
           {/* Comment toggle */}
-          <button type="button" onClick={handleCommentModal} style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: showComments ? '#00e5ff' : '#2e4460',
-            fontFamily: "'DM Mono', monospace", fontSize: 13, fontWeight: 500,
-            padding: '8px 12px', borderRadius: 10,
-            transition: 'color 0.15s',
-          }}
-            onMouseEnter={e => e.currentTarget.style.color = '#00e5ff'}
-            onMouseLeave={e => !showComments && (e.currentTarget.style.color = '#2e4460')}
+          <button
+            type="button"
+            onClick={handleCommentModal}
+            className="flex items-center gap-[6px] bg-none border-none cursor-pointer font-['DM_Mono'] text-[13px] font-medium px-[12px] py-[8px] rounded-[10px] transition-colors duration-150"
+            style={{ color: showComments ? "#00e5ff" : "#aaaaaa" }}
+            onMouseEnter={(e) => !showComments && (e.currentTarget.style.color = "#00e5ff")}
+            onMouseLeave={(e) => !showComments && (e.currentTarget.style.color = "#aaaaaa")}
           >
             <FaComment style={{ fontSize: 14 }} />
             <span>{post.commentsCount}</span>
@@ -426,29 +402,26 @@ function PostCard({ post, currentUserId, onLike, onDelete, index }) {
 function TrendingTopics() {
   const topics = ['#JavaScript', '#ReactJS', '#WebDev', '#CSS', '#NodeJS', '#TypeScript', '#OpenSource', '#API'];
   return (
-    <div style={{
-      background: '#0b1420', border: '1px solid #1a2535', borderRadius: 16,
-      padding: '16px 18px', marginBottom: 12,
-    }}>
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14,
-        fontFamily: "'Syne', sans-serif", fontWeight: 700,
-        fontSize: 13, color: '#e8f0fe', letterSpacing: 0.3,
-      }}>
-        <FaFire style={{ color: '#fb923c', fontSize: 14 }} /> Trending
+    <div className="bg-[#2B2B2B] border border-[#1a2535] rounded-[16px] px-[18px] py-[16px] mb-[12px]">
+      <div className="flex items-center gap-[8px] mb-[14px] font-['Syne'] font-bold text-[13px] text-[#e8f0fe] tracking-[0.3px]">
+        <FaFire className="text-[#fb923c] text-[14px]" /> Trending
       </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-        {topics.map(t => (
-          <span key={t} style={{
-            padding: '4px 10px',
-            background: '#0f1825', border: '1px solid #1a2535',
-            borderRadius: 8, fontSize: 12, color: '#4a6080',
-            fontFamily: "'DM Mono', monospace", cursor: 'pointer',
-            transition: 'all 0.15s',
-          }}
-            onMouseEnter={e => { e.target.style.borderColor = '#00e5ff33'; e.target.style.color = '#00e5ff'; }}
-            onMouseLeave={e => { e.target.style.borderColor = '#1a2535'; e.target.style.color = '#4a6080'; }}
-          >{t}</span>
+      <div className="flex flex-wrap gap-[6px]">
+        {topics.map((t) => (
+          <span
+            key={t}
+            className="px-[10px] py-[4px] bg-[#404040] rounded-[8px] text-[12px] text-[#aaaaaa] font-['DM_Mono'] cursor-pointer transition-all duration-150"
+            onMouseEnter={(e) => {
+              e.target.style.borderColor = "#00e5ff33";
+              e.target.style.color = "#ffffff";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.borderColor = "#2B2B2B";
+              e.target.style.color = "#aaaaaa";
+            }}
+          >
+            {t}
+          </span>
         ))}
       </div>
     </div>
@@ -521,24 +494,18 @@ export default function CommunityPage() {
     <div>
       {!showModal ? (
         <div>
-          <div style={{
-            minHeight: '100vh',
-            background: '#080e18',
-            color: '#e8f0fe',
-            fontFamily: "'Plus Jakarta Sans', sans-serif",
-            padding: '0',
-            position: 'relative',
-            overflow: 'hidden',
-          }}>
+          <div className="min-h-screen bg-[#000000] text-[#e8f0fe] p-0 relative overflow-hidden">
             {/* Ambient top glow */}
-            <div style={{
-              position: 'absolute', top: -180, left: '30%',
-              width: 500, height: 400, borderRadius: '50%',
-              maxWidth: '100%',
-              background: 'radial-gradient(circle, #00e5ff08 0%, transparent 70%)',
-              pointerEvents: 'none', zIndex: 0,
-            }} />
-
+            <div
+              className="absolute rounded-full max-w-full pointer-events-none z-0"
+              style={{
+                top: -180,
+                left: "30%",
+                width: 500,
+                height: 400,
+                background: "radial-gradient(circle, #00e5ff08 0%)",
+              }}
+            />
             <div
               className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 max-w-275 mx-auto px-4 sm:px-5 pt-6 sm:pt-7 pb-16"
               style={{ position: 'relative', zIndex: 1 }}
@@ -547,27 +514,15 @@ export default function CommunityPage() {
               {/* ── Left: main feed ──────────────────────────────── */}
               <div>
                 {/* Page header */}
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 14,
-                  marginBottom: 24,
-                  paddingBottom: 20,
-                  borderBottom: '1px solid #1a2535',
-                }}>
-                  <div style={{
-                    width: 44, height: 44, borderRadius: 13,
-                    background: '#fb923c18', border: '1px solid #fb923c33',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 20,
-                  }}>🔥</div>
+                <div className="flex items-center gap-[14px] mb-[24px] pb-[20px] border-b border-[#1a2535]">
+                  <div className="w-[44px] h-[44px] rounded-[13px] bg-[#2B2B2B] border border-[#fb923c33] flex items-center justify-center text-[20px]">
+                    🔥
+                  </div>
                   <div>
-                    <h1 style={{
-                      margin: 0,
-                      fontFamily: "'Syne', sans-serif", fontWeight: 800,
-                      fontSize: 24, letterSpacing: -0.5, color: '#e8f0fe',
-                    }}>
+                    <h1 className="m-0 font-['Syne'] font-extrabold text-[24px] tracking-[-0.5px] text-[#e8f0fe]">
                       Community Feed
                     </h1>
-                    <p style={{ margin: 0, fontSize: 13, color: '#2e4460' }}>
+                    <p className="m-0 text-[13px] text-[#2e4460]">
                       Where web devs share what they're building
                     </p>
                   </div>
@@ -599,14 +554,13 @@ export default function CommunityPage() {
                 )}
 
                 {/* Feed */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div className="flex flex-col gap-[10px]">
                   {posts.length === 0 && !isLoading ? (
-                    <div style={{
-                      background: '#0b1420', border: '1px solid #1a2535',
-                      borderRadius: 20, padding: '48px 24px', textAlign: 'center',
-                    }}>
-                      <div style={{ fontSize: 40, marginBottom: 12 }}>👩‍💻</div>
-                      <p style={{ color: '#2e4460', fontSize: 14 }}>No posts yet — be the first to share!</p>
+                    <div className="bg-[#404040] border border-[#1a2535] rounded-[20px] px-[24px] py-[48px] text-center">
+                      <div className="text-[40px] mb-[12px]">👩‍💻</div>
+                      <p className="text-[#2e4460] text-[14px]">
+                        No posts yet — be the first to share!
+                      </p>
                     </div>
                   ) : (
                     posts.map((post, i) => (
@@ -641,34 +595,28 @@ export default function CommunityPage() {
               </div>
 
               {/* ── Right: sidebar ───────────────────────────────── */}
-              <div className="hidden lg:block" style={{ position: 'sticky', top: 28, alignSelf: 'start' }}>
+              <div className="hidden lg:block sticky top-[28px] self-start">
                 {/* Mini stats */}
-                <div style={{
-                  background: '#0b1420', border: '1px solid #1a2535', borderRadius: 16,
-                  padding: '16px 18px', marginBottom: 12,
-                }}>
-                  <div style={{
-                    fontFamily: "'Syne', sans-serif", fontWeight: 700,
-                    fontSize: 13, color: '#e8f0fe', marginBottom: 14, letterSpacing: 0.3,
-                  }}>
+                <div className="bg-[#2B2B2B] rounded-[16px] px-[18px] py-[16px] mb-[12px]">
+                  <div className="font-['Syne'] font-bold text-[13px] text-[#e8f0fe] mb-[14px] tracking-[0.3px]">
                     📡 Community
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div className="flex flex-col gap-[10px]">
                     {[
                       { label: 'Posts today', val: posts.length, icon: '📝' },
                       { label: 'Active devs', val: '—', icon: '👥' },
                       { label: 'Your posts', val: posts.filter(p => p.author.id === currentUserId).length, icon: '✍️' },
                     ].map(row => (
-                      <div key={row.label} style={{
-                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                        padding: '8px 12px', background: '#080e18', borderRadius: 10,
-                        border: '1px solid #131e2e',
-                      }}>
-                        <span style={{ fontSize: 12, color: '#4a6080' }}>{row.icon} {row.label}</span>
-                        <span style={{
-                          fontSize: 14, fontWeight: 700,
-                          fontFamily: "'DM Mono', monospace", color: '#00e5ff',
-                        }}>{row.val}</span>
+                      <div
+                        key={row.label}
+                        className="flex justify-between items-center px-[12px] py-[8px] bg-[#404040] rounded-[10px]"
+                      >
+                        <span className="text-[12px] text-[#aaaaaa]">
+                          {row.icon} {row.label}
+                        </span>
+                        <span className="text-[14px] font-bold font-['DM_Mono'] text-[#aaaaaa]">
+                          {row.val}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -677,30 +625,23 @@ export default function CommunityPage() {
                 <TrendingTopics />
 
                 {/* Community rules */}
-                <div style={{
-                  background: '#0b1420', border: '1px solid #1a2535', borderRadius: 16,
-                  padding: '16px 18px',
-                }}>
-                  <div style={{
-                    fontFamily: "'Syne', sans-serif", fontWeight: 700,
-                    fontSize: 13, color: '#e8f0fe', marginBottom: 12, letterSpacing: 0.3,
-                  }}>
-                    <FaCode style={{ color: '#00e5ff', fontSize: 13, marginRight: 7 }} />
+                <div className="bg-[#2B2B2B] rounded-[16px] px-[18px] py-[16px]">
+                  <div className="font-['Syne'] font-bold text-[13px] text-[#e8f0fe] mb-[12px] tracking-[0.3px] flex items-center">
+                    <FaCode className="text-[#aaaaaa] text-[13px] mr-[7px]" />
                     Dev Code
                   </div>
                   {[
-                    'Share what you\'re building',
-                    'Help each other debug',
-                    'Celebrate small wins',
-                    'Keep it constructive',
+                    "Share what you're building",
+                    "Help each other debug",
+                    "Celebrate small wins",
+                    "Keep it constructive",
                   ].map((rule, i) => (
-                    <div key={i} style={{
-                      display: 'flex', gap: 8, alignItems: 'flex-start',
-                      marginBottom: 8, fontSize: 12, color: '#3a5270',
-                      lineHeight: 1.5,
-                    }}>
-                      <span style={{ color: '#00e5ff', fontFamily: "'DM Mono', monospace", marginTop: 1 }}>
-                        {String(i + 1).padStart(2, '0')}
+                    <div
+                      key={i}
+                      className="flex gap-[8px] items-start mb-[8px] text-[12px] text-[#aaaaaa] leading-[1.5]"
+                    >
+                      <span className="text-[#aaaaaa] font-['DM_Mono'] mt-[1px]">
+                        {String(i + 1).padStart(2, "0")}
                       </span>
                       {rule}
                     </div>
@@ -715,7 +656,8 @@ export default function CommunityPage() {
           <Comments
             post={selectedPost} />
         </>
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 }

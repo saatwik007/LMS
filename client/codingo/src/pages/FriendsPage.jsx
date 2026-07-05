@@ -215,14 +215,6 @@ export function FriendsPage() {
             >
               <FaTrash />
             </button>
-          {/* <div className="flex items-center gap-1 text-purple-400 text-sm mt-1">
-            <FaTrophy />
-            <span>Level {friend.level}</span>
-          </div> */}
-          {/* <div className="flex items-center gap-1 text-orange-500 text-sm mt-1">
-            <FaFire />
-            <span>{friend.streakCount} day</span>
-          </div> */}
         </div>
       </div>
       {!showRank && (

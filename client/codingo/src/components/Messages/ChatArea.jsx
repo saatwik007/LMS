@@ -140,9 +140,7 @@ function MessageBubble({ msg, contact, animate }) {
   );
 };
 
-export const ChatArea = (
-  setInputText,
-) => {
+export const ChatArea = () => {
   const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "ws://localhost:5000";
   const dispatch = useDispatch();
   const currentUser = useSelector(s => s.dashboard.currentUser);
@@ -172,11 +170,12 @@ export const ChatArea = (
                 id: msg._id,
                 senderId: msg.senderId,
                 text: msg.content,
-                time: new Date(msg.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+                time: new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
                 from: msg.senderId === currentUser.id ? "me" : "them"
               }
             }));
             console.log(res.data)
+            console.log('fetched msg', msg)
           })
         }
       } catch (error) {
@@ -311,7 +310,7 @@ const fetchhistoryy = async () => {
     return (
        <div
       ref={ref}
-      className="flex-1 overflow-y-auto relative flex flex-col gap-2.5 px-4 sm:px-7 py-4 sm:py-6"
+      className="flex-1 overflow-y-auto flex flex-col gap-2.5 px-4 sm:px-7 py-4 sm:py-6"
       style={{ overscrollBehavior: "contain" }}
     >
       {/* Date label */}
