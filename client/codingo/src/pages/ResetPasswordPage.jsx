@@ -32,7 +32,7 @@ export default function ResetPasswordPage() {
     }
     setLoading(true);
     try {
-      await axios.post(`${apiUrl}/api/auth/user/reset-password`, { email, otp, newPassword });
+      await axios.post(`${apiUrl}/api/otp/verify`, { email, otp, newPassword });
       setDone(true);
     } catch (err) {
       setError(err.response?.data?.message || 'Invalid or expired OTP.');

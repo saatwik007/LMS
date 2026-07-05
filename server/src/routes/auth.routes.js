@@ -11,7 +11,7 @@ const router = express.Router();
 router.post('/user/register', authController.registerUser);
 router.post('/user/login', authController.loginUser);
 router.get('/user/me', protect, authController.getCurrentUser);
-router.get('/user/:userId/public', protect, authController.getPublicProfile);
+router.get('/user/:userId/public', authController.getPublicProfile);
 router.patch('/user/profile', protect, authController.updateProfile);
 router.patch('/user/profile/image', protect, profileImageUpload, authController.uploadProfileImage);
 router.get('/user/notifications', protect, authController.getNotifications);
@@ -21,6 +21,7 @@ router.post('/user/rewards/claim', protect, authController.claimReward);
 router.post('/user/forgot-password', authController.forgotPassword);
 router.post('/user/reset-password', authController.resetPassword);
 router.get('/user/logout', authController.logoutUser);
+// router.post('/user/verify-reset-otp', authController.verifyResetOtp);
 
 // OAuth status endpoint — frontend checks before showing Google button
 // router.get('/oauth/status', (req, res) => {

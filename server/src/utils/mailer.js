@@ -4,19 +4,51 @@ let cachedTransporter = null;
 
 /**
  * Returns true when an email provider is configured via environment variables.
- * Supports Brevo (BREVO_API_KEY), the Mailtrap sending API (MAILTRAP_TOKEN),
- * or classic SMTP.
+ * Provider priority:
+ * 1) Brevo HTTP API
+ * 2) Mailtrap sending API
+ * 3) SMTP OAuth2 (Gmail/Google Workspace)
+ * 4) SMTP user/pass
  */
 function isMailConfigured() {
-  return Boolean(
-    process.env.BREVO_API_KEY ||
-    process.env.MAILTRAP_TOKEN ||
-    (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS)
+  const smtpOauthConfigured = Boolean(
+    process.env.SMTP_HOST &&
+      process.env.SMTP_USER &&
+      process.env.GOOGLE_CLIENT_ID &&
+      process.env.GOOGLE_CLIENT_SECRET &&
+      process.env.GOOGLE_REFRESH_TOKEN
   );
+
+  const smtpPasswordConfigured = Boolean(
+    process.env.SMTP_HOST &&
+      process.env.SMTP_USER &&
+      process.env.SMTP_PASS
+  );
+
+  const configured = Boolean(
+    process.env.BREVO_API_KEY ||
+      process.env.MAILTRAP_TOKEN ||
+      smtpOauthConfigured ||
+      smtpPasswordConfigured
+  );
+
+  if (configured) {
+    let providerInfo = '';
+    if (process.env.BREVO_API_KEY) providerInfo = 'Brevo API';
+    else if (process.env.MAILTRAP_TOKEN) providerInfo = 'Mailtrap API';
+    else if (smtpOauthConfigured) providerInfo = `SMTP OAuth2 (${process.env.SMTP_USER})`;
+    else if (smtpPasswordConfigured) providerInfo = `SMTP Password (${process.env.SMTP_USER})`;
+    
+    console.log(`[MAIL] ✓ Email provider configured: ${providerInfo}`);
+  } else {
+    console.warn('[MAIL] ✗ No email provider configured. Password resets will not send emails.');
+  }
+
+  return configured;
 }
 
 /**
- * Resolves the sender identity from environment variables.
+ * Resolves sender identity from environment.
  */
 function getSender() {
   return {
@@ -30,7 +62,7 @@ function getSender() {
 }
 
 /**
- * Builds the OTP email subject, text and HTML body.
+ * OTP email content.
  */
 function buildOtpMessage(otp) {
   const html = `
@@ -48,43 +80,54 @@ function buildOtpMessage(otp) {
 }
 
 /**
- * Sends an email through Brevo's transactional HTTP API. Uses HTTPS (port 443),
- * so it works on hosts that block outbound SMTP (e.g. Render free tier).
+ * Brevo via HTTPS API (port 443-friendly for Render/Vercel).
  */
 async function sendViaBrevo(to, message) {
   const sender = getSender();
-  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-    method: 'POST',
-    headers: {
-      'api-key': process.env.BREVO_API_KEY,
-      'content-type': 'application/json',
-      accept: 'application/json'
-    },
-    body: JSON.stringify({
-      sender: { email: sender.address, name: sender.name },
-      to: [{ email: to }],
-      subject: message.subject,
-      textContent: message.text,
-      htmlContent: message.html
-    })
-  });
 
-  if (!res.ok) {
-    const detail = await res.text().catch(() => '');
-    throw new Error(`Brevo API ${res.status}: ${detail}`);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
+
+  try {
+    console.log(`[MAIL] Sending OTP email to ${to} via Brevo API`);
+    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'api-key': process.env.BREVO_API_KEY,
+        'content-type': 'application/json',
+        accept: 'application/json'
+      },
+      body: JSON.stringify({
+        sender: { email: sender.address, name: sender.name },
+        to: [{ email: to }],
+        subject: message.subject,
+        textContent: message.text,
+        htmlContent: message.html
+      }),
+      signal: controller.signal
+    });
+
+    if (!res.ok) {
+      const detail = await res.text().catch(() => '');
+      throw new Error(`Brevo API ${res.status}: ${detail}`);
+    }
+
+    console.log(`[MAIL] OTP email sent to ${to} via Brevo API`);
+    return { sent: true, provider: 'brevo' };
+  } finally {
+    clearTimeout(timeout);
   }
-
-  return { sent: true };
 }
 
 /**
- * Lazily builds and caches a nodemailer transporter (Mailtrap API or SMTP).
- * Returns null when neither is configured.
+ * Creates/caches nodemailer transporter.
  */
 function getTransporter() {
   if (cachedTransporter) return cachedTransporter;
 
+  // Mailtrap API transport
   if (process.env.MAILTRAP_TOKEN) {
+    console.log('[MAIL] Using Mailtrap API transport');
     const { MailtrapTransport } = require('mailtrap');
     cachedTransporter = nodemailer.createTransport(
       MailtrapTransport({ token: process.env.MAILTRAP_TOKEN })
@@ -92,12 +135,40 @@ function getTransporter() {
     return cachedTransporter;
   }
 
-  if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+  // SMTP OAuth2 (Gmail/Workspace)
+  const hasSmtpOauth =
+    process.env.SMTP_HOST &&
+    process.env.SMTP_USER &&
+    process.env.GOOGLE_CLIENT_ID &&
+    process.env.GOOGLE_CLIENT_SECRET &&
+    process.env.GOOGLE_REFRESH_TOKEN;
+
+  if (hasSmtpOauth) {
+    console.log(`[MAIL] Using SMTP OAuth2 transport for ${process.env.SMTP_USER} (Gmail/Workspace)`);
     const port = Number(process.env.SMTP_PORT) || 587;
     cachedTransporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port,
-      secure: port === 465, // true for 465, false for 587/STARTTLS
+      secure: port === 465,
+      auth: {
+        type: 'OAuth2',
+        user: process.env.SMTP_USER,
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        refreshToken: process.env.GOOGLE_REFRESH_TOKEN
+      }
+    });
+    return cachedTransporter;
+  }
+
+  // SMTP user/pass fallback
+  if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+    console.log(`[MAIL] Using SMTP password transport for ${process.env.SMTP_USER}`);
+    const port = Number(process.env.SMTP_PORT) || 587;
+    cachedTransporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port,
+      secure: port === 465,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS
@@ -106,24 +177,28 @@ function getTransporter() {
     return cachedTransporter;
   }
 
+  console.warn('[MAIL] No email transporter configured (Mailtrap or SMTP)');
   return null;
 }
 
 /**
- * Sends a password-reset OTP email.
- * Provider priority: Brevo HTTP API -> Mailtrap API -> SMTP.
- * Resolves to { sent: true } on success, or { sent: false } when no provider is
- * configured (so callers can fall back to dev behavior). Throws on send errors.
+ * Sends password-reset OTP email.
  */
 async function sendOtpEmail(to, otp) {
   const message = buildOtpMessage(otp);
 
+  // 1) Brevo first (best for Render/Vercel networking)
   if (process.env.BREVO_API_KEY) {
+    console.log('[MAIL] Email provider: Brevo HTTP API');
     return sendViaBrevo(to, message);
   }
 
+  // 2/3/4) Mailtrap or SMTP OAuth2 or SMTP pass
   const transporter = getTransporter();
-  if (!transporter) return { sent: false };
+  if (!transporter) {
+    console.warn('[MAIL] Email provider: NONE (email sending disabled)');
+    return { sent: false, provider: 'none' };
+  }
 
   const sender = getSender();
   await transporter.sendMail({
@@ -135,7 +210,14 @@ async function sendOtpEmail(to, otp) {
     category: 'Password Reset'
   });
 
-  return { sent: true };
+  const provider = process.env.MAILTRAP_TOKEN
+    ? 'mailtrap'
+    : process.env.GOOGLE_REFRESH_TOKEN
+    ? 'smtp-oauth2'
+    : 'smtp-password';
+
+  console.log(`[MAIL] Email sent to ${to} via ${provider}`);
+  return { sent: true, provider };
 }
 
 module.exports = { sendOtpEmail, isMailConfigured };

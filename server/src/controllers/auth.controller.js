@@ -63,6 +63,9 @@ function buildUserPayload(user) {
 }
 
 function signToken(userId) {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET environment variable is not set');
+  }
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
 }
 
@@ -406,7 +409,10 @@ async function forgotPassword(req, res) {
 
     const user = await userModel.findOne({ email: email.toLowerCase().trim() });
     // Always return success to prevent email enumeration
-    if (!user) return res.status(200).json({ message: 'If that email exists, an OTP has been sent.' });
+    if (!user) {
+      console.log(`[AUTH] Forgot password attempt for non-existent email: ${email}`);
+      return res.status(200).json({ message: 'If that email exists, an OTP has been sent.' });
+    }
 
     // 6-digit cryptographically-random OTP; store only its SHA-256 digest
     const otp = String(crypto.randomInt(100000, 1000000));
@@ -415,23 +421,30 @@ async function forgotPassword(req, res) {
     user.resetOtpAttempts = 0;
     await user.save();
 
-    console.log(`[DEV] Password reset OTP for ${email}: ${otp}`);
+    console.log(`[AUTH] Password reset requested for ${email}. OTP: ${otp}`);
 
     // Send the OTP via email when SMTP is configured; never fail the request on email errors.
     let emailSent = false;
     try {
       const result = await sendOtpEmail(user.email, otp);
       emailSent = result.sent;
+      if (emailSent) {
+        console.log(`[AUTH] OTP email sent successfully to ${email}`);
+      } else {
+        console.warn(`[AUTH] Email provider not configured. Showing OTP in response for development.`);
+      }
     } catch (mailError) {
-      console.error(`[MAIL] Failed to send reset OTP to ${email}:`, mailError.message);
+      console.error(`[AUTH] Error sending reset OTP to ${email}:`, mailError.message);
     }
 
     return res.status(200).json({
       message: 'If that email exists, an OTP has been sent.',
       // Only expose the OTP in the response outside production (so dev works without SMTP).
+      // This allows testing without email configuration.
       otp: process.env.NODE_ENV !== 'production' && !emailSent ? otp : undefined
     });
   } catch (error) {
+    console.error('[AUTH] Forgot password error:', error);
     return res.status(500).json({ message: error.message });
   }
 }

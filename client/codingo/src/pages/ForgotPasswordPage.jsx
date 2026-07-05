@@ -20,7 +20,7 @@ export default function ForgotPasswordPage() {
     dispatch(setError(''));
     dispatch(setLoading(true));
     try {
-      const res = await axios.post(`${apiUrl}/api/auth/user/forgot-password`, { email });
+      const res = await axios.post(`${apiUrl}/api/otp/send`, { email });
       dispatch(setSent(true));
       if (res.data?.otp) dispatch(setDevToken(res.data.otp));
     } catch (err) {
