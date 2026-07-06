@@ -133,60 +133,66 @@ async function getFeed(req, res) {
     const totalPages = Math.ceil(total / limit);
 
     const posts = await Post.find(filter)
-      .populate('author', 'username profilePic league level totalXp')
-      .populate('comments.author', 'username profilePic')
-      .populate('comments.replies.author', 'username profilePic')
+      .populate("author", "username profilePic league level totalXp")
+      .populate("comments.author", "username profilePic")
+      .populate("comments.replies.author", "username profilePic")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .lean();
 
-    const currentUserId = String(req.user.id);
+    const currentUserId = String(req.user?.id || "");
 
-    const formattedPosts = posts.map(post => ({
-      id: String(post._id),
-      author: {
-        id: String(post.author._id),
-        username: post.author.username,
-        profilePic: post.author.profilePic || '',
-        league: post.author.league || 'Bronze 1',
-        level: post.author.level || 1,
-        totalXp: post.author.totalXp || 0
-      },
-      content: post.content,
-      image: post.image,
-      likes: post.likes.map(id => String(id)),
-      comments: post.comments.map(comment => ({
-        id: String(comment._id),
-        postId: String(post._id),                          // ✅ postId belongs here, not inside author
+    const formattedPosts = posts
+      .filter((post) => post?.author) // skip orphaned posts
+      .map((post) => ({
+        id: String(post._id),
         author: {
-          id: String(comment.author._id),
-          username: comment.author.username,
-          profilePic: comment.author.profilePic || ''
+          id: String(post.author._id),
+          username: post.author.username || "Unknown",
+          profilePic: post.author.profilePic || "",
+          league: post.author.league || "Bronze 1",
+          level: post.author.level || 1,
+          totalXp: post.author.totalXp || 0,
         },
-        content: comment.content,
-        createdAt: comment.createdAt,
-        likesCount: comment.likes?.length || 0,             // ✅ added
-        isLikedByCurrentUser: comment.likes?.some(           // ✅ added
-          id => String(id) === currentUserId
-        ) ?? false,
-        replies: comment.replies?.map(reply => ({            // ✅ this was completely missing
-          id: String(reply._id),
-          author: {
-            id: String(reply.author._id),
-            username: reply.author.username,
-            profilePic: reply.author.profilePic || ''
-          },
-          content: reply.content,
-          createdAt: reply.createdAt,
-        })) || []
-      })),
-      likesCount: post.likes.length,
-      commentsCount: post.comments.length,
-      isLikedByCurrentUser: post.likes.some(id => String(id) === currentUserId),
-      createdAt: post.createdAt,
-      updatedAt: post.updatedAt
-    }));
+        content: post.content || "",
+        image: post.image || "",
+        likes: (post.likes || []).map((id) => String(id)),
+        comments: (post.comments || [])
+          .filter((comment) => comment?.author)
+          .map((comment) => ({
+            id: String(comment._id),
+            postId: String(post._id),
+            author: {
+              id: String(comment.author._id),
+              username: comment.author.username || "Unknown",
+              profilePic: comment.author.profilePic || "",
+            },
+            content: comment.content || "",
+            createdAt: comment.createdAt,
+            likesCount: comment.likes?.length || 0,
+            isLikedByCurrentUser:
+              comment.likes?.some((id) => String(id) === currentUserId) ?? false,
+            replies: (comment.replies || [])
+              .filter((reply) => reply?.author)
+              .map((reply) => ({
+                id: String(reply._id),
+                author: {
+                  id: String(reply.author._id),
+                  username: reply.author.username || "Unknown",
+                  profilePic: reply.author.profilePic || "",
+                },
+                content: reply.content || "",
+                createdAt: reply.createdAt,
+              })),
+          })),
+        likesCount: post.likes?.length || 0,
+        commentsCount: post.comments?.length || 0,
+        isLikedByCurrentUser:
+          post.likes?.some((id) => String(id) === currentUserId) ?? false,
+        createdAt: post.createdAt,
+        updatedAt: post.updatedAt,
+      }));
 
     return res.status(200).json({
       posts: formattedPosts,
@@ -195,14 +201,14 @@ async function getFeed(req, res) {
         limit,
         total,
         totalPages,
-        hasMore: page < totalPages
-      }
+        hasMore: page < totalPages,
+      },
     });
   } catch (error) {
-    console.error('Get feed error:', error);
+    console.error("Get feed error:", error);
     return res.status(500).json({ message: error.message });
   }
-};
+}
 
 
 async function getPostImage(req, res) {
