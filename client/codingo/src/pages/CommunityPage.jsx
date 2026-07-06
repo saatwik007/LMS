@@ -20,8 +20,8 @@ import {
 import { Navigate, useNavigate } from 'react-router-dom';
 // import Comments from './LandinPageExperimental';
 import { useDispatch, useSelector } from 'react-redux';
-import { setContent, setError, setFocused, setImagePreview, setIsPosting } from '../redux/slices/postSlice';
-import { setHeartAnim, setLikeCount, setLiked, setPage, setPosts, setSelectedPost, setShowModal } from '../redux/slices/feedSlice';
+import { setContent, setError, setFocused, setImagePreview, setIsPosting} from '../redux/slices/postSlice';
+import { setHeartAnim, setLikeCount, setLiked, setPage, setPosts, setSelectedPost, setShowModal,addPostToTop } from '../redux/slices/feedSlice';
 import { fetchPosts, getAuthHeaders, handleLike, getStoredUser, formatTimeAgo } from '../utilites/communityHelper';
 import Comments from './CommentsModal';
 import { useState } from 'react';
@@ -127,11 +127,17 @@ function PostComposer({ onPostCreated }) {
         withCredentials: true,
         headers: { ...getAuthHeaders() },
       });
-      dispatch(setContent('')); dispatch(setFocused(false)); dispatch(setSelectedImageFile(null)); dispatch(setImagePreview(null));
+          dispatch(setContent(''));
+    dispatch(setFocused(false));
+    setSelectedImageFile(null);
+    dispatch(setImagePreview(null));
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (onPostCreated) onPostCreated(res.data.post);
+      // dispatch(setContent('')); dispatch(setFocused(false)); dispatch(setSelectedImageFile(null)); dispatch(setImagePreview(null));
       if (fileInputRef.current) fileInputRef.current.value = '';
       if (onPostCreated) onPostCreated(res.data.post);
     } catch (err) {
-      dispatch(setError(err.response?.data?.message || 'Failed to post'));
+      dispatch(setError(err.response?.data?.message));
     } finally {
       dispatch(setIsPosting(false));
     }
@@ -188,7 +194,8 @@ function PostComposer({ onPostCreated }) {
                 ref={fileInputRef}
                 type="file"
                 accept="image/jpeg,image/png,image/webp,image/jpg"
-                onChange={(e) => dispatch(handleImageSelect(e))}
+                // onChange={(e) => dispatch(handleImageSelect(e))}
+                onChange={handleImageSelect}
                 className="hidden"
                 id="post-image-input"
               />
@@ -266,7 +273,8 @@ function PostCard({ post, currentUserId, onLike, onDelete, index }) {
     dispatch(setLiked({ postId: post.id, value: !liked }));
     dispatch(setLikeCount({ postId: post.id, value: liked ? likeCount - 1 : likeCount + 1 }));
     if (!liked) { dispatch(setHeartAnim({ postId: post.id, value: true })); setTimeout(() => dispatch(setHeartAnim({ postId: post.id, value: false })), 600); }
-    dispatch(onLike(post.id));
+    // dispatch(onLike(post.id));
+    onLike(post.id);
   };
 
   const handleCommentModal = () => {
@@ -459,7 +467,10 @@ export default function CommunityPage() {
     return () => observerRef.current?.disconnect();
   }, [page, hasMore, isLoading, dispatch]);
 
-  const handlePostCreated = (newPost) => dispatch(setPosts(prev => [newPost, ...prev]));
+  // const handlePostCreated = (newPost) => dispatch(setPosts(prev => [newPost, ...prev]));
+  const handlePostCreated = (newPost) => {
+  dispatch(addPostToTop(newPost));
+};
 
   const handleComment = async (postId) => {
     try {

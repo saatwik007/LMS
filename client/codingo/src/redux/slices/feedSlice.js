@@ -127,6 +127,11 @@ const feedSlice = createSlice({
       const { commentId, value } = action.payload;
       state.commentLiked[commentId] = value;
     },
+    addPostToTop: (state, action) => {
+      const incoming = action.payload;
+      const exists = state.posts.some(p => p.id === incoming.id);
+      if (!exists) state.posts.unshift(incoming);
+    },
     setError: (state, action) => {
       state.error = action.payload;
     },
@@ -172,5 +177,5 @@ const feedSlice = createSlice({
   },
 });
 
-export const { setShowComments, setCommentText, setIsCommenting, toggleLike, toggleComments, setLiked, setLikeCount, setHeartAnim, setShowModal, initPost, setPosts, setPage, setHasMore, setIsLoading, setError, setSelectedPost, setCommentReplying, setCommentLiked, setCommentLikedCount, setIsSubmittingReply, setReplyText, setRepliesOpen, setIsCommentLiked, setLocalCommentReplies } = feedSlice.actions;
+export const { setShowComments, setCommentText, setIsCommenting, toggleLike, toggleComments, setLiked, setLikeCount, setHeartAnim, setShowModal, initPost, setPosts, setPage, setHasMore, setIsLoading, setError, setSelectedPost, setCommentReplying, setCommentLiked, setCommentLikedCount, setIsSubmittingReply, setReplyText, setRepliesOpen, setIsCommentLiked, setLocalCommentReplies, addPostToTop } = feedSlice.actions;
 export default feedSlice.reducer;
