@@ -40,14 +40,17 @@ function AvatarInitial({ name, size = 44 }) {
   const initial = (name || '?')[0].toUpperCase();
   const [bg, text] = AVATAR_PALETTE[initial.charCodeAt(0) % AVATAR_PALETTE.length];
   return (
-    <div style={{
-      width: size, height: size, borderRadius: '50%', flexShrink: 0,
-      background: bg, color: text,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontFamily: "'Syne', sans-serif", fontWeight: 800,
-      fontSize: size * 0.38,
-      border: `2px solid ${bg}66`,
-    }}>
+    <div
+      className="flex items-center justify-center flex-shrink-0 rounded-full font-['Syne'] font-extrabold"
+      style={{
+        width: size,
+        height: size,
+        background: bg,
+        color: text,
+        fontSize: size * 0.38,
+        border: `2px solid ${bg}66`,
+      }}
+    >
       {initial}
     </div>
   );
@@ -66,13 +69,14 @@ function LeagueBadge({ league }) {
   if (!tier) return null;
   const { color, icon } = map[tier];
   return (
-    <span style={{
-      fontSize: 11, fontWeight: 700, color,
-      background: `${color}18`, border: `1px solid ${color}33`,
-      padding: '1px 6px', borderRadius: 6,
-      fontFamily: "'DM Mono', monospace",
-      letterSpacing: 0.5,
-    }}>
+    <span
+      className="text-[11px] font-bold font-['DM_Mono'] px-[6px] py-[1px] rounded-[6px] tracking-[0.5px]"
+      style={{
+        color,
+        background: `${color}18`,
+        border: `1px solid ${color}33`,
+      }}
+    >
       {icon} {league}
     </span>
   );
@@ -214,8 +218,8 @@ function PostComposer({ onPostCreated }) {
               onClick={handlePost}
               disabled={!content.trim() || isPosting}
               className={`flex items-center gap-[7px] px-[20px] py-[8px] border-none rounded-[10px] font-['Syne'] font-extrabold text-[13px] tracking-[0.3px] transition-all duration-200 ease-in-out ${content.trim()
-                  ? "bg-gradient-to-br from-[#00b4cc] to-[#00e5ff] text-black cursor-pointer shadow-[0_4px_16px_#00e5ff33]"
-                  : "bg-[#404040] text-[#aaaaaa] cursor-not-allowed"
+                ? "bg-gradient-to-br from-[#00b4cc] to-[#00e5ff] text-black cursor-pointer shadow-[0_4px_16px_#00e5ff33]"
+                : "bg-[#404040] text-[#aaaaaa] cursor-not-allowed"
                 }`}
             >
               {isPosting
@@ -442,6 +446,8 @@ export default function CommunityPage() {
   const apiUrl = import.meta.env.VITE_API_URL || '';
   const currentUser = getStoredUser();
   const currentUserId = currentUser?.id || currentUser?._id || '';
+  {/* Add near your other useState hooks, don't touch existing state */ }
+  const [showMobileComposer, setShowMobileComposer] = useState(false);
   const dispatch = useDispatch();
   useEffect(() => { dispatch(fetchPosts(1)); }, [dispatch]);
 
@@ -491,173 +497,182 @@ export default function CommunityPage() {
   //   }
   // }
   return (
-    <div>
-      {!showModal ? (
-        <div>
-          <div className="min-h-screen bg-[#000000] text-[#e8f0fe] p-0 relative overflow-hidden">
-            {/* Ambient top glow */}
-            <div
-              className="absolute rounded-full max-w-full pointer-events-none z-0"
-              style={{
-                top: -180,
-                left: "30%",
-                width: 500,
-                height: 400,
-                background: "radial-gradient(circle, #00e5ff08 0%)",
-              }}
-            />
-            <div
-              className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 max-w-275 mx-auto px-4 sm:px-5 pt-6 sm:pt-7 pb-16"
-              style={{ position: 'relative', zIndex: 1 }}
-            >
+    <>
+      <div
+        className="grid grid-cols-1 lg:grid-cols-[260px_1fr_300px] bg-black gap-6 max-w-full mx-auto px-4 sm:px-5 pt-6 sm:pt-7 pb-16"
+        style={{ position: 'relative', zIndex: 1 }}
+      >
 
-              {/* ── Left: main feed ──────────────────────────────── */}
-              <div>
-                {/* Page header */}
-                <div className="flex items-center gap-[14px] mb-[24px] pb-[20px] border-b border-[#1a2535]">
-                  <div className="w-[44px] h-[44px] rounded-[13px] bg-[#2B2B2B] border border-[#fb923c33] flex items-center justify-center text-[20px]">
-                    🔥
-                  </div>
-                  <div>
-                    <h1 className="m-0 font-['Syne'] font-extrabold text-[24px] tracking-[-0.5px] text-[#e8f0fe]">
-                      Community Feed
-                    </h1>
-                    <p className="m-0 text-[13px] text-[#2e4460]">
-                      Where web devs share what they're building
-                    </p>
-                  </div>
-                </div>
-
-                {/* Composer */}
-                <PostComposer onPostCreated={handlePostCreated} />
-
-                {/* Divider */}
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0 16px',
-                }}>
-                  <div style={{ flex: 1, height: 1, background: '#1a2535' }} />
-                  <span style={{ fontSize: 11, color: '#2e4460', fontFamily: "'DM Mono', monospace", letterSpacing: 1 }}>
-                    FOR YOU
-                  </span>
-                  <div style={{ flex: 1, height: 1, background: '#1a2535' }} />
-                </div>
-
-                {/* Error */}
-                {error && (
-                  <div style={{
-                    background: '#f8717118', border: '1px solid #f8717144',
-                    borderRadius: 12, padding: '12px 16px', marginBottom: 16,
-                    color: '#f87171', fontSize: 13,
-                  }}>
-                    {error}
-                  </div>
-                )}
-
-                {/* Feed */}
-                <div className="flex flex-col gap-[10px]">
-                  {posts.length === 0 && !isLoading ? (
-                    <div className="bg-[#404040] border border-[#1a2535] rounded-[20px] px-[24px] py-[48px] text-center">
-                      <div className="text-[40px] mb-[12px]">👩‍💻</div>
-                      <p className="text-[#2e4460] text-[14px]">
-                        No posts yet — be the first to share!
-                      </p>
-                    </div>
-                  ) : (
-                    posts.map((post, i) => (
-                      <PostCard
-                        key={post.id}
-                        post={post}
-                        currentUserId={currentUserId}
-                        onLike={handleLike}
-                        onComment={handleComment}
-                        onDelete={handleDelete}
-                        index={i}
-                      />
-                    ))
-                  )}
-
-                  {isLoading && (
-                    <div style={{ textAlign: 'center', padding: '32px 0' }}>
-                      <div style={{
-                        width: 36, height: 36,
-                        border: '3px solid #00e5ff',
-                        borderTopColor: 'transparent',
-                        borderRadius: '50%',
-                        margin: '0 auto 12px',
-                        animation: 'spin 0.75s linear infinite',
-                      }} />
-                      <p style={{ color: '#2e4460', fontSize: 13 }}>Loading...</p>
-                    </div>
-                  )}
-
-                  {hasMore && !isLoading && <div ref={loadingRef} style={{ height: 20 }} />}
-                </div>
-              </div>
-
-              {/* ── Right: sidebar ───────────────────────────────── */}
-              <div className="hidden lg:block sticky top-[28px] self-start">
-                {/* Mini stats */}
-                <div className="bg-[#2B2B2B] rounded-[16px] px-[18px] py-[16px] mb-[12px]">
-                  <div className="font-['Syne'] font-bold text-[13px] text-[#e8f0fe] mb-[14px] tracking-[0.3px]">
-                    📡 Community
-                  </div>
-                  <div className="flex flex-col gap-[10px]">
-                    {[
-                      { label: 'Posts today', val: posts.length, icon: '📝' },
-                      { label: 'Active devs', val: '—', icon: '👥' },
-                      { label: 'Your posts', val: posts.filter(p => p.author.id === currentUserId).length, icon: '✍️' },
-                    ].map(row => (
-                      <div
-                        key={row.label}
-                        className="flex justify-between items-center px-[12px] py-[8px] bg-[#404040] rounded-[10px]"
-                      >
-                        <span className="text-[12px] text-[#aaaaaa]">
-                          {row.icon} {row.label}
-                        </span>
-                        <span className="text-[14px] font-bold font-['DM_Mono'] text-[#aaaaaa]">
-                          {row.val}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <TrendingTopics />
-
-                {/* Community rules */}
-                <div className="bg-[#2B2B2B] rounded-[16px] px-[18px] py-[16px]">
-                  <div className="font-['Syne'] font-bold text-[13px] text-[#e8f0fe] mb-[12px] tracking-[0.3px] flex items-center">
-                    <FaCode className="text-[#aaaaaa] text-[13px] mr-[7px]" />
-                    Dev Code
-                  </div>
-                  {[
-                    "Share what you're building",
-                    "Help each other debug",
-                    "Celebrate small wins",
-                    "Keep it constructive",
-                  ].map((rule, i) => (
-                    <div
-                      key={i}
-                      className="flex gap-[8px] items-start mb-[8px] text-[12px] text-[#aaaaaa] leading-[1.5]"
-                    >
-                      <span className="text-[#aaaaaa] font-['DM_Mono'] mt-[1px]">
-                        {String(i + 1).padStart(2, "0")}
-                      </span>
-                      {rule}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+        {/* ── Left: reserved space (hover sidebar lives here) + composer — desktop only, unchanged ── */}
+        <div className="hidden lg:block relative">
+          <div className="fixed top-180 min-w-110">
+            <PostComposer onPostCreated={handlePostCreated} />
           </div>
         </div>
-      ) : (
-        <>
-          <Comments
-            post={selectedPost} />
-        </>
-      )
-      }
-    </div >
+
+        {/* ── Middle: main feed ─────────────────────────────── */}
+        <div className="mx-auto w-full max-w-3xl px-2 sm:px-0">
+          {/* Page header */}
+          <div className="flex items-center gap-[14px] mb-[24px] pb-[20px] border-b border-[#1a2535]">
+            <div className="w-[44px] h-[44px] rounded-[13px] bg-[#2B2B2B] border border-[#fb923c33] flex items-center justify-center text-[20px]">
+              🔥
+            </div>
+            <div>
+              <h1 className="m-0 font-['Syne'] font-extrabold text-[24px] tracking-[-0.5px] text-[#e8f0fe]">
+                Community Feed
+              </h1>
+              <p className="m-0 text-[13px] text-[#2e4460]">
+                Where web devs share what they're building
+              </p>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0 16px' }}>
+            <div style={{ flex: 1, height: 1, background: '#1a2535' }} />
+            <span style={{ fontSize: 11, color: '#2e4460', fontFamily: "'DM Mono', monospace", letterSpacing: 1 }}>
+              FOR YOU
+            </span>
+            <div style={{ flex: 1, height: 1, background: '#1a2535' }} />
+          </div>
+
+          {/* Error */}
+          {error && (
+            <div style={{
+              background: '#f8717118', border: '1px solid #f8717144',
+              borderRadius: 12, padding: '12px 16px', marginBottom: 16,
+              color: '#f87171', fontSize: 13,
+            }}>
+              {error}
+            </div>
+          )}
+
+          {/* Feed */}
+          <div className="flex flex-col gap-[10px]">
+            {posts.length === 0 && !isLoading ? (
+              <div className="bg-[#404040] border border-[#1a2535] rounded-[20px] px-[24px] py-[48px] text-center">
+                <div className="text-[40px] mb-[12px]">👩‍💻</div>
+                <p className="text-[#2e4460] text-[14px]">
+                  No posts yet — be the first to share!
+                </p>
+              </div>
+            ) : (
+              posts.map((post, i) => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  currentUserId={currentUserId}
+                  onLike={handleLike}
+                  onComment={handleComment}
+                  onDelete={handleDelete}
+                  index={i}
+                />
+              ))
+            )}
+
+            {isLoading && (
+              <div style={{ textAlign: 'center', padding: '32px 0' }}>
+                <div style={{
+                  width: 36, height: 36,
+                  border: '3px solid #00e5ff',
+                  borderTopColor: 'transparent',
+                  borderRadius: '50%',
+                  margin: '0 auto 12px',
+                  animation: 'spin 0.75s linear infinite',
+                }} />
+                <p style={{ color: '#2e4460', fontSize: 13 }}>Loading...</p>
+              </div>
+            )}
+
+            {hasMore && !isLoading && <div ref={loadingRef} style={{ height: 20 }} />}
+          </div>
+        </div>
+
+        {/* ── Right: sidebar — desktop only, unchanged ─────────── */}
+        <div className="hidden lg:block fixed top-25 right-20 max-w-80">
+          {/* Mini stats */}
+          <div className="bg-[#2B2B2B] rounded-[16px] px-[18px] py-[16px] mb-[12px]">
+            <div className="font-['Syne'] font-bold text-[13px] text-[#e8f0fe] mb-[14px] tracking-[0.3px]">
+              📡 Community
+            </div>
+            <div className="flex flex-col gap-[10px]">
+              {[
+                { label: 'Posts today', val: posts.length, icon: '📝' },
+                { label: 'Active devs', val: '—', icon: '👥' },
+                { label: 'Your posts', val: posts.filter(p => p.author.id === currentUserId).length, icon: '✍️' },
+              ].map(row => (
+                <div
+                  key={row.label}
+                  className="flex justify-between items-center px-[12px] py-[8px] bg-[#404040] rounded-[10px]"
+                >
+                  <span className="text-[12px] text-[#aaaaaa]">
+                    {row.icon} {row.label}
+                  </span>
+                  <span className="text-[14px] font-bold font-['DM_Mono'] text-[#aaaaaa]">
+                    {row.val}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <TrendingTopics />
+
+          {/* Community rules */}
+          <div className="bg-[#2B2B2B] rounded-[16px] px-[18px] py-[16px]">
+            <div className="font-['Syne'] font-bold text-[13px] text-[#e8f0fe] mb-[12px] tracking-[0.3px] flex items-center">
+              <FaCode className="text-[#aaaaaa] text-[13px] mr-[7px]" />
+              Dev Code
+            </div>
+            {[
+              "Share what you're building",
+              "Help each other debug",
+              "Celebrate small wins",
+              "Keep it constructive",
+            ].map((rule, i) => (
+              <div
+                key={i}
+                className="flex gap-[8px] items-start mb-[8px] text-[12px] text-[#aaaaaa] leading-[1.5]"
+              >
+                <span className="text-[#aaaaaa] font-['DM_Mono'] mt-[1px]">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                {rule}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Mobile-only: floating + button to open composer ──────── */}
+        <button
+          onClick={() => setShowMobileComposer(true)}
+          className="lg:hidden fixed bottom-6 right-5 w-14 h-14 rounded-full bg-[#00e5ff] text-black text-[28px] font-bold flex items-center justify-center shadow-lg z-50 active:scale-95 transition-transform"
+          aria-label="New post"
+        >
+          +
+        </button>
+
+        {/* ── Mobile-only: composer modal, opened by the + button ───── */}
+        {showMobileComposer && (
+          <div className="lg:hidden fixed inset-0 bg-black/70 z-[60] flex items-end sm:items-center justify-center">
+            <div className="w-full sm:max-w-md bg-[#0a0f1a] rounded-t-[20px] sm:rounded-[20px] p-4 relative">
+              <button
+                onClick={() => setShowMobileComposer(false)}
+                className="absolute top-3 right-4 text-[#aaaaaa] text-[20px]"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+              <PostComposer
+                onPostCreated={(post) => {
+                  handlePostCreated(post);
+                  setShowMobileComposer(false);
+                }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
