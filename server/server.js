@@ -2,7 +2,7 @@ require('dotenv').config();
 const app = require('./src/app');
 const mongoose = require('mongoose');
 const connectDB = require('./src/db/db');
-// const connectDrive = require('./src/db/googlestorage')
+const connectDrive = require('./src/db/googlestorage')
 const { startMonthlyRewardJob, startWeeklyChallengeReminder } = require('./src/jobs/scheduler');
 const { reconcileUserLeagues } = require('./src/jobs/reconciliation');
 const { ensureDefaultBadges } = require('./src/controllers/badge.controller');

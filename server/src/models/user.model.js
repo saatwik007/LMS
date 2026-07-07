@@ -37,7 +37,8 @@ const userSchema = new mongoose.Schema(
   {
     username: { type: String, required: true, unique: true, minlength: 3 },
     email: { type: String, required: true, unique: true },
-    password: { type: String },
+    password: { type: String, required: function () { return this.authProvider === 'local'; } },
+    authProvider: { type: String, enum: ['local', 'google'], default: 'local' },
     googleId: { type: String, sparse: true },
     profilePic: { type: String, default: "" },
     totalXp: { type: Number, default: 0, min: 0, index: true },
