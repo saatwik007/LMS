@@ -142,7 +142,6 @@ async function getFeed(req, res) {
       .lean();
 
     const currentUserId = String(req.user.id);
-     console.log('comment:', posts[0]?.comments.author);
 
     const formattedPosts = posts.map(post => ({
       id: String(post._id),
