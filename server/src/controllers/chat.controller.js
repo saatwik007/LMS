@@ -14,7 +14,7 @@ exports.getConversation = async (req, res) => {
         const recipientObjId = new mongoose.Types.ObjectId(recipientId);
 
         const allMessages = await Message.find({}).limit(5).lean();
-        console.log('All messages in DB:', JSON.stringify(allMessages, null, 2));
+        // console.log('All messages in DB:', JSON.stringify(allMessages, null, 2));
 
         const messages = await Message.find({
             $or: [
