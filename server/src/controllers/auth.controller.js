@@ -513,5 +513,5 @@ module.exports = {
   claimReward,
   forgotPassword,
   resetPassword,
-  logoutUser
+  logoutUser,
 };
