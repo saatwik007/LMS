@@ -33,12 +33,21 @@ router.get('/oauth/status', (req, res) => {
 // Google OAuth — only register if strategy is available
 if (isGoogleEnabled) {
   router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+  router.get("/google", (req, res, next) => {
+  console.log("[AUTH] /google hit");
+  console.log("[AUTH] sessionID:", req.sessionID);
+  console.log("[AUTH] callback expected:", `${process.env.BACKEND_URL}/api/auth/google/callback`);
+  next();
+}, passport.authenticate("google", { scope: ["profile", "email"] }));
+
+
 
   router.get('/google/callback',
-    passport.authenticate('google', { session: false, failureRedirect: (process.env.CLIENT_URL || 'http://localhost:5173') + '/login?error=oauth_failed' }),
+    passport.authenticate('google', { session: false, failureRedirect: (process.env.CLIENT_URL || 'https://lms-peach-pi.vercel.app') + '/login?error=oauth_failed' }),
     (req, res) => {
       const token = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
       const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+      console.log(`[AUTH] Google OAuth successful for user ${req.user._id}. Redirecting to ${clientUrl}/oauth/callback?token=${token}`);
       res.redirect(`${clientUrl}/oauth/callback?token=${token}`);
     }
   );
