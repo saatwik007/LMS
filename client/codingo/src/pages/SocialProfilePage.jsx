@@ -1,0 +1,644 @@
+import React, { useEffect, useRef, useState } from "react";
+import gsap from "gsap";
+import { ImageCard, TextCard } from "../components/SocialProfile/SocialImageCard";
+import { ArticleCard, QuoteCard } from "../components/SocialProfile/SocialQouteArticleCard";
+import { apiUrl } from "../utilites/DashboardHelper";
+import { getAuthHeaders } from "../utilites/communityHelper";
+import { useParams } from "react-router-dom";
+import axios from "axios";
+import { FaCamera, FaEdit, FaHeart, FaSave, FaTimes } from "react-icons/fa";
+
+const TABS = ["Your Posts"];
+
+// ---------------------------------------------------------------
+// Sample data — swap these out for real API data later.
+// ---------------------------------------------------------------
+
+const PROFILE = {
+    name: "ALEXANDER COLE",
+    title: "Lead Product Designer",
+    handle: "@AlexColeDesign",
+    bio: "Crafting pixels into experiences. Minimalist advocate. // portfolio: alexcole.design",
+    posts: 210,
+    followers: "6.8K",
+    following: 750,
+};
+
+const POSTS_DATA = [
+    {
+        id: "p1",
+        type: "image",
+        likes: 522,
+        comments: 88,
+    },
+    {
+        id: "p2",
+        type: "text",
+        title: "UX Case Study: Dark Mode Benefits",
+        body: "Crafting pixels into experiences. Minimalist advocate.  // portfolio: alexcole.design...",
+    },
+    {
+        id: "p3",
+        type: "quote",
+        quote: "Miniminalist design in quote, minimialist design maths.",
+        author: "- Minii Design",
+    },
+    {
+        id: "p4",
+        type: "article",
+        title: "UX Case Study: Dark Mode - External Article",
+        body: "The popularitor of designs to thar dark Mode benefram at an internal...",
+        author: "alexColeDesign",
+    },
+];
+
+const SHOWCASE_DATA = [
+    {
+        id: "s1",
+        type: "text",
+        title: "Fintech Dashboard Redesign",
+        body: "A ground-up redesign of a legacy fintech dashboard, focused on data density without sacrificing clarity...",
+    },
+    {
+        id: "s2",
+        type: "image",
+        likes: 341,
+        comments: 42,
+    },
+    {
+        id: "s3",
+        type: "article",
+        title: "Design Systems at Scale",
+        body: "How we built a token-driven design system used across 12 product teams...",
+        author: "alexColeDesign",
+    },
+    {
+        id: "s4",
+        type: "quote",
+        quote: "Systems age. Principles don't.",
+        author: "- A. Cole",
+    },
+];
+
+const LINKS_DATA = [
+    { id: "l1", label: "Portfolio", url: "alexcole.design" },
+    { id: "l2", label: "Dribbble", url: "dribbble.com/alexcole" },
+    { id: "l3", label: "Behance", url: "behance.net/alexcole" },
+    { id: "l4", label: "Twitter / X", url: "x.com/AlexColeDesign" },
+];
+
+const DATA_BY_TAB = {
+    Posts: POSTS_DATA,
+    "Project Showcases": SHOWCASE_DATA,
+    Links: LINKS_DATA,
+};
+
+// ---------------------------------------------------------------
+// Small presentational pieces
+// ---------------------------------------------------------------
+
+
+function LinkRow({ label, url }) {
+    return (
+        <div className="col-span-1 flex h-[80px] items-center justify-between rounded-2xl border border-white/10 bg-neutral-900/60 px-6">
+            <span className="text-base font-semibold text-white">{label}</span>
+            <span className="text-sm text-neutral-400">{url}</span>
+        </div>
+    );
+}
+
+function renderCard(item) {
+    switch (item.type) {
+        case "image":
+            return <ImageCard key={item.id} likes={item.likes} comments={item.comments} />;
+        case "quote":
+            return <QuoteCard key={item.id} quote={item.quote} author={item.author} />;
+        case "article":
+            return <ArticleCard key={item.id} title={item.title} body={item.body} author={item.author} />;
+        case "text":
+            return <TextCard key={item.id} title={item.title} body={item.body} />;
+        default:
+            return null;
+    }
+}
+
+// ---------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------
+
+export default function SocialProfileSection() {
+    const [activeTab, setActiveTab] = useState("Your Posts");
+    const { userId } = useParams();
+    const storedUser = getStoredUser();
+    const isOwnProfile = !userId || userId === storedUser?.id;
+    const [currentUser, setCurrentUser] = useState(isOwnProfile ? storedUser : null);
+    const [isEditingUsername, setIsEditingUsername] = useState(false);
+    const [editedUsername, setEditedUsername] = useState('');
+    const [isEditingBio, setIsEditingBio] = useState(false);
+    const [bio, setBio] = useState('');
+    const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const fileInputRef = useRef(null);
+    const [userPosts, setUserPosts] = useState([]);
+    const [postsLoading, setPostsLoading] = useState(true);
+
+    const rootRef = useRef(null);
+    const headerRef = useRef(null);
+    const avatarRef = useRef(null);
+    const infoRef = useRef(null);
+    const tabsRef = useRef(null);
+    const contentRef = useRef(null);
+    const firstRender = useRef(true);
+
+    useEffect(() => {
+        const fetchUserPosts = async () => {
+            const id = userId || storedUser?.id;
+            if (!id) return;
+
+            setPostsLoading(true);
+            try {
+                const res = await axios.get(
+                    `${apiUrl}/api/community/users/${id}/posts?page=1&limit=20`,
+                    {
+                        withCredentials: true,
+                        headers: getAuthHeaders()
+                    }
+                );
+                setUserPosts(res.data.posts || []);
+            } catch (err) {
+                console.error('Failed to fetch user posts:', err);
+                setError('Failed to load user posts.');
+            } finally {
+                setPostsLoading(false);
+            }
+        };
+
+        fetchUserPosts();
+    }, [userId, storedUser?.id]);
+
+    // const imageUrl = post.image?.startsWith('/')
+    //     ? `${apiUrl}${post.image}`
+    //     : post.image;
+
+    const getDisplayImageUrl = (imageUrl) => {
+        if (!imageUrl) return '';
+        return imageUrl.startsWith('/') ? `${apiUrl}${imageUrl}` : imageUrl;
+    };
+
+
+    useEffect(() => {
+        fetchUserProfile();
+    }, [userId]);
+
+
+    function getStoredUser() {
+        try {
+            const raw = localStorage.getItem('user');
+            return raw ? JSON.parse(raw) : null;
+        } catch {
+            return null;
+        }
+    }
+
+    async function fetchUserProfile() {
+        try {
+            const url = isOwnProfile
+                ? `${apiUrl}/api/auth/user/me`
+                : `${apiUrl}/api/auth/user/${userId}/public`;
+
+            const response = await axios.get(url, {
+                withCredentials: true,
+                headers: getAuthHeaders()
+            });
+
+            if (response.data?.user) {
+                const userData = response.data.user;
+                setCurrentUser(userData);
+                setBio(userData.bio || '');
+                setEditedUsername(userData.username || '');
+
+                if (isOwnProfile) {
+                    localStorage.setItem('user', JSON.stringify(userData));
+                }
+            }
+            console.log('Fetched user profile:', response.data);
+        } catch (err) {
+            console.error('Failed to fetch user profile:', err);
+            setError('Failed to load profile.');
+            setIsLoading(false);
+        }
+    }
+
+    const handleAvatarUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (file.size > 3 * 1024 * 1024) {
+            setError('Image must be less than 3MB');
+            return;
+        }
+
+        setIsUploadingAvatar(true);
+        setError(null);
+
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const response = await axios.patch(
+                `${apiUrl}/api/auth/user/profile/image`,
+                formData,
+                {
+                    withCredentials: true,
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'multipart/form-data'
+                    }
+                }
+            );
+
+            if (response.data?.user) {
+                setCurrentUser(response.data.user);
+                localStorage.setItem('user', JSON.stringify(response.data.user));
+                window.dispatchEvent(new Event('auth:user-updated'));
+            }
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to upload avatar');
+        } finally {
+            setIsUploadingAvatar(false);
+        }
+    };
+
+    const handleSaveBio = async () => {
+        try {
+            const response = await axios.patch(
+                `${apiUrl}/api/auth/user/profile`,
+                { bio },
+                {
+                    withCredentials: true,
+                    headers: getAuthHeaders()
+                }
+            );
+
+            if (response.data?.user) {
+                setCurrentUser(response.data.user);
+                localStorage.setItem('user', JSON.stringify(response.data.user));
+            }
+            setIsEditingBio(false);
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to update bio');
+        }
+    };
+
+    const handleSaveUsername = async () => {
+        const trimmed = editedUsername.trim();
+        if (!trimmed || trimmed === currentUser?.username) {
+            setIsEditingUsername(false);
+            return;
+        }
+
+        try {
+            setError(null);
+            const response = await axios.patch(
+                `${apiUrl}/api/auth/user/profile`,
+                { username: trimmed },
+                {
+                    withCredentials: true,
+                    headers: getAuthHeaders()
+                }
+            );
+
+            if (response.data?.user) {
+                setCurrentUser(response.data.user);
+                setEditedUsername(response.data.user.username);
+                localStorage.setItem('user', JSON.stringify(response.data.user));
+                window.dispatchEvent(new Event('auth:user-updated'));
+            }
+            setIsEditingUsername(false);
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to update username');
+        }
+    };
+
+    // Page-open animation
+    useEffect(() => {
+        const ctx = gsap.context(() => {
+            const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+
+            tl.fromTo(
+                avatarRef.current,
+                { opacity: 0, scale: 0.85 },
+                { opacity: 1, scale: 1, duration: 0.7 }
+            )
+                .fromTo(
+                    infoRef.current.children,
+                    { opacity: 0, y: 16 },
+                    { opacity: 1, y: 0, duration: 0.5, stagger: 0.08 },
+                    "-=0.45"
+                )
+                .fromTo(
+                    tabsRef.current,
+                    { opacity: 0, y: 12 },
+                    { opacity: 1, y: 0, duration: 0.4 },
+                    "-=0.2"
+                )
+                .fromTo(
+                    contentRef.current.children,
+                    { opacity: 0, y: 24 },
+                    { opacity: 1, y: 0, duration: 0.5, stagger: 0.1 },
+                    "-=0.15"
+                );
+        }, rootRef);
+
+        return () => ctx.revert();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Tab-switch animation
+    useEffect(() => {
+        if (firstRender.current) {
+            firstRender.current = false;
+            return;
+        }
+        if (!contentRef.current) return;
+
+        gsap.fromTo(
+            contentRef.current.children,
+            { opacity: 0, y: 18 },
+            {
+                opacity: 1,
+                y: 0,
+                duration: 0.45,
+                stagger: 0.07,
+                ease: "power2.out",
+            }
+        );
+    }, [activeTab]);
+
+    const handleTabClick = (tab) => {
+        if (tab === activeTab) return;
+
+        const underline = tabsRef.current.querySelector(`[data-tab="${activeTab}"] span.underline-bar`);
+
+        gsap.to(contentRef.current, {
+            opacity: 0,
+            y: 10,
+            duration: 0.18,
+            ease: "power2.in",
+            onComplete: () => {
+                setActiveTab(tab);
+                gsap.set(contentRef.current, { opacity: 1, y: 0 });
+            },
+        });
+    };
+
+    const items = DATA_BY_TAB[activeTab];
+    const isLinks = activeTab === "Links";
+
+    return (
+        <div
+            ref={rootRef}
+            className="relative min-h-screen w-full overflow-hidden bg-black text-white"
+        >
+            {/* ---------- Background: dark navy silk texture fading to black ---------- */}
+            <div className="pointer-events-none absolute inset-0">
+                <div className="absolute inset-x-0 top-0 h-[420px] bg-gradient-to-b from-[#25406b] via-[#16233d] to-transparent" />
+                <div className="absolute -left-20 top-[-100px] h-[500px] w-[700px] rounded-full bg-[#2f5590]/40 blur-[110px]" />
+                <div className="absolute right-[-150px] top-[-60px] h-[450px] w-[600px] rounded-full bg-[#1c3a66]/50 blur-[120px]" />
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/60 to-black" />
+            </div>
+
+            <div className="relative z-10 mx-auto max-w-6xl px-10 pb-20 pt-16">
+                {/* ---------------- Header ---------------- */}
+                <div ref={headerRef} className="flex items-start justify-between">
+                    <div className="flex items-start gap-8">
+                        <div
+                            ref={avatarRef}
+                            className="group relative flex h-[190px] w-[190px] shrink-0 items-center justify-center overflow-hidden cursor-pointer rounded-full border border-white/10 bg-neutral-200"
+                        >
+                            {isOwnProfile && (
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp,image/jpg"
+                                    onChange={handleAvatarUpload}
+                                    className="hidden"
+                                />
+                            )}
+
+                            {/* Profile Pic */}
+                            <img
+                                src={currentUser.profilePic}
+                                alt={currentUser.username}
+                                className="cursor-pointer w-full h-full object-cover rounded-full transition-opacity duration-200 group-hover:opacity-50"
+                            />
+
+                            {/* Overlay Camera Icon */}
+                            {isOwnProfile && (
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={isUploadingAvatar}
+                                    className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                                >
+                                    {isUploadingAvatar ? (
+                                        <div className="animate-spin w-6 h-6 rounded-full"></div>
+                                    ) : (
+                                        <FaCamera className="text-2xl text-white transform transition-transform duration-200 group-hover:scale-110" />
+                                    )}
+                                </button>
+                            )}
+                        </div>
+
+
+                        <div ref={infoRef} className="pt-2">
+
+                            {/* <h1 className="text-5xl font-extrabold tracking-tight">{currentUser.username}</h1> */}
+                            {isOwnProfile && isEditingUsername ? (
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="text"
+                                        value={editedUsername}
+                                        onChange={(e) => setEditedUsername(e.target.value)}
+                                        className="bg-transparent text-white text-3xl font-bold outline-0"
+                                        maxLength={30}
+                                        autoFocus
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') handleSaveUsername();
+                                            if (e.key === 'Escape') {
+                                                setEditedUsername(currentUser?.username || '');
+                                                setIsEditingUsername(false);
+                                            }
+                                        }}
+                                    />
+                                    <button type="button" onClick={handleSaveUsername} className="text-cyan-400 hover:text-cyan-300">
+                                        <FaSave />
+                                    </button>
+                                    <button type="button" onClick={() => { setEditedUsername(currentUser?.username || ''); setIsEditingUsername(false); }} className="text-gray-400 hover:text-gray-300">
+                                        <FaTimes />
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    {isOwnProfile && (
+                                        <h1 onClick={() => setIsEditingUsername(true)} className="text-3xl font-bold">{currentUser?.username || 'Learner'}</h1>
+                                        // <button type="button" onClick={() => setIsEditingUsername(true)} className="text-cyan-400 hover:text-cyan-300">
+                                        //     <FaEdit className="text-sm" />
+                                        // </button>
+                                    )}
+                                </>
+                            )}
+
+                            <p className="mt-2 text-xl text-neutral-300">{PROFILE.title}</p>
+                            <p className="mt-1 text-neutral-500">{PROFILE.handle}</p>
+
+                            {isOwnProfile && isEditingBio ? (
+                                <div>
+                                    <textarea
+                                        value={bio}
+                                        onChange={(e) => setBio(e.target.value)}
+                                        placeholder="Write something about yourself..."
+                                        className="w-full bg-transparent text-white rounded-lg outline-none"
+                                        rows="3"
+                                        maxLength="200"
+                                    />
+                                    <div className="flex items-center justify-between mt-2">
+                                        <span className="text-xs text-gray-500">{bio.length}/200</span>
+                                        <div className="flex gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setBio(currentUser?.bio || '');
+                                                    setIsEditingBio(false);
+                                                }}
+                                                className="px-3 py-1 bg-gray-600 hover:bg-gray-700 rounded-lg text-sm font-semibold transition"
+                                            >
+                                                <FaTimes className="inline mr-1" /> Cancel
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={handleSaveBio}
+                                                className="px-3 py-1 bg-cyan-600 hover:bg-cyan-700 rounded-lg text-sm font-semibold transition"
+                                            >
+                                                <FaSave className="inline mr-1" /> Save
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex items-start justify-between">
+
+                                    {isOwnProfile && (
+                                        <p onClick={() => setIsEditingBio(true)} className="text-gray-300 flex-1">
+                                            {bio || (isOwnProfile ? 'No bio yet. Click edit to add one.' : 'No bio yet.')}
+                                        </p>
+                                        // <button
+                                        //     type="button"
+                                        //     onClick={() => setIsEditingBio(true)}
+                                        //     className="text-cyan-400 hover:text-cyan-300 ml-4"
+                                        // >
+                                        //     <FaEdit />
+                                        // </button>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="mt-5 flex items-center gap-3 text-neutral-400">
+                                <span>
+                                    <span className="font-bold text-white">{PROFILE.posts}</span> Posts
+                                </span>
+                                <span className="text-neutral-600">|</span>
+                                <span>
+                                    <span className="font-bold text-white">{PROFILE.followers}</span> Followers
+                                </span>
+                                <span className="text-neutral-600">|</span>
+                                <span>
+                                    <span className="font-bold text-white">{PROFILE.following}</span> Following
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ---------------- Edit Profile Message Buttons ---------------- */}
+                    {/* <div className="flex shrink-0 items-center gap-3 pt-2">
+                        <button className="rounded-xl border border-white/10 bg-neutral-700/70 px-6 py-3 text-sm font-semibold text-white transition hover:bg-neutral-600/70">
+                            Edit Profile
+                        </button>
+                        <button className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-neutral-800/70 transition hover:bg-neutral-700/70">
+                            <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+                                <path d="M12 3C6.5 3 2 6.9 2 11.8c0 2.7 1.4 5.1 3.6 6.7L5 22l3.9-2.1c1 .3 2 .4 3.1.4 5.5 0 10-3.9 10-8.7S17.5 3 12 3z" />
+                            </svg>
+                        </button>
+                    </div> */}
+
+                </div>
+
+                {/* ---------------- Tabs ---------------- */}
+                <div
+                    ref={tabsRef}
+                    className="mt-10 flex items-center justify-center gap-10 border-b border-white/10 pb-4"
+                >
+                    {TABS.map((tab) => {
+                        const active = tab === activeTab;
+                        return (
+                            <button
+                                key={tab}
+                                data-tab={tab}
+                                onClick={() => handleTabClick(tab)}
+                                className={`relative pb-2 text-lg font-medium transition-colors ${active ? "font-bold text-white" : "text-neutral-500 hover:text-neutral-300"
+                                    }`}
+                            >
+                                [ {tab} ]
+                                {active && (
+                                    <span className="underline-bar absolute -bottom-[17px] left-0 h-[2px] w-full bg-white" />
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* ---------------- Content grid ---------------- */}
+                <div ref={contentRef} className="mt-10">
+                    {/* <h2 className="text-2xl font-bold mb-6 text-center">Your Posts</h2> */}
+
+                    {postsLoading ? (
+                        <div className="text-center text-gray-400">Loading posts...</div>
+                    ) : userPosts.length === 0 ? (
+                        <div className="text-center text-gray-400">No posts yet.</div>
+                    ) : (
+                        <div className="grid grid-cols-3 gap-6 max-w-6xl mx-auto">
+                            {userPosts.map((post) => {
+                                const imageUrl = getDisplayImageUrl(post.image);
+
+                                return (
+                                    <div
+                                        key={post.id}
+                                        className="rounded-2xl border border-white/10 bg-[#2B2B2B] p-4 transition-transform duration-300 hover:scale-105 hover:shadow-lg"
+                                    >
+                                        <div className="mb-3 text-sm text-gray-400">
+                                            {new Date(post.createdAt).toLocaleDateString()}
+                                        </div>
+                                        <div className="text-white mb-3">{post.content}</div>
+                                        {post.image && (
+                                            <div className="overflow-hidden rounded-xl aspect-square">
+                                                <img src={imageUrl} alt="" className="w-full h-full object-cover" />
+                                            </div>
+                                        )}
+                                        <div className="mt-3 flex items-center justify-between text-sm text-gray-400">
+                                            <div>
+                                            <span className="mr-5 flex flex-col justify-center"><FaHeart /></span>
+                                            <span>{post.likesCount} likes</span>
+                                            </div>
+                                            <span>{post.commentsCount} comments</span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}

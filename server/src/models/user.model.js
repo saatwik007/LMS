@@ -65,6 +65,10 @@ const userSchema = new mongoose.Schema(
       default: [],
     },
     bio: { type: String, default: "", maxlength: 200 },
+    posts: {
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Post" }],
+      default: [],
+    },
     rewards: { type: [rewardSchema], default: [] },
     resetToken: { type: String, default: null, index: true },
     resetTokenExpiry: { type: Date, default: null },
