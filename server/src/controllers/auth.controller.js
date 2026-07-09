@@ -8,6 +8,7 @@ const mongoose = require('mongoose');
 const crypto = require('crypto');
 const { checkAndAwardBadges } = require('./badge.controller');
 const { sendOtpEmail } = require('../utils/mailer');
+const post = require('../models/post.model');
 
 const PROFILE_PICS_DIR = path.join(__dirname, '..', '..', 'uploads', 'profile-pics');
 const MAX_PROCESSED_IMAGE_BYTES = 450 * 1024;
@@ -58,7 +59,7 @@ function buildUserPayload(user) {
     notifications: (user.notifications || []).slice(-10).reverse(),
     friends: user.friends || [],
     friendRequests: user.friendRequests || [],
-    rewards: user.rewards || []
+    rewards: user.rewards || [],
   };
 }
 
@@ -243,7 +244,7 @@ async function uploadProfileImage(req, res) {
     );
 
     if (previousUploadedFile && previousUploadedFile !== absoluteFilePath) {
-      await fs.unlink(previousUploadedFile).catch(() => {});
+      await fs.unlink(previousUploadedFile).catch(() => { });
     }
 
     return res.status(200).json({

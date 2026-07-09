@@ -26,6 +26,7 @@ import AppSidebar from './components/Layout/AppSidebar.jsx';
 import LevelPage from './pages/LevelPage.jsx';
 import Messages from './pages/messages.jsx';
 import Comments from './pages/CommentsModal.jsx';
+import SocialProfileSection from './pages/SocialProfilePage.jsx';
 
 function ProtectedRoute({ children }) {
   const [isChecking, setIsChecking] = useState(true);
@@ -191,6 +192,14 @@ function AppShell() {
             element={(
               <ProtectedRoute>
                 <Messages />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/socialprofile"
+            element={(
+              <ProtectedRoute>
+                <SocialProfileSection />
               </ProtectedRoute>
             )}
           />

@@ -20,8 +20,8 @@ import {
 import { Navigate, useNavigate } from 'react-router-dom';
 // import Comments from './LandinPageExperimental';
 import { useDispatch, useSelector } from 'react-redux';
-import { setContent, setError, setFocused, setImagePreview, setIsPosting} from '../redux/slices/postSlice';
-import { setHeartAnim, setLikeCount, setLiked, setPage, setPosts, setSelectedPost, setShowModal,addPostToTop } from '../redux/slices/feedSlice';
+import { setContent, setError, setFocused, setImagePreview, setIsPosting } from '../redux/slices/postSlice';
+import { setHeartAnim, setLikeCount, setLiked, setPage, setPosts, setSelectedPost, setShowModal, addPostToTop } from '../redux/slices/feedSlice';
 import { fetchPosts, getAuthHeaders, handleLike, getStoredUser, formatTimeAgo } from '../utilites/communityHelper';
 import Comments from './CommentsModal';
 import { useState } from 'react';
@@ -131,12 +131,12 @@ function PostComposer({ onPostCreated }) {
         withCredentials: true,
         headers: { ...getAuthHeaders() },
       });
-          dispatch(setContent(''));
-    dispatch(setFocused(false));
-    setSelectedImageFile(null);
-    dispatch(setImagePreview(null));
-    if (fileInputRef.current) fileInputRef.current.value = '';
-    if (onPostCreated) onPostCreated(res.data.post);
+      dispatch(setContent(''));
+      dispatch(setFocused(false));
+      setSelectedImageFile(null);
+      dispatch(setImagePreview(null));
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (onPostCreated) onPostCreated(res.data.post);
       // dispatch(setContent('')); dispatch(setFocused(false)); dispatch(setSelectedImageFile(null)); dispatch(setImagePreview(null));
       if (fileInputRef.current) fileInputRef.current.value = '';
       if (onPostCreated) onPostCreated(res.data.post);
@@ -149,7 +149,7 @@ function PostComposer({ onPostCreated }) {
 
   return (
     <div
-      className={`bg-[#2B2B2B] z-10 rounded-[20px] px-[20px] pt-[20px] pb-[16px] mb-[8px] transition-colors duration-200 ease-in-out ${focused ? "border border-[#aaaaaa]" : "border border-[#2B2B2B]"
+      className={`bg-[#2B2B2B] rounded-[20px] px-[20px] pt-[20px] pb-[16px] mb-[8px] transition-colors duration-200 ease-in-out ${focused ? "border border-[#aaaaaa]" : "border border-[#2B2B2B]"
         }`}
     >
       <div className="flex gap-[14px]">
@@ -475,8 +475,8 @@ export default function CommunityPage() {
 
   // const handlePostCreated = (newPost) => dispatch(setPosts(prev => [newPost, ...prev]));
   const handlePostCreated = (newPost) => {
-  dispatch(addPostToTop(newPost));
-};
+    dispatch(addPostToTop(newPost));
+  };
 
   const handleComment = async (postId) => {
     try {
@@ -515,7 +515,7 @@ export default function CommunityPage() {
       >
 
         {/* ── Left: reserved space (hover sidebar lives here) + composer — desktop only, unchanged ── */}
-        <div className="hidden lg:block relative">
+        <div className="hidden lg:block z-10 relative">
           <div className="fixed top-180 min-w-110">
             <PostComposer onPostCreated={handlePostCreated} />
           </div>
@@ -523,37 +523,19 @@ export default function CommunityPage() {
 
         {/* ── Middle: main feed ─────────────────────────────── */}
         <div className="mx-auto w-full max-w-3xl px-2 sm:px-0">
-          {/* Page header */}
-          <div className="flex items-center gap-[14px] mb-[24px] pb-[20px] border-b border-[#1a2535]">
-            <div className="w-[44px] h-[44px] rounded-[13px] bg-[#2B2B2B] border border-[#fb923c33] flex items-center justify-center text-[20px]">
-              🔥
-            </div>
-            <div>
-              <h1 className="m-0 font-['Syne'] font-extrabold text-[24px] tracking-[-0.5px] text-[#e8f0fe]">
-                Community Feed
-              </h1>
-              <p className="m-0 text-[13px] text-[#2e4460]">
-                Where web devs share what they're building
-              </p>
-            </div>
-          </div>
 
           {/* Divider */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0 16px' }}>
-            <div style={{ flex: 1, height: 1, background: '#1a2535' }} />
-            <span style={{ fontSize: 11, color: '#2e4460', fontFamily: "'DM Mono', monospace", letterSpacing: 1 }}>
+          <div className="flex items-center gap-[12px] mb-[16px]">
+            <div className="flex-1 h-[1px] bg-[#6b6b6b]" />
+            <span className="text-[11px] text-[#8b8b8b] font-['DM_Mono'] tracking-[1px]">
               FOR YOU
             </span>
-            <div style={{ flex: 1, height: 1, background: '#1a2535' }} />
+            <div className="flex-1 h-[1px] bg-[#6b6b6b]" />
           </div>
 
           {/* Error */}
           {error && (
-            <div style={{
-              background: '#f8717118', border: '1px solid #f8717144',
-              borderRadius: 12, padding: '12px 16px', marginBottom: 16,
-              color: '#f87171', fontSize: 13,
-            }}>
+            <div className="bg-[#f8717118] border border-[#f8717144] rounded-[12px] px-[16px] py-[12px] mb-[16px] text-[#f87171] text-[13px]">
               {error}
             </div>
           )}

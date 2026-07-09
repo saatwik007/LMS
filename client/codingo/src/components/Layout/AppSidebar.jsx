@@ -6,6 +6,7 @@ import {
   FaFacebookMessenger,
   FaFlagCheckered,
   FaGraduationCap,
+  FaHome,
   FaMedal,
   FaRegStar,
   FaTimes,
@@ -33,9 +34,10 @@ import { setDesktopCollapsed, setMobileMenuOpen } from '../../redux/slices/sideB
 
 const communityNavItems = [
   // { key: 'dashboard', label: 'Dashboard', icon: FaRegStar, to: '/community', match: ['/community'] },
-  { key: 'community', label: 'Community', icon: FaUsers, to: '/community', match: ['/community'] },
+  { key: 'home', label: 'Home', icon: FaHome, to: '/community', match: ['/community'] },
   { key: 'friends', label: 'Friends', icon: FaUserFriends, to: '/friends', match: ['/friends'] },
   { key: 'messages', label: 'Messages', icon: FaFacebookMessenger, to: '/messages', match: ['/messages'] },
+  { key: 'socialprofile', label: 'Social Profile', icon: FaUser, to: '/socialprofile', match: ['/socialprofile'] },
   // { key: 'leaderboards', label: 'Leaderboards', icon: FaTrophy, to: '/leaderboard', match: ['/leaderboard'] },
   // { key: 'profile', label: 'Profile', icon: FaMedal, to: '/profile', match: ['/profile'] },
 ];
@@ -61,8 +63,8 @@ function SidebarItem({ item, isActive, collapsed, onClick, iconOnly = false }) {
       type="button"
       title={item.label}
       onClick={() => onClick(item.to)}
-      className={`w-full rounded-lg transition border text-cyan-300 ${
-        isActive ? 'bg-cyan-600/30 border-cyan-600/50' : 'border-transparent hover:bg-[#243547]'
+      className={`w-full rounded-lg transition border text-[#cdcdcd] ${
+        isActive ? 'bg-[#414141] border-[#414141]' : 'border-transparent hover:bg-[#4f4f4f]'
       } ${
         iconOnly || collapsed
           ? 'h-10 flex items-center justify-center'
@@ -107,11 +109,11 @@ const navItems = dashboardMode === 'community' ? communityNavItems : lmsNavItems
 console.log('Current dashboardMode:', dashboardMode, 'Nav items:', navItems.map(item => item.key));
   return (
     <>
-      <aside className="hidden lg:block shrink-0">
+      <aside className="hidden z-10 lg:block shrink-0">
         <div
         onMouseEnter={() => dispatch(setDesktopCollapsed(false))}
         onMouseLeave={() => dispatch(setDesktopCollapsed(true))}
-          className={`sticky top-14 h-[calc(100vh-3.5rem)] bg-[#1a2332] border-r border-[#2a3a4a] py-4 transition-all duration-200 ${
+          className={`sticky top-14 h-[calc(100vh-3.5rem)] bg-[#2B2B2B] border-r border-[#414141] py-4 transition-all duration-200 ${
             isDesktopCollapsed ? 'w-20 px-2' : 'w-50 px-2'
           }`}
         >
@@ -132,12 +134,12 @@ console.log('Current dashboardMode:', dashboardMode, 'Nav items:', navItems.map(
         </div>
       </aside>
 
-      <aside className="lg:hidden w-14 shrink-0 bg-[#1a2332] border-r border-[#2a3a4a]">
+      <aside className="lg:hidden w-14 shrink-0 bg-[#2B2B2B] border-r border-[#414141]">
         <div className="sticky top-14 h-[calc(100vh-3.5rem)] py-3 px-2 flex flex-col gap-2 items-center">
           <button
             type="button"
             onClick={() => dispatch(setMobileMenuOpen(true))}
-            className="h-10 w-10 rounded-lg text-cyan-300 hover:bg-[#243547] transition grid place-items-center"
+            className="h-10 w-10 rounded-lg text-[#A0A0A0] hover:bg-[#515151] transition grid place-items-center"
             aria-label="Open sidebar menu"
             title="Open menu"
           >
@@ -166,13 +168,13 @@ console.log('Current dashboardMode:', dashboardMode, 'Nav items:', navItems.map(
             aria-label="Close sidebar menu backdrop"
           />
 
-          <div className="absolute left-0 top-0 h-full w-64 bg-[#1a2332] border-r border-[#2a3a4a] p-3 shadow-2xl">
+          <div className="absolute left-0 top-0 h-full w-64 bg-[#2B2B2B] border-r border-[#414141] p-3 shadow-2xl">
             <div className="flex items-center justify-between mb-5 px-1">
               <div className="text-xl font-extrabold text-cyan-400">Codify</div>
               <button
                 type="button"
                 onClick={() => dispatch(setMobileMenuOpen(false))}
-                className="h-9 w-9 rounded-lg text-cyan-300 hover:bg-[#243547] transition grid place-items-center"
+                className="h-9 w-9 rounded-lg text-[#A0A0A0] hover:bg-[#515151] transition grid place-items-center"
                 aria-label="Close sidebar menu"
               >
                 <FaTimes />
