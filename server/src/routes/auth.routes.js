@@ -22,40 +22,53 @@ router.post('/user/forgot-password', authController.forgotPassword);
 router.post('/user/reset-password', authController.resetPassword);
 router.get('/user/logout', authController.logoutUser);
 
-// router.post('/user/verify-reset-otp', authController.verifyResetOtp);
-
-// OAuth status endpoint — frontend checks before showing Google button
 router.get('/oauth/status', (req, res) => {
   res.json({ google: isGoogleEnabled });
 });
 
+const frontendUrl =
+  process.env.FRONTEND_URL ||
+  (process.env.NODE_ENV === 'production'
+    ? 'https://lms-peach-pi.vercel.app'
+    : 'http://localhost:5173');
 
-// Google OAuth — only register if strategy is available
 if (isGoogleEnabled) {
-  router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
-  router.get("/google", (req, res, next) => {
-  console.log("[AUTH] /google hit");
-  console.log("[AUTH] sessionID:", req.sessionID);
-  console.log("[AUTH] callback expected:", `${process.env.BACKEND_URL}/api/auth/google/callback`);
-  next();
-}, passport.authenticate("google", { scope: ["profile", "email"] }));
+  router.get(
+    '/google',
+    (req, res, next) => {
+      console.log('[AUTH] /google hit');
+      console.log('[AUTH] callback expected:', `${process.env.BACKEND_URL}/api/auth/google/callback`);
+      next();
+    },
+    passport.authenticate('google', { scope: ['profile', 'email'] })
+  );
 
-
-
-  router.get('/google/callback',
-    passport.authenticate('google', { session: false, failureRedirect: (process.env.CLIENT_URL || 'https://lms-peach-pi.vercel.app') + '/login?error=oauth_failed' }),
+  router.get(
+    '/google/callback',
+    (req, res, next) => {
+      console.log('[AUTH] /google/callback hit');
+      console.log('[AUTH] query:', req.query);
+      next();
+    },
+    passport.authenticate('google', {
+      session: false,
+      failureRedirect: `${frontendUrl}/login?error=oauth_failed`,
+    }),
     (req, res) => {
       const token = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-      const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
-      console.log(`[AUTH] Google OAuth successful for user ${req.user._id}. Redirecting to ${clientUrl}/oauth/callback?token=${token}`);
-      res.redirect(`${clientUrl}/oauth/callback?token=${token}`);
+      const redirectUrl = `${frontendUrl}/oauth/callback?token=${token}`;
+      console.log(`[AUTH] Google OAuth success user=${req.user._id}`);
+      console.log(`[AUTH] Redirecting -> ${redirectUrl}`);
+      res.redirect(redirectUrl);
     }
   );
 } else {
-  router.get('/google', (req, res) => res.status(503).json({ message: 'Google OAuth is not configured.' }));
-  router.get('/google/callback', (req, res) => res.status(503).json({ message: 'Google OAuth is not configured.' }));
+  router.get('/google', (_req, res) =>
+    res.status(503).json({ message: 'Google OAuth is not configured.' })
+  );
+  router.get('/google/callback', (_req, res) =>
+    res.status(503).json({ message: 'Google OAuth is not configured.' })
+  );
 }
-
-
 
 module.exports = router;

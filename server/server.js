@@ -2,7 +2,6 @@ require('dotenv').config();
 const app = require('./src/app');
 const mongoose = require('mongoose');
 const connectDB = require('./src/db/db');
-const connectDrive = require('./src/db/googlestorage')
 const { startMonthlyRewardJob, startWeeklyChallengeReminder } = require('./src/jobs/scheduler');
 const { reconcileUserLeagues } = require('./src/jobs/reconciliation');
 const { ensureDefaultBadges } = require('./src/controllers/badge.controller');
@@ -11,14 +10,24 @@ const http = require('http');
 const WebSocket = require('ws');
 
 const PORT = process.env.PORT || 5000;
-
 const clients = new Map();
 
 (async () => {
   try {
     await connectDB();
-    // await connectDrive();
     await ensureDefaultBadges();
+
+    app.set('trust proxy', 1);
+
+    console.log('=== BOOT CONFIG ===');
+    console.log('NODE_ENV:', process.env.NODE_ENV);
+    console.log('PORT:', PORT);
+    console.log('BACKEND_URL:', process.env.BACKEND_URL);
+    console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
+    console.log('GOOGLE_CLIENT_ID prefix:', process.env.GOOGLE_CLIENT_ID?.slice(0, 20));
+    console.log('Google callback URL:', `${process.env.BACKEND_URL}/api/auth/google/callback`);
+    console.log('===================');
+
     console.log('✅ Default badges ensured');
 
     await reconcileUserLeagues();
@@ -28,17 +37,9 @@ const clients = new Map();
     const server = http.createServer(app);
     const wss = new WebSocket.Server({ server });
 
-    // const history = await Message.find().sort({ timestamp: -1 }).limit(5);
-
     wss.on('connection', async (socket) => {
-      console.log('New WS connection')
-
-      //send last 20 msgs as history
-      // const history = await Message.find().sort({ timestamp: -1 }).limit(20).lean();
-      // socket.send(JSON.stringify({ type: 'history', messages: history.reverse() }))
-
+      console.log('New WS connection');
       let registeredUserId = null;
-
 
       socket.on('message', async (rawData) => {
         try {
@@ -51,30 +52,16 @@ const clients = new Map();
             console.log(`📋 Active clients:`, Array.from(clients.keys()));
             return;
           }
-          console.log('📨 Raw incoming message:', JSON.stringify(msg, null, 2));  // ✅ ADD THIS
 
-          // Handle registration
-          // if (msg.type === 'register') {
-          //   clients.set(msg.userId, socket);
-          //   console.log(`registered user ${msg.userId}`)
-          //   console.log(`📋 Total active clients:`, clients.size);  // ✅ ADD THIS
-          //   return;
-          // }
+          console.log('📨 Raw incoming message:', JSON.stringify(msg, null, 2));
 
-          // Handle chat messages
           if (msg.type === 'chat-message') {
-            console.log('💬 Message type detected');
-            console.log('msg.message:', msg.message);  // ✅ ADD THIS
-            const { senderId, recipientId, text, time, id } = msg.message
-            console.log('Destructured:', { senderId, recipientId, text, time, id });  // ✅ ADD THIS
-
+            const { senderId, recipientId, text, time, id } = msg.message || {};
             if (!senderId || !recipientId || !text) {
               console.error('❌ Missing required fields:', { senderId, recipientId, text });
-              return;  // ✅ ADD THIS - Don't try to save incomplete data
+              return;
             }
 
-
-            // Save to DB
             const saved = await Message.create({
               senderId: new mongoose.Types.ObjectId(senderId),
               recipientId: new mongoose.Types.ObjectId(recipientId),
@@ -83,60 +70,46 @@ const clients = new Map();
               timestamp: new Date(),
               delivered: false
             });
+
             console.log('💾 Saved message:', saved.senderId, typeof saved.senderId);
 
-            // Build Payload
             const payload = JSON.stringify({
               type: 'chat-message',
-              message: {
-                id,
-                senderId,
-                recipientId,
-                text,
-                time
-              }
+              message: { id, senderId, recipientId, text, time }
             });
 
-            // Send to recipient
             const recipientSocket = clients.get(recipientId);
             console.log('🔍 Looking for recipient:', recipientId);
-            console.log('📋 Active clients:', Array.from(clients.keys()));  // ✅ ADD THIS
+            console.log('📋 Active clients:', Array.from(clients.keys()));
             console.log('🎯 Recipient socket found:', !!recipientSocket);
 
             if (recipientSocket && recipientSocket.readyState === WebSocket.OPEN) {
               recipientSocket.send(payload);
               console.log('✅ Message sent to recipient:', recipientId);
             } else {
-              console.log('❌ Recipient not connected:', recipientId);  // ✅ ADD THIS
+              console.log('❌ Recipient not connected:', recipientId);
             }
-
-            //Echo back to sender (confirmation)
-            // if (socket.readyState === WebSocket.OPEN) {
-            //   socket.send(payload);
-            // }
-          };
+          }
         } catch (err) {
-          console.error('Faile to proccess msg', err)
+          console.error('Failed to process ws msg', err);
         }
       });
+
       socket.on('close', () => {
         if (registeredUserId) {
           clients.delete(registeredUserId);
           console.log(`🔴 User ${registeredUserId} disconnected and removed`);
           console.log(`📋 Remaining clients:`, Array.from(clients.keys()));
         }
-      })
+      });
     });
-    const sample = await Message.findOne({}).lean();
+
     server.listen(PORT, () => {
       console.log(`🚀 Server running with WebSockets + MongoDB on port ${PORT}`);
-      console.log('Sample message from DB:', sample);
-      console.log('senderId type:', typeof sample?.senderId, sample?.senderId);
-    })
+    });
   } catch (err) {
-    console.error('❌ Server failed to start:', err);
-    process.exit(1);
-    console.error('❌ Error:', err.message); // ← will now show the real error
+    console.error('❌ Server failed to start:', err.message);
     console.error(err.stack);
+    process.exit(1);
   }
 })();

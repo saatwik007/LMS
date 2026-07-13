@@ -1,4 +1,3 @@
-// File used to create server
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const passport = require('./config/passport');
@@ -10,16 +9,37 @@ const communityRoutes = require('./routes/community.routes');
 const socialRoutes = require('./routes/social.routes');
 const cors = require('cors');
 const path = require('path');
-const chatRoutes = require('./routes/chat.routes')
+const chatRoutes = require('./routes/chat.routes');
 const otpRoutes = require('./routes/otp.routes');
 
 const app = express();
+
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
 app.use(cookieParser());
 app.use(express.json());
-app.use(cors({
-	origin: process.env.CLIENT_URL || 'http://localhost:5173',
-	credentials: true
-}));
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin) return callback(null, true); // Postman/curl
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
+    credentials: true,
+  })
+);
+
+app.use((req, _res, next) => {
+  console.log(
+    `[REQ] ${req.method} ${req.originalUrl} host=${req.headers.host} origin=${req.headers.origin || '-'} proto=${req.headers['x-forwarded-proto'] || req.protocol}`
+  );
+  next();
+});
+
 app.use(passport.initialize());
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
