@@ -13,17 +13,18 @@ const {
   getPostImage
 } = require('../controllers/community.controller');
 const { protect } = require('../middlewares/auth.middleware');
-const { profileImageUpload } = require('../middlewares/upload.middleware');
+const { postImageUpload } = require('../middlewares/upload.middleware');
 
 const router = express.Router();
 
 // Get feed (paginated)
 router.get('/feed', protect, getFeed);
 
+// Proxy image from Drive
 router.get('/posts/image/:fileId', getPostImage);
 
 // Create a new post (with optional image)
-router.post('/posts', protect, profileImageUpload, createPost);
+router.post('/posts', protect, postImageUpload, createPost);
 
 // Get a single post
 router.get('/posts/:postId', protect, getPost);
@@ -40,7 +41,7 @@ router.post('/posts/:postId/like', protect, toggleLike);
 // Add a comment
 router.post('/posts/:postId/comments', protect, addComment);
 
-// Like a comment 
+// Like a comment
 router.post('/posts/:postId/:commentId/likeComment', protect, likeComment);
 
 // Add a comment reply

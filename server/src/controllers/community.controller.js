@@ -30,32 +30,56 @@ async function createPost(req, res) {
     };
 
     // Handle image upload if present
+    // if (req.file && req.file.buffer) {
+
+
+    //   try {
+    //     const timestamp = Date.now();
+    //     const fileName = `post-${req.user.id}-${timestamp}.webp`;
+
+    //     // Process and save image
+    //     const processedImageBuffer = await sharp(req.file.buffer)
+    //       .resize({ width: 800, height: 800, fit: 'inside' })
+    //       .webp({ quality: 85 })
+    //       .toBuffer();
+
+    //     // Upload to Google Drive
+    //     const { publicUrl, fileId } = await uploadBufferToDrive(processedImageBuffer, fileName);
+    //     postData.image = `/api/community/posts/image/${fileId}`;
+    //     postData.driveFileId = fileId; // Store the Drive file ID in the post document
+
+    //     console.log('post',timestamp,fileName)
+
+    //   } catch (imageError) {
+    //     console.error('Image processing error:', imageError);
+    //     return res.status(500).json({ message: 'Failed to process image' });
+    //   }
+    // }
+
+
     if (req.file && req.file.buffer) {
+  let processedImageBuffer;
+  try {
+    processedImageBuffer = await sharp(req.file.buffer)
+      .resize({ width: 800, height: 800, fit: 'inside' })
+      .webp({ quality: 85 })
+      .toBuffer();
+  } catch (err) {
+    console.error('[POST IMAGE] Sharp error:', err);
+    return res.status(500).json({ message: 'Image transform failed' });
+  }
 
-
-      try {
-        const timestamp = Date.now();
-        const fileName = `post-${req.user.id}-${timestamp}.webp`;
-
-        // Process and save image
-        const processedImageBuffer = await sharp(req.file.buffer)
-          .resize({ width: 800, height: 800, fit: 'inside' })
-          .webp({ quality: 85 })
-          .toBuffer();
-
-        // Upload to Google Drive
-        const { publicUrl, fileId } = await uploadBufferToDrive(processedImageBuffer, fileName);
-        postData.image = `/api/community/posts/image/${fileId}`;
-        postData.driveFileId = fileId; // Store the Drive file ID in the post document
-
-        console.log('post',timestamp,fileName)
-
-      } catch (imageError) {
-        console.error('Image processing error:', imageError);
-        return res.status(500).json({ message: 'Failed to process image' });
-      }
-    }
-
+  try {
+    const timestamp = Date.now();
+    const fileName = `post-${req.user.id}-${timestamp}.webp`;
+    const { fileId } = await uploadBufferToDrive(processedImageBuffer, fileName);
+    postData.image = `/api/community/posts/image/${fileId}`;
+    postData.driveFileId = fileId;
+  } catch (err) {
+    console.error('[POST IMAGE] Drive upload error:', err?.response?.data || err.message || err);
+    return res.status(500).json({ message: 'Image upload failed (drive)' });
+  }
+}
     const post = await Post.create(postData);
 
     // Populate author details
