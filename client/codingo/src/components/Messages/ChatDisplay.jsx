@@ -1,44 +1,30 @@
-import React, { useEffect, useRef } from 'react'
+import { useEffect, useRef } from "react";
 import gsap from "gsap";
 
-const ChatDisplay = () => {
+const ChatDisplay = ({ msgs = [], contact, newMsgIds, MessageBubble }) => {
+  const ref = useRef(null);
 
-    const ref = useRef(null);
+  useEffect(() => {
+    gsap.fromTo(ref.current, { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power2.out" });
+  }, []);
 
-    // entrance fade-in
-    useEffect(() => {
-        gsap.fromTo(ref.current,
-            { opacity: 0 },
-            { opacity: 1, duration: 0.35, ease: "power2.out", delay: 0.08 }
-        );
-    }, []);
-    return (
-        <div
-            ref={ref}
-            className="flex-1 overflow-y-auto relative flex flex-col gap-2.5 px-4 sm:px-7 py-4 sm:py-6"
-            style={{ overscrollBehavior: "contain" }}
-        >
-            {/* Date label */}
-            <div className="text-center mb-2">
-                <span className="text-[11px] text-[#33334a] bg-[#14141c] px-3 py-1 rounded-[20px] border border-[#1e1e2c]">
-                    Today
-                </span>
-            </div>
+  return (
+    <div
+      ref={ref}
+      className="relative flex min-h-full flex-col gap-2.5 px-3 sm:px-5 lg:px-7 py-4 sm:py-6"
+      style={{ overscrollBehavior: "contain" }}
+    >
+      <div className="mb-2 text-center">
+        <span className="rounded-full border border-[#1e1e2c] bg-[#14141c] px-3 py-1 text-[11px] text-[#33334a]">
+          Today
+        </span>
+      </div>
 
-            {msgs.map((msg) => (
-                <MessageBubble
-                    key={msg.id}
-                    msg={msg}
-                    contact={contact}
-                    animate={newMsgIds.has(msg.id)}
-                />
-            ))}
+      {msgs.map((msg) => (
+        <MessageBubble key={msg.id} msg={msg} contact={contact} animate={newMsgIds?.has(msg.id)} />
+      ))}
+    </div>
+  );
+};
 
-            <button onClick={fetchhistoryy} className="text-white cursor-pointer">
-                msg history
-            </button>
-        </div>
-    )
-}
-
-export default ChatDisplay
+export default ChatDisplay;

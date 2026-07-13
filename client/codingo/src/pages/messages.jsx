@@ -12,15 +12,12 @@ export default function MessagesPage() {
   }, [dispatch]);
 
   return (
-    <div className="flex max-h-screen bg-[#0b0b10] font-['DM_Sans']">
-      {/* Left Sidebar — Contacts */}
-      <ContactList />
-
-      {/* Thin separator */}
-      <div className="w-px bg-[#1c1c28] shrink-0" />
-
-      {/* Right — Chat Area */}
-      <ChatArea />
+    <div className="h-[calc(100vh-64px)] w-full bg-[#0b0b10]">
+      {/* Mobile: stacked. Desktop: fixed 2-column split */}
+      <div className="h-full w-full lg:grid lg:grid-cols-[320px_minmax(0,1fr)]">
+        <ContactList />
+        <ChatArea />
+      </div>
     </div>
   );
 }
