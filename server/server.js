@@ -30,6 +30,12 @@ const clients = new Map();
 
     console.log('✅ Default badges ensured');
 
+
+    console.log('[DRIVE] GOOGLE_CLIENT_ID set:', !!process.env.GOOGLE_CLIENT_ID);
+console.log('[DRIVE] GOOGLE_CLIENT_SECRET set:', !!process.env.GOOGLE_CLIENT_SECRET);
+console.log('[DRIVE] GOOGLE_REFRESH_TOKEN set:', !!process.env.GOOGLE_REFRESH_TOKEN);
+console.log('[DRIVE] GOOGLE_DRIVE_FOLDER_ID:', process.env.GOOGLE_DRIVE_FOLDER_ID || '(none)');
+
     await reconcileUserLeagues();
     startMonthlyRewardJob();
     startWeeklyChallengeReminder();
