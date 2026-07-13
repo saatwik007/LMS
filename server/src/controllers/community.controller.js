@@ -48,6 +48,8 @@ async function createPost(req, res) {
         postData.image = `/api/community/posts/image/${fileId}`;
         postData.driveFileId = fileId; // Store the Drive file ID in the post document
 
+        console.log('post',timestamp,fileName)
+
       } catch (imageError) {
         console.error('Image processing error:', imageError);
         return res.status(500).json({ message: 'Failed to process image' });
