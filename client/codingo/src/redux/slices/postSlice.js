@@ -5,7 +5,6 @@ const postSlice = createSlice({
     initialState: {
         content: '',
         focused: false,
-        // image: null,
         imagePreview: null,
         isPosting: false,
         error: '',

@@ -63,13 +63,11 @@ function SidebarItem({ item, isActive, collapsed, onClick, iconOnly = false }) {
       type="button"
       title={item.label}
       onClick={() => onClick(item.to)}
-      className={`w-full rounded-lg transition border text-[#cdcdcd] ${
-        isActive ? 'bg-[#414141] border-[#414141]' : 'border-transparent hover:bg-[#4f4f4f]'
-      } ${
-        iconOnly || collapsed
+      className={`w-full rounded-lg transition border text-[#cdcdcd] ${isActive ? 'bg-[#414141] border-[#414141]' : 'border-transparent hover:bg-[#4f4f4f]'
+        } ${iconOnly || collapsed
           ? 'h-10 flex items-center justify-center'
           : 'h-10 px-3 flex items-center gap-3 text-sm font-semibold'
-      }`}
+        }`}
     >
       <Icon className="text-sm" />
       {iconOnly || collapsed ? null : <span>{item.label}</span>}
@@ -91,31 +89,30 @@ export default function AppSidebar() {
 
   const isActiveItem = (item) => item.match.some((routePrefix) => location.pathname.startsWith(routePrefix));
 
-    const [dashboardMode, setDashboardMode] = useState(
-  localStorage.getItem('dashboardMode') || 'community'
-);
-useEffect(() => {
-  const syncMode = () =>
-    setDashboardMode(localStorage.getItem('dashboardMode') || 'community');
+  const [dashboardMode, setDashboardMode] = useState(
+    localStorage.getItem('dashboardMode') || 'community'
+  );
+  useEffect(() => {
+    const syncMode = () =>
+      setDashboardMode(localStorage.getItem('dashboardMode') || 'community');
 
-  window.addEventListener('storage', syncMode);
-  window.addEventListener('dashboardModeChanged', syncMode); // custom event for same tab
-  return () => {
-    window.removeEventListener('storage', syncMode);
-    window.removeEventListener('dashboardModeChanged', syncMode);
-  };
-}, []);
-const navItems = dashboardMode === 'community' ? communityNavItems : lmsNavItems;
-console.log('Current dashboardMode:', dashboardMode, 'Nav items:', navItems.map(item => item.key));
+    window.addEventListener('storage', syncMode);
+    window.addEventListener('dashboardModeChanged', syncMode); // custom event for same tab
+    return () => {
+      window.removeEventListener('storage', syncMode);
+      window.removeEventListener('dashboardModeChanged', syncMode);
+    };
+  }, []);
+  const navItems = dashboardMode === 'community' ? communityNavItems : lmsNavItems;
+  console.log('Current dashboardMode:', dashboardMode, 'Nav items:', navItems.map(item => item.key));
   return (
     <>
       <aside className="hidden z-10 lg:block shrink-0">
         <div
-        onMouseEnter={() => dispatch(setDesktopCollapsed(false))}
-        onMouseLeave={() => dispatch(setDesktopCollapsed(true))}
-          className={`sticky top-14 h-[calc(100vh-3.5rem)] bg-[#2B2B2B] border-r border-[#414141] py-4 transition-all duration-200 ${
-            isDesktopCollapsed ? 'w-20 px-2' : 'w-50 px-2'
-          }`}
+          onMouseEnter={() => dispatch(setDesktopCollapsed(false))}
+          onMouseLeave={() => dispatch(setDesktopCollapsed(true))}
+          className={`sticky top-14 h-full bg-[#2B2B2B] border-r border-[#414141] py-4 transition-width duration-300 ease-in-out will-change-[width] ${isDesktopCollapsed ? 'w-20 px-2' : 'w-45 px-2'
+            }`}
         >
           <div className="flex items-center justify-center mb-6">
           </div>

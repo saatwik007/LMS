@@ -3,7 +3,7 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import { useDispatch } from "react-redux";
 // import { setError, setImage, setImagePreview } from "../redux/slices/postSlice";
 
-const apiUrl = import.meta.env.VITE_API_URL || '';
+export const apiUrl = import.meta.env.VITE_API_URL || '';
 // const dispatch = useDispatch();
 
 export const getAuthHeaders = () => {
@@ -32,37 +32,37 @@ export const formatTimeAgo = (date) => {
   if (d < 7) return `${d}d`;
   return new Date(date).toLocaleDateString();
 }
-  
-  export const fetchPosts = createAsyncThunk(
-    'feed/fetchPosts',
-    async (pageNum, { rejectWithValue }) => {
-      try {
-        const res = await axios.get(`${apiUrl}/api/community/feed?page=${pageNum}&limit=10`, {
-          withCredentials: true,
-          headers: getAuthHeaders(),
-        });
-        
-        const newPosts = res.data.posts || [];
-        
-        return {
-          posts: newPosts,
-          pageNum,
-          hasMore: res.data.pagination?.hasMore || false,
-        };
-      } catch (err) {
-        return rejectWithValue(err.response?.data?.message || 'Failed to load posts');
-      }
-    }
-  );
-  
-  export const handleLike = createAsyncThunk(
-    'feed/handleLike',
-    async (postId, { rejectWithValue }) => {
-      try {
-        const res = await axios.post(`${apiUrl}/api/community/posts/${postId}/like`, {}, {
-          withCredentials: true, headers: getAuthHeaders(),
+
+export const fetchPosts = createAsyncThunk(
+  'feed/fetchPosts',
+  async (pageNum, { rejectWithValue }) => {
+    try {
+      const res = await axios.get(`${apiUrl}/api/community/feed?page=${pageNum}&limit=10`, {
+        withCredentials: true,
+        headers: getAuthHeaders(),
       });
-      return{
+
+      const newPosts = res.data.posts || [];
+
+      return {
+        posts: newPosts,
+        pageNum,
+        hasMore: res.data.pagination?.hasMore || false,
+      };
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Failed to load posts');
+    }
+  }
+);
+
+export const handleLike = createAsyncThunk(
+  'feed/handleLike',
+  async (postId, { rejectWithValue }) => {
+    try {
+      const res = await axios.post(`${apiUrl}/api/community/posts/${postId}/like`, {}, {
+        withCredentials: true, headers: getAuthHeaders(),
+      });
+      return {
         postId,
         likesCount: res.data.likesCount,
         isLiked: res.data.isLiked,
