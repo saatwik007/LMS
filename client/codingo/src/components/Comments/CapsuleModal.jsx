@@ -7,13 +7,15 @@ import {
   FiBookmark,
   FiChevronLeft,
   FiChevronRight,
+  FiTrash2,
 } from 'react-icons/fi';
 import gsap from 'gsap';
 
-export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext }) {
+export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, onDelete }) {
   const cardRef = useRef(null);
   const glowRef = useRef(null);
   const backdropRef = useRef(null);
+  console.log('capsule modal render', isOpen, story)
 
   // Escape to close + body scroll lock while open
   useEffect(() => {
@@ -167,6 +169,16 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext })
             <button className="text-white/80 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 rounded-full" aria-label="Save">
               <FiBookmark size={19} />
             </button>
+            {typeof onDelete === 'function' && (
+              <button
+                onClick={() => onDelete(story)}
+                className="text-red-300 hover:text-red-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/70 rounded-full"
+                aria-label="Delete capsule"
+                title="Delete capsule"
+              >
+                <FiTrash2 size={19} />
+              </button>
+            )}
           </div>
           </div>
         </div>
