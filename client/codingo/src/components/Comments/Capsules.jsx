@@ -105,6 +105,7 @@ function ProgressBar({ elapsed }) {
 
 function CapsuleTile({ story, derived, index, onOpenCapsule, onRevive }) {
   const isFading = derived.phase === 'fading';
+  const tileImageUrl = story?.mediaUrl || story?.user?.profilePic || '';
 
   const title = derived.phase === 'active' && derived.remaining != null
     ? `${formatDuration(derived.remaining)} left`
@@ -130,7 +131,7 @@ function CapsuleTile({ story, derived, index, onOpenCapsule, onRevive }) {
       <div
         className="absolute inset-0 bg-cover bg-center transition-opacity duration-700"
         style={{
-          backgroundImage: `url('${story.user.profilePic}')`,
+          backgroundImage: tileImageUrl ? `url('${tileImageUrl}')` : 'none',
           opacity: derived.opacity ?? 1,
         }}
       />
@@ -234,6 +235,30 @@ export default function Capsules({ stories, onAddCapsule, onOpenCapsule, onReviv
     setOpenIndex(visible.findIndex(({ story }) => story._id === storyId));  // ✅ _id not id
   }, [onOpenCapsule, visible]);
 
+  const handleDeleteCapsule = useCallback(async (storyToDelete) => {
+    const capsuleId = storyToDelete?._id;
+    if (!capsuleId) return;
+
+    const ok = window.confirm('Delete this capsule? This will also remove its media.');
+    if (!ok) return;
+
+    try {
+      await axios.delete(`${apiUrl}/api/capsule/${capsuleId}`, {
+        withCredentials: true,
+        headers: getAuthHeaders(),
+      });
+
+      const nextCapsules = (capsule || []).filter((item) => item?._id !== capsuleId);
+      dispatch(setCapsule(nextCapsules));
+
+      // Always close modal after deleting a capsule.
+      setOpenIndex(null);
+    } catch (err) {
+      console.error('Failed to delete capsule:', err);
+      window.alert(err?.response?.data?.message || 'Failed to delete capsule');
+    }
+  }, [capsule, dispatch]);
+
   const activeEntry = openIndex !== null ? visible[openIndex] : null;
   const modalStory = activeEntry
     ? {
@@ -271,6 +296,7 @@ export default function Capsules({ stories, onAddCapsule, onOpenCapsule, onReviv
         onClose={() => setOpenIndex(null)}
         onPrev={openIndex > 0 ? () => setOpenIndex((i) => i - 1) : undefined}
         onNext={openIndex !== null && openIndex < visible.length - 1 ? () => setOpenIndex((i) => i + 1) : undefined}
+        onDelete={handleDeleteCapsule}
       />
     </>
   );

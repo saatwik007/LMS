@@ -2,15 +2,22 @@
 const Capsule = require('../models/capsule.model')
 const User = require('../models/user.model');
 const { uploadBufferToDrive } = require('../utils/driveUpload');
+const { streamFileFromDrive } = require('../utils/driveUpload');
+const { deleteFileFromDrive } = require('../utils/driveUpload');
 const fs = require('fs');
 const HOUR = 60 * 60 * 1000;
+
+function buildCapsuleMediaUrl(req, fileId) {
+  if (!fileId) return '';
+  return `${req.protocol}://${req.get('host')}/api/capsule/media/${fileId}`;
+}
 
 const createCapsule = async (req, res) => {
   try {
     const userId = req.user.id || req.user._id;
     const now = new Date();
 
-    // Debug incoming request
+    // Debug incoming request 
     console.log(`[CAPSULE CREATE] user=${userId} filePresent=${!!req.file}`);
 
     if (!req.file) {
@@ -21,7 +28,7 @@ const createCapsule = async (req, res) => {
     // ✅ read file from disk into buffer
     const fileBuffer = fs.readFileSync(req.file.path);
 
-    const { fileId, publicUrl } = await uploadBufferToDrive(
+    const { fileId } = await uploadBufferToDrive(
       fileBuffer,
       req.file.originalname,
       req.file.mimetype          // ✅ mediaType from req.file
@@ -33,7 +40,7 @@ const createCapsule = async (req, res) => {
     const capsule = await Capsule.create({
       user: userId,
       mediaFileId: fileId,
-      mediaUrl: publicUrl,       // ✅ save publicUrl too
+      mediaUrl: buildCapsuleMediaUrl(req, fileId),
       mediaType: req.file.mimetype.startsWith('video') ? 'video' : 'image',
       caption: req.body.caption || '',
       expiresAt: new Date(now.getTime() + 24 * HOUR),
@@ -76,8 +83,8 @@ const getFriendsCapsules = async (req, res) => {
     // served from the uploads folder.
     const processed = capsules.map((c) => {
       const obj = typeof c.toObject === 'function' ? c.toObject() : { ...c };
-      if (!obj.mediaUrl && obj.mediaFileId) {
-        obj.mediaUrl = `https://drive.google.com/uc?id=${obj.mediaFileId}`;
+      if (obj.mediaFileId) {
+        obj.mediaUrl = buildCapsuleMediaUrl(req, obj.mediaFileId);
       }
       if (obj.user && obj.user.profilePic && typeof obj.user.profilePic === 'string') {
         if (!obj.user.profilePic.startsWith('http')) {
@@ -116,8 +123,8 @@ const getUserCapsules = async (req, res) => {
     // Normalize older records to include mediaUrl when missing
     const processed = stories.map((c) => {
       const obj = typeof c.toObject === 'function' ? c.toObject() : { ...c };
-      if (!obj.mediaUrl && obj.mediaFileId) {
-        obj.mediaUrl = `https://drive.google.com/uc?id=${obj.mediaFileId}`;
+      if (obj.mediaFileId) {
+        obj.mediaUrl = buildCapsuleMediaUrl(req, obj.mediaFileId);
       }
       return obj;
     });
@@ -137,9 +144,48 @@ const viewCapsule = async (req, res) => {
   }
 };
 
+const deleteCapsule = async (req, res) => {
+  try {
+    const capsuleId = req.params.id;
+    const userId = String(req.user.id || req.user._id);
+
+    const capsule = await Capsule.findById(capsuleId);
+    if (!capsule) {
+      return res.status(404).json({ message: 'Capsule not found' });
+    }
+
+    if (String(capsule.user) !== userId) {
+      return res.status(403).json({ message: 'Not authorized to delete this capsule' });
+    }
+
+    if (capsule.mediaFileId) {
+      try {
+        await deleteFileFromDrive(capsule.mediaFileId);
+      } catch (driveError) {
+        console.error('Delete capsule drive file error:', driveError);
+      }
+    }
+
+    await Capsule.findByIdAndDelete(capsuleId);
+    return res.status(200).json({ message: 'Capsule deleted successfully' });
+  } catch (err) {
+    return res.status(500).json({ message: err.message || 'Failed to delete capsule' });
+  }
+};
+
+const getCapsuleMedia = async (req, res) => {
+  try {
+    await streamFileFromDrive(req.params.fileId, res);
+  } catch (err) {
+    return res.status(500).json({ message: err.message || 'Failed to load capsule media' });
+  }
+};
+
 module.exports = {
   createCapsule,
   viewCapsule,
+  deleteCapsule,
   getUserCapsules,
-  getFriendsCapsules
+  getFriendsCapsules,
+  getCapsuleMedia,
 }

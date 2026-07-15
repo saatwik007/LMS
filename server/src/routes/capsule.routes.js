@@ -1,6 +1,6 @@
 const express = require('express');
 const { protect } = require('../middlewares/auth.middleware');
-const { createCapsule, getFriendsCapsules, getUserCapsules, viewCapsule } = require('../controllers/Capsule.controller');
+const { createCapsule, getFriendsCapsules, getUserCapsules, viewCapsule, getCapsuleMedia, deleteCapsule } = require('../controllers/Capsule.controller');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -23,8 +23,10 @@ const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
 const router = express.Router();
 
 router.post('/capsulepost', protect, upload.single('media'), createCapsule);
+router.get('/media/:fileId', getCapsuleMedia);
 router.get('/feed', protect, getFriendsCapsules);
 router.get('/user/:userId', protect, getUserCapsules);
 router.post('/:id/view', protect, viewCapsule);
+router.delete('/:id', protect, deleteCapsule);
 
 module.exports = router;
