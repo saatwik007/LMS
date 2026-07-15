@@ -9,6 +9,7 @@ import friendsSlice from './slices/friendsSlice';
 import chatSlice from './slices/chatSlice';
 import commentsSlice from './slices/commentsSlice';
 import leaderboardSlice from './slices/leaderboardSlice';
+import capsuleSlice from './slices/capsuleSlice';
 
 const store = configureStore({
     reducer: {
@@ -22,6 +23,7 @@ const store = configureStore({
         chat: chatSlice,
         comments: commentsSlice,
         leaderboard: leaderboardSlice,
+        capsule: capsuleSlice
     }
 });
 export default store;

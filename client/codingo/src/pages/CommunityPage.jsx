@@ -39,6 +39,10 @@ import {
   formatTimeAgo,
 } from '../utilites/communityHelper';
 import ParticleCanvas from '../components/LandingPage/ParticleCanvas';
+import Capsules from '../components/Comments/Capsules';
+import CapsuleModal from '../components/Comments/CapsuleModal';
+import CapsulePostModal from '../components/Comments/CapsulePostModal';
+/* ─── Helpers ─────────────────────────────────────────────────── */
 
 const AVATAR_PALETTE = [
   ['#00e5ff', '#003040'],
@@ -310,16 +314,26 @@ function PostCard({ post, currentUserId, onLike, onDelete }) {
 
   return (
     <>
-      <ParticleCanvas />
-      <article className="bg-[#2B2B2B] z-10 rounded-[20px] overflow-hidden transition-colors duration-200 ease-in-out">
+    <ParticleCanvas />
+      <article
+        className="bg-[#2B2B2B] z-10 rounded-[20px] overflow-hidden transition-colors duration-200 ease-in-out"
+      // onMouseEnter={e => e.currentTarget.style.borderColor = '#313131'}
+      // onMouseLeave={e => e.currentTarget.style.borderColor = '#2B2B2B'}
+      >
+        {/* Card body */}
         <div className="px-[20px] pt-[20px]">
           <div className="flex items-start justify-between mb-[14px]">
-            <div className="flex items-center gap-[12px] cursor-pointer" onClick={() => post.author.id && navigate(`/profile/${post.author.id}`)}>
-              {post.author.profilePic ? (
-                <img src={post.author.profilePic} alt={post.author.username} style={{ width: 44, height: 44, borderRadius: '50%', border: '2px solid #1a2535', flexShrink: 0 }} />
-              ) : (
-                <AvatarInitial name={post.author.username} size={44} />
-              )}
+            <div
+              className="flex items-center gap-[12px] cursor-pointer fill"
+              onClick={() =>
+                post.author.id && navigate(`/profile/${post.author.id}`)
+              }
+            >
+              {post.author.profilePic
+                ? <img src={post.author.profilePic} alt={post.author.username}
+                  style={{ width: 44, height: 44, borderRadius: '50%', border: '2px solid #1a2535', flexShrink: 0, objectFit: 'cover' }} />
+                : <AvatarInitial name={post.author.username} size={44} />
+              }
               <div>
                 <span className="font-['Syne'] font-bold text-[15px] text-[#e8f0fe]">{post.author.username}</span>
                 <div className="flex items-center gap-[6px] mt-[2px]">
@@ -376,6 +390,38 @@ function TrendingTopics() {
   );
 }
 
+/* ─────────────────────────────────────────────────────────────────
+   Entrance animation keyframes, scoped to this page.
+   Kept as a plain <style> tag instead of editing tailwind.config.js,
+   so this drops in without touching your build config.
+   Respects prefers-reduced-motion.
+   ───────────────────────────────────────────────────────────────── */
+function CommunityStyles() {
+  return (
+    <style>{`
+      @keyframes capsulePop {
+        0%   { opacity: 0; transform: scale(0.6) translateY(8px); }
+        60%  { opacity: 1; transform: scale(1.05) translateY(0); }
+        100% { opacity: 1; transform: scale(1) translateY(0); }
+      }
+      @keyframes postRise {
+        0%   { opacity: 0; transform: translateY(18px); }
+        100% { opacity: 1; transform: translateY(0); }
+      }
+      .animate-capsule-pop { animation: capsulePop 420ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+      .animate-post-rise   { animation: postRise 480ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+ 
+      @media (prefers-reduced-motion: reduce) {
+        .animate-capsule-pop, .animate-post-rise {
+          animation: none !important;
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      }
+    `}</style>
+  );
+}
+
 export default function CommunityPage() {
   const posts = useSelector((state) => state.feed.posts);
   const page = useSelector((state) => state.feed.page);
@@ -395,10 +441,20 @@ export default function CommunityPage() {
   const [composerPreview, setComposerPreview] = useState(null);
 
   const dispatch = useDispatch();
+  useEffect(() => { dispatch(fetchPosts(1)); }, [dispatch]);
+  const [showCapsuleModal, setShowCapsuleModal] = useState(false);
+  const [showAddCapsule, setShowAddCapsule] = useState(false);
+  const [selectedCapsuleId, setSelectedCapsuleId] = useState(null);
+  const [selectedImageFile, setSelectedImageFile] = useState(null);
 
-  useEffect(() => {
-    dispatch(fetchPosts(1));
-  }, [dispatch]);
+  const showCapsule = (id) => {
+    setSelectedCapsuleId(id);
+    setShowCapsuleModal(true);
+  };
+
+  const addCapsule = () => {
+    setShowAddCapsule(true);
+  }
 
   useEffect(() => {
     if (!loadingRef.current || !hasMore) return;
@@ -415,7 +471,18 @@ export default function CommunityPage() {
     return () => observerRef.current?.disconnect();
   }, [page, hasMore, isLoading, dispatch]);
 
-  const handlePostCreated = (newPost) => dispatch(addPostToTop(newPost));
+  const handlePostCreated = (newPost) => {
+    dispatch(addPostToTop(newPost));
+  };
+
+  const handleComment = async (postId) => {
+    try {
+      const res = await axios.get(`${apiUrl}/api/community/posts/${postId}`, {
+        withCredentials: true, headers: getAuthHeaders(),
+      });
+      dispatch(setPosts(prev => prev.map(p => p.id === postId ? res.data.post : p)));
+    } catch (err) { console.error('Refresh error:', err); }
+  };
 
   const handleDelete = async (postId) => {
     if (!confirm('Delete this post?')) return;
@@ -424,32 +491,95 @@ export default function CommunityPage() {
         withCredentials: true,
         headers: getAuthHeaders(),
       });
-      dispatch(setPosts(posts.filter((p) => p.id !== postId)));
-    } catch (err) {
-      console.error('Delete error:', err);
+      dispatch(setPosts(prev => prev.filter(p => p.id !== postId)));
+    } catch (err) { console.error('Delete error:', err); }
+  };
+
+  const handleCapsulePost = async (file, caption = '') => {
+    if (!file) {
+      dispatch(setError('Please select an image to post'));
+      return;
+    }
+
+    dispatch(setError(''));
+
+    try {
+      const formData = new FormData();
+      formData.append('media', file);
+      if (caption) formData.append('caption', caption);
+      const res = await axios.post(`${apiUrl}/api/capsule/capsulepost`, formData, {
+        withCredentials: true,
+        headers: { ...getAuthHeaders() },
+      });
+
+      // clear local selection and preview
+      setSelectedImageFile(null);
+      dispatch(setImagePreview(null));
+      setShowAddCapsule(false);
+
+      // TODO: refresh capsule feed or notify parent via a prop callback
+      return res.data;
+    } catch (error) {
+      const msg = error?.response?.data?.message || error.message || 'capsule posting error';
+      dispatch(setError(msg));
+      console.error('capsule posting error', error);
+      throw error;
     }
   };
 
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr_300px] bg-black gap-6 max-w-full mx-auto px-4 sm:px-5 pt-6 sm:pt-7 pb-16" style={{ position: 'relative', zIndex: 1 }}>
-      <div className="hidden lg:block z-10 relative">
-        <div className="fixed top-180 min-w-110">
-          <PostComposer
+    <>
+      <CommunityStyles />
+
+      <div
+        className="grid grid-cols-1 lg:grid-cols-[260px_1fr_300px] items-start bg-black gap-6 max-w-full mx-auto px-4 sm:px-5 pt-6 sm:pt-7 pb-16"
+        style={{ position: 'relative', zIndex: 1 }}
+      >
+        <div className="hidden lg:block z-10 relative">
+          <div className="fixed top-180 min-w-110">
+             <PostComposer
             onPostCreated={handlePostCreated}
             composerFile={composerFile}
             setComposerFile={setComposerFile}
             composerPreview={composerPreview}
             setComposerPreview={setComposerPreview}
           />
+          </div>
         </div>
-      </div>
 
-      <div className="mx-auto w-full max-w-3xl px-2 sm:px-0">
-        <div className="flex items-center gap-[12px] mb-[16px]">
-          <div className="flex-1 h-[1px] bg-[#6b6b6b]" />
-          <span className="text-[11px] text-[#8b8b8b] font-['DM_Mono'] tracking-[1px]">FOR YOU</span>
-          <div className="flex-1 h-[1px] bg-[#6b6b6b]" />
-        </div>
+        {/* ── Middle: main feed ─────────────────────────────── */}
+        <div className="mx-auto w-full max-w-3xl px-2 sm:px-0">
+                 <Capsules
+            onOpenCapsule={showCapsule}
+            onAddCapsule={addCapsule}
+          />
+          
+          {showCapsuleModal && (
+            <CapsuleModal capsuleId={selectedCapsuleId} onClose={() => setShowCapsuleModal(false)} />
+          )}
+
+          {showAddCapsule && (
+            <CapsulePostModal
+              isOpen={showAddCapsule}
+              story={{
+                author: currentUser?.username || 'you',
+                timestamp: 'just now',
+                avatar: currentUser?.profilePic || '',
+                caption: '',
+              }}
+              onClose={() => setShowAddCapsule(false)}
+              onAddCapsule={handleCapsulePost}
+            />
+          )}
+          {/* Divider */}
+          <div className="flex items-center gap-[12px] mb-[16px]">
+            <div className="flex-1 h-[1px] bg-[#6b6b6b]" />
+            <span className="text-[11px] text-[#8b8b8b] font-['DM_Mono'] tracking-[1px]">
+              FOR YOU
+            </span>
+            <div className="flex-1 h-[1px] bg-[#6b6b6b]" />
+          </div>
 
         {error && <div className="bg-[#f8717118] border border-[#f8717144] rounded-[12px] px-[16px] py-[12px] mb-[16px] text-[#f87171] text-[13px]">{error}</div>}
 
@@ -531,5 +661,6 @@ export default function CommunityPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

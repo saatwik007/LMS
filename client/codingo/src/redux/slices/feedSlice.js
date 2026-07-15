@@ -156,6 +156,8 @@ const feedSlice = createSlice({
       .addCase(fetchPosts.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
+        // Prevent continuous pagination on server errors
+        state.hasMore = false;
       })
 
     builder
