@@ -155,6 +155,7 @@ export default function SocialProfileSection() {
         const fetchUserPosts = async () => {
             const id = userId || storedUser?.id;
             if (!id) return;
+            console.log('Fetching posts for user ID:', id, 'storedUser ID:', storedUser?.id,'isUserId:', userId);
 
             setPostsLoading(true);
             try {
@@ -165,6 +166,7 @@ export default function SocialProfileSection() {
                         headers: getAuthHeaders()
                     }
                 );
+                console.log('res', res);
                 setUserPosts(res.data.posts || []);
             } catch (err) {
                 console.error('Failed to fetch user posts:', err);

@@ -328,10 +328,6 @@ const fetchhistoryy = async () => {
           animate={newMsgIds.has(msg.id)}
         />
       ))}
- 
-      <button onClick={fetchhistoryy} className="text-white cursor-pointer">
-        msg history
-      </button>
     </div>
     )
   }

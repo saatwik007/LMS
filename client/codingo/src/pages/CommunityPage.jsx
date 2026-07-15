@@ -26,6 +26,9 @@ import { fetchPosts, getAuthHeaders, handleLike, getStoredUser, formatTimeAgo } 
 import Comments from './CommentsModal';
 import { useState } from 'react';
 import ParticleCanvas from '../components/LandingPage/ParticleCanvas';
+import Capsules from '../components/Comments/Capsules';
+import CapsuleModal from '../components/Comments/CapsuleModal';
+import CapsulePostModal from '../components/Comments/CapsulePostModal';
 /* ─── Helpers ─────────────────────────────────────────────────── */
 
 const AVATAR_PALETTE = [
@@ -100,7 +103,7 @@ function PostComposer({ onPostCreated }) {
     try {
       const file = e.target.files[0];
       if (!file) return;
-      if (file.size > 3 * 1024 * 1024) { dispatch(setError('Image must be < 3MB')); return; }
+      // if (file.size > 3 * 1024 * 1024) { dispatch(setError('Image must be < 3MB')); return; }
       if (!['image/jpeg', 'image/png', 'image/webp', 'image/jpg'].includes(file.type)) {
         dispatch(setError('Only JPEG, PNG, WEBP allowed')); return;
       }
@@ -289,7 +292,6 @@ function PostCard({ post, currentUserId, onLike, onDelete, index }) {
 
   return (
     <>
-      <ParticleCanvas />
       <article
         className="bg-[#2B2B2B] z-10 rounded-[20px] overflow-hidden transition-colors duration-200 ease-in-out"
       // onMouseEnter={e => e.currentTarget.style.borderColor = '#313131'}
@@ -300,14 +302,14 @@ function PostCard({ post, currentUserId, onLike, onDelete, index }) {
           {/* Author row */}
           <div className="flex items-start justify-between mb-[14px]">
             <div
-              className="flex items-center gap-[12px] cursor-pointer"
+              className="flex items-center gap-[12px] cursor-pointer fill"
               onClick={() =>
                 post.author.id && navigate(`/profile/${post.author.id}`)
               }
             >
               {post.author.profilePic
                 ? <img src={post.author.profilePic} alt={post.author.username}
-                  style={{ width: 44, height: 44, borderRadius: '50%', border: '2px solid #1a2535', flexShrink: 0 }} />
+                  style={{ width: 44, height: 44, borderRadius: '50%', border: '2px solid #1a2535', flexShrink: 0, objectFit: 'cover' }} />
                 : <AvatarInitial name={post.author.username} size={44} />
               }
               <div>
@@ -440,7 +442,38 @@ function TrendingTopics() {
   );
 }
 
-/* ─── Main Page ───────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────
+   Entrance animation keyframes, scoped to this page.
+   Kept as a plain <style> tag instead of editing tailwind.config.js,
+   so this drops in without touching your build config.
+   Respects prefers-reduced-motion.
+   ───────────────────────────────────────────────────────────────── */
+function CommunityStyles() {
+  return (
+    <style>{`
+      @keyframes capsulePop {
+        0%   { opacity: 0; transform: scale(0.6) translateY(8px); }
+        60%  { opacity: 1; transform: scale(1.05) translateY(0); }
+        100% { opacity: 1; transform: scale(1) translateY(0); }
+      }
+      @keyframes postRise {
+        0%   { opacity: 0; transform: translateY(18px); }
+        100% { opacity: 1; transform: translateY(0); }
+      }
+      .animate-capsule-pop { animation: capsulePop 420ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+      .animate-post-rise   { animation: postRise 480ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+ 
+      @media (prefers-reduced-motion: reduce) {
+        .animate-capsule-pop, .animate-post-rise {
+          animation: none !important;
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      }
+    `}</style>
+  );
+}
+
 export default function CommunityPage() {
   const showModal = useSelector(state => state.feed.showModal);
   const selectedPost = useSelector(state => state.feed.selectedPost);
@@ -454,10 +487,22 @@ export default function CommunityPage() {
   const apiUrl = import.meta.env.VITE_API_URL || '';
   const currentUser = getStoredUser();
   const currentUserId = currentUser?.id || currentUser?._id || '';
-  {/* Add near your other useState hooks, don't touch existing state */ }
   const [showMobileComposer, setShowMobileComposer] = useState(false);
   const dispatch = useDispatch();
   useEffect(() => { dispatch(fetchPosts(1)); }, [dispatch]);
+  const [showCapsuleModal, setShowCapsuleModal] = useState(false);
+  const [showAddCapsule, setShowAddCapsule] = useState(false);
+  const [selectedCapsuleId, setSelectedCapsuleId] = useState(null);
+  const [selectedImageFile, setSelectedImageFile] = useState(null);
+
+  const showCapsule = (id) => {
+    setSelectedCapsuleId(id);
+    setShowCapsuleModal(true);
+  };
+
+  const addCapsule = () => {
+    setShowAddCapsule(true);
+  }
 
   useEffect(() => {
     if (!loadingRef.current || !hasMore) return;
@@ -473,7 +518,6 @@ export default function CommunityPage() {
     return () => observerRef.current?.disconnect();
   }, [page, hasMore, isLoading, dispatch]);
 
-  // const handlePostCreated = (newPost) => dispatch(setPosts(prev => [newPost, ...prev]));
   const handlePostCreated = (newPost) => {
     dispatch(addPostToTop(newPost));
   };
@@ -497,32 +541,83 @@ export default function CommunityPage() {
     } catch (err) { console.error('Delete error:', err); }
   };
 
-  // const getUsers = () => {
-  //   const data = dispatch(searchUsers(searchQuery));
-  //   console.log('Search results:', data);
-  //   dispatch(setSearchResults(data));
-  // }
-  // const searchButton = () => {
-  //   if (searchQuery?.trim()) {
-  //     dispatch(searchUsers(searchQuery)); // Dispatch as async action
-  //   }
-  // }
+  const handleCapsulePost = async (file, caption = '') => {
+    if (!file) {
+      dispatch(setError('Please select an image to post'));
+      return;
+    }
+
+    dispatch(setError(''));
+
+    try {
+      const formData = new FormData();
+      formData.append('media', file);
+      if (caption) formData.append('caption', caption);
+      const res = await axios.post(`${apiUrl}/api/capsule/capsulepost`, formData, {
+        withCredentials: true,
+        headers: { ...getAuthHeaders() },
+      });
+
+      // clear local selection and preview
+      setSelectedImageFile(null);
+      dispatch(setImagePreview(null));
+      setShowAddCapsule(false);
+
+      // TODO: refresh capsule feed or notify parent via a prop callback
+      return res.data;
+    } catch (error) {
+      const msg = error?.response?.data?.message || error.message || 'capsule posting error';
+      dispatch(setError(msg));
+      console.error('capsule posting error', error);
+      throw error;
+    }
+  };
+
+
   return (
     <>
+      <CommunityStyles />
+
       <div
-        className="grid grid-cols-1 lg:grid-cols-[260px_1fr_300px] bg-black gap-6 max-w-full mx-auto px-4 sm:px-5 pt-6 sm:pt-7 pb-16"
+        className="grid grid-cols-1 lg:grid-cols-[260px_1fr_300px] items-start bg-black gap-6 max-w-full mx-auto px-4 sm:px-5 pt-6 sm:pt-7 pb-16"
         style={{ position: 'relative', zIndex: 1 }}
       >
 
-        {/* ── Left: reserved space (hover sidebar lives here) + composer — desktop only, unchanged ── */}
-        <div className="hidden lg:block z-10 relative">
-          <div className="fixed top-180 min-w-110">
-            <PostComposer onPostCreated={handlePostCreated} />
-          </div>
-        </div>
+        {/* ── Left: reserved space for your existing sidebar ──────────
+            This div is the fix. It's empty and invisible on purpose —
+            your real Sidebar component renders elsewhere in the layout
+            (untouched, as asked). This just holds the 260px grid track
+            open so the feed and right rail land in the correct columns
+            instead of grid auto-placement pushing everything left. ── */}
+        <div className="hidden lg:block" aria-hidden="true" />
 
-        {/* ── Middle: main feed ─────────────────────────────── */}
+        {/* ── Middle: capsules + feed ──────────────────────────────── */}
         <div className="mx-auto w-full max-w-3xl px-2 sm:px-0">
+
+          {/* Capsules — now correctly spans the feed column, matching Figma,
+              instead of landing in the sidebar's reserved space. */}
+          <Capsules
+            onOpenCapsule={showCapsule}
+            onAddCapsule={addCapsule}
+          />
+
+          {showCapsuleModal && (
+            <CapsuleModal capsuleId={selectedCapsuleId} onClose={() => setShowCapsuleModal(false)} />
+          )}
+
+          {showAddCapsule && (
+            <CapsulePostModal
+              isOpen={showAddCapsule}
+              story={{
+                author: currentUser?.username || 'you',
+                timestamp: 'just now',
+                avatar: currentUser?.profilePic || '',
+                caption: '',
+              }}
+              onClose={() => setShowAddCapsule(false)}
+              onAddCapsule={handleCapsulePost}
+            />
+          )}
 
           {/* Divider */}
           <div className="flex items-center gap-[12px] mb-[16px]">
@@ -543,37 +638,35 @@ export default function CommunityPage() {
           {/* Feed */}
           <div className="flex flex-col gap-[10px]">
             {posts.length === 0 && !isLoading ? (
-              <div className="bg-[#404040] border border-[#1a2535] rounded-[20px] px-[24px] py-[48px] text-center">
+              <div className="bg-white/[0.03] border border-white/10 rounded-[20px] px-[24px] py-[48px] text-center">
                 <div className="text-[40px] mb-[12px]">👩‍💻</div>
-                <p className="text-[#2e4460] text-[14px]">
+                <p className="text-zinc-400 text-[14px]">
                   No posts yet — be the first to share!
                 </p>
               </div>
             ) : (
               posts.map((post, i) => (
-                <PostCard
+                <div
                   key={post.id}
-                  post={post}
-                  currentUserId={currentUserId}
-                  onLike={handleLike}
-                  onComment={handleComment}
-                  onDelete={handleDelete}
-                  index={i}
-                />
+                  className="animate-post-rise"
+                  style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}
+                >
+                  <PostCard
+                    post={post}
+                    currentUserId={currentUserId}
+                    onLike={handleLike}
+                    onComment={handleComment}
+                    onDelete={handleDelete}
+                    index={i}
+                  />
+                </div>
               ))
             )}
 
             {isLoading && (
-              <div style={{ textAlign: 'center', padding: '32px 0' }}>
-                <div style={{
-                  width: 36, height: 36,
-                  border: '3px solid #00e5ff',
-                  borderTopColor: 'transparent',
-                  borderRadius: '50%',
-                  margin: '0 auto 12px',
-                  animation: 'spin 0.75s linear infinite',
-                }} />
-                <p style={{ color: '#2e4460', fontSize: 13 }}>Loading...</p>
+              <div className="flex flex-col items-center py-8">
+                <div className="h-9 w-9 rounded-full border-2 border-[#00e5ff] border-t-transparent animate-spin mb-3" />
+                <p className="text-zinc-500 text-[13px]">Loading...</p>
               </div>
             )}
 
@@ -581,10 +674,14 @@ export default function CommunityPage() {
           </div>
         </div>
 
-        {/* ── Right: sidebar — desktop only, unchanged ─────────── */}
-        <div className="hidden lg:block fixed top-25 right-20 max-w-80">
+        {/* ── Right: sidebar ────────────────────────────────────────
+            Changed from `fixed top-25 right-20 max-w-80` (which pulled
+            this out of grid flow entirely and caused the overlap you
+            saw) to `sticky`, which keeps it correctly inside its grid
+            column at every viewport width. ─────────────────────── */}
+        <div className="hidden lg:block sticky top-6 w-full">
           {/* Mini stats */}
-          <div className="bg-[#2B2B2B] rounded-[16px] px-[18px] py-[16px] mb-[12px]">
+          <div className="bg-[#111111] border border-white/[0.06] rounded-[16px] px-[18px] py-[16px] mb-[12px]">
             <div className="font-['Syne'] font-bold text-[13px] text-[#e8f0fe] mb-[14px] tracking-[0.3px]">
               📡 Community
             </div>
@@ -596,12 +693,12 @@ export default function CommunityPage() {
               ].map(row => (
                 <div
                   key={row.label}
-                  className="flex justify-between items-center px-[12px] py-[8px] bg-[#404040] rounded-[10px]"
+                  className="flex justify-between items-center px-[12px] py-[8px] bg-white/[0.04] rounded-[10px] transition-colors hover:bg-white/[0.07]"
                 >
                   <span className="text-[12px] text-[#aaaaaa]">
                     {row.icon} {row.label}
                   </span>
-                  <span className="text-[14px] font-bold font-['DM_Mono'] text-[#aaaaaa]">
+                  <span className="text-[14px] font-bold font-['DM_Mono'] text-[#e8f0fe]">
                     {row.val}
                   </span>
                 </div>
@@ -612,7 +709,7 @@ export default function CommunityPage() {
           <TrendingTopics />
 
           {/* Community rules */}
-          <div className="bg-[#2B2B2B] rounded-[16px] px-[18px] py-[16px]">
+          <div className="bg-[#111111] border border-white/[0.06] rounded-[16px] px-[18px] py-[16px]">
             <div className="font-['Syne'] font-bold text-[13px] text-[#e8f0fe] mb-[12px] tracking-[0.3px] flex items-center">
               <FaCode className="text-[#aaaaaa] text-[13px] mr-[7px]" />
               Dev Code
@@ -639,7 +736,7 @@ export default function CommunityPage() {
         {/* ── Mobile-only: floating + button to open composer ──────── */}
         <button
           onClick={() => setShowMobileComposer(true)}
-          className="lg:hidden fixed bottom-6 right-5 w-14 h-14 rounded-full bg-[#00e5ff] text-black text-[28px] font-bold flex items-center justify-center shadow-lg z-50 active:scale-95 transition-transform"
+          className="lg:hidden fixed bottom-6 right-5 w-14 h-14 rounded-full bg-[#00e5ff] text-black text-[28px] font-bold flex items-center justify-center shadow-[0_0_24px_rgba(0,229,255,0.35)] z-50 active:scale-95 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:ring-cyan-300"
           aria-label="New post"
         >
           +

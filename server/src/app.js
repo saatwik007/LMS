@@ -12,6 +12,7 @@ const cors = require('cors');
 const path = require('path');
 const chatRoutes = require('./routes/chat.routes')
 const otpRoutes = require('./routes/otp.routes');
+const capsuleRoutes = require('./routes/capsule.routes')
 
 const app = express();
 app.use(cookieParser());
@@ -31,5 +32,6 @@ app.use('/api/community', communityRoutes);
 app.use('/api/social', socialRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/otp', otpRoutes);
+app.use('/api/capsule', capsuleRoutes)
 
 module.exports = app;
