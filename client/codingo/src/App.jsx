@@ -73,16 +73,16 @@ function ProtectedRoute({ children }) {
   if (isChecking) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 z-50">
-      <div className="flex flex-col items-center">
-        {/* Spinner */}
-        <div className="w-16 h-16 border-4 border-blue-500 border-dashed rounded-full animate-spin"></div>
-        
-        {/* Loading text */}
-        <p className="mt-4 text-white text-lg font-semibold animate-pulse">
-          Loading data...
-        </p>
+        <div className="flex flex-col items-center">
+          {/* Spinner */}
+          <div className="w-16 h-16 border-4 border-blue-500 border-dashed rounded-full animate-spin"></div>
+
+          {/* Loading text */}
+          <p className="mt-4 text-white text-lg font-semibold animate-pulse">
+            Loading data...
+          </p>
+        </div>
       </div>
-    </div>
     );
   }
 
@@ -109,144 +109,144 @@ function AppShell() {
       <div className="flex min-h-[calc(100vh-3.5rem)]">
         {showSidebar ? <AppSidebar /> : null}
         <div className="flex-1 min-w-0">
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/language/:langId" element={<LanguagePageWrapper />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/Login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterationPage />} />
-          <Route path="/Register" element={<RegisterationPage />} />
-          <Route path="/signup" element={<SignupPage  />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
-          <Route path="/next-step" element={<ProtectedRoute><SignupNextPage /></ProtectedRoute>} />
-          <Route
-            path="/dashboard"
-            element={(
-              <ProtectedRoute>
-                <DashboardPage />
-              </ProtectedRoute>
-            )}
-          />
-          <Route
-            path="/Dashboard"
-            element={(
-              <ProtectedRoute>
-                <DashboardPage />
-              </ProtectedRoute>
-            )}
-          />
-          <Route path="/welcome" element={<ProtectedRoute><WelcomePage /></ProtectedRoute>} />
-          <Route path="/Welcome" element={<ProtectedRoute><WelcomePage /></ProtectedRoute>} />
-          <Route
-            path="/levels"
-            element={(
-              <ProtectedRoute>
-                <LevelsPage />
-              </ProtectedRoute>
-            )}
-          />
-          <Route
-            path="/learn"
-            element={(
-              <ProtectedRoute>
-                <LearnPage />
-              </ProtectedRoute>
-            )}
-          />
-          <Route
-            path="/Learn"
-            element={(
-              <ProtectedRoute>
-                <LearnPage />
-              </ProtectedRoute>
-            )}
-          />
-          <Route
-            path="/leaderboard"
-            element={(
-              <ProtectedRoute>
-                <LeaderboardPage />
-              </ProtectedRoute>
-            )}
-          />
-          <Route
-            path="/challenges"
-            element={(
-              <ProtectedRoute>
-                <ChallengePage />
-              </ProtectedRoute>
-            )}
-          />
-          <Route
-            path="/comments"
-            element={(
-              <ProtectedRoute>
-                <Comments />
-              </ProtectedRoute>
-            )}
-          />
-          <Route
-            path="/messages"
-            element={(
-              <ProtectedRoute>
-                <Messages />
-              </ProtectedRoute>
-            )}
-          />
-          <Route
-            path="/socialprofile"
-            element={(
-              <ProtectedRoute>
-                <SocialProfileSection />
-              </ProtectedRoute>
-            )}
-          />
-          <Route
-            path="/profile"
-            element={(
-              <ProtectedRoute>
-                <ProfilePage />
-              </ProtectedRoute>
-            )}
-          />
-          <Route
-            path="/profile/:userId"
-            element={(
-              <ProtectedRoute>
-                <ProfilePage />
-              </ProtectedRoute>
-            )}
-          />
-          <Route
-            path="/progress"
-            element={(
-              <ProtectedRoute>
-                <ProgressPage />
-              </ProtectedRoute>
-            )}
-          />
-          <Route
-            path="/friends"
-            element={(
-              <ProtectedRoute>
-                <FriendsPage />
-              </ProtectedRoute>
-            )}
-          />
-          <Route
-            path="/community"
-            element={(
-              <ProtectedRoute>
-                <CommunityPage />
-              </ProtectedRoute>
-            )}
-          />
-          <Route path="/level/:courseId/:levelNo" element={<LevelPage />} />
-          <Route path="/levels/:courseId" element={<LevelsPageWrapper />} />
-          <Route path="/languagepage" element={<LanguagePage />} />
-        </Routes>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/language/:langId" element={<LanguagePageWrapper />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/Login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterationPage />} />
+            <Route path="/Register" element={<RegisterationPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
+            <Route path="/next-step" element={<ProtectedRoute><SignupNextPage /></ProtectedRoute>} />
+            <Route
+              path="/dashboard"
+              element={(
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              )}
+            />
+            <Route
+              path="/Dashboard"
+              element={(
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              )}
+            />
+            <Route path="/welcome" element={<ProtectedRoute><WelcomePage /></ProtectedRoute>} />
+            <Route path="/Welcome" element={<ProtectedRoute><WelcomePage /></ProtectedRoute>} />
+            <Route
+              path="/levels"
+              element={(
+                <ProtectedRoute>
+                  <LevelsPage />
+                </ProtectedRoute>
+              )}
+            />
+            <Route
+              path="/learn"
+              element={(
+                <ProtectedRoute>
+                  <LearnPage />
+                </ProtectedRoute>
+              )}
+            />
+            <Route
+              path="/Learn"
+              element={(
+                <ProtectedRoute>
+                  <LearnPage />
+                </ProtectedRoute>
+              )}
+            />
+            <Route
+              path="/leaderboard"
+              element={(
+                <ProtectedRoute>
+                  <LeaderboardPage />
+                </ProtectedRoute>
+              )}
+            />
+            <Route
+              path="/challenges"
+              element={(
+                <ProtectedRoute>
+                  <ChallengePage />
+                </ProtectedRoute>
+              )}
+            />
+            <Route
+              path="/comments"
+              element={(
+                <ProtectedRoute>
+                  <Comments />
+                </ProtectedRoute>
+              )}
+            />
+            <Route
+              path="/messages"
+              element={(
+                <ProtectedRoute>
+                  <Messages />
+                </ProtectedRoute>
+              )}
+            />
+            <Route
+              path="/socialprofile"
+              element={(
+                <ProtectedRoute>
+                  <SocialProfileSection />
+                </ProtectedRoute>
+              )}
+            />
+            <Route
+              path="/profile"
+              element={(
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              )}
+            />
+            <Route
+              path="/profile/:userId"
+              element={(
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              )}
+            />
+            <Route
+              path="/progress"
+              element={(
+                <ProtectedRoute>
+                  <ProgressPage />
+                </ProtectedRoute>
+              )}
+            />
+            <Route
+              path="/friends"
+              element={(
+                <ProtectedRoute>
+                  <FriendsPage />
+                </ProtectedRoute>
+              )}
+            />
+            <Route
+              path="/community"
+              element={(
+                <ProtectedRoute>
+                  <CommunityPage />
+                </ProtectedRoute>
+              )}
+            />
+            <Route path="/level/:courseId/:levelNo" element={<LevelPage />} />
+            <Route path="/levels/:courseId" element={<LevelsPageWrapper />} />
+            <Route path="/languagepage" element={<LanguagePage />} />
+          </Routes>
         </div>
       </div>
     </>
@@ -257,7 +257,7 @@ function LanguagePageWrapper() {
   const { langId } = useParams();
   const navigate = useNavigate();
 
-    useEffect(() => {
+  useEffect(() => {
     window.scrollTo(0, 0);
   }, [langId]);
 

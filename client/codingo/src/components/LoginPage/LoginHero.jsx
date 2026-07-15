@@ -142,7 +142,7 @@ const res = await axios.post(`${apiUrl}/api/auth/user/login`, {
             <svg className="w-6 h-6 mr-2" viewBox="0 0 20 20" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" fill="#ffffff" stroke="#ffffff"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>microsoft [#ffffff150]</title> <desc>Created with Sketch.</desc> <defs> </defs> <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <g id="Dribbble-Light-Preview" transform="translate(-220.000000, -7519.000000)" fill="#ffffff"> <g id="icons" transform="translate(56.000000, 160.000000)"> <path d="M174,7379 L184,7379 L184,7370 L174,7370 L174,7379 Z M164,7379 L173,7379 L173,7370 L164,7370 L164,7379 Z M174,7369 L184,7369 L184,7359 L174,7359 L174,7369 Z M164,7369 L173,7369 L173,7359 L164,7359 L164,7369 Z" id="microsoft-[#ffffff150]"> </path> </g> </g> </g> </g></svg>
             MICROSOFT
           </button> */}
-          <button
+          {/* <button
   type="button"
   onClick={() => { window.location.href = `${apiUrl}/api/auth/github`; }}
   className="flex-1 flex items-center gap-2 py-3 rounded-lg bg-[#141b24] border border-[#1f2a38] text-white font-bold text-sm justify-center hover:bg-[#22344c] transition"
@@ -151,7 +151,7 @@ const res = await axios.post(`${apiUrl}/api/auth/user/login`, {
     <path d="M12 .5a12 12 0 0 0-3.79 23.39c.6.11.82-.26.82-.58v-2.02c-3.34.73-4.04-1.61-4.04-1.61-.54-1.4-1.34-1.77-1.34-1.77-1.1-.76.08-.75.08-.75 1.22.09 1.86 1.25 1.86 1.25 1.08 1.86 2.83 1.32 3.52 1.01.11-.79.42-1.32.77-1.62-2.67-.31-5.47-1.36-5.47-6.03 0-1.33.47-2.41 1.24-3.26-.12-.31-.54-1.56.12-3.25 0 0 1.01-.33 3.3 1.24a11.3 11.3 0 0 1 6 0c2.28-1.57 3.3-1.24 3.3-1.24.66 1.69.24 2.94.12 3.25.77.85 1.24 1.93 1.24 3.26 0 4.68-2.8 5.72-5.48 6.02.43.37.82 1.1.82 2.22v3.29c0 .32.22.7.83.58A12 12 0 0 0 12 .5Z" />
   </svg>
   GITHUB
-</button>
+</button> */}
         </div>
         {/* Terms and Info */}
         <p className="text-xs text-gray-500 mt-6 mb-2 text-center leading-5 font-semibold">

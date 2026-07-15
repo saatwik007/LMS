@@ -40,7 +40,7 @@ export default function SignupProfile() {
       localStorage.setItem("token", res.data.token);
     }
     window.dispatchEvent(new Event("auth:user-updated"));
-    navigate("/dashboard", { replace: true });
+    navigate("/community", { replace: true });
   } catch (err) {
     setErrorMsg(
       err.response?.data?.message ||

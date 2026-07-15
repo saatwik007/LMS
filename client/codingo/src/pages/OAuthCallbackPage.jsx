@@ -35,7 +35,7 @@ export default function OAuthCallbackPage() {
         if (data.user) {
           localStorage.setItem('user', JSON.stringify(data.user));
           window.dispatchEvent(new Event('auth:user-updated'));
-          navigate('/dashboard');
+          navigate('/community');
         } else {
           setError('Failed to load profile.');
           setTimeout(() => navigate('/login'), 3000);
