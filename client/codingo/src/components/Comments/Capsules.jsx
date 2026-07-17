@@ -68,18 +68,6 @@ function formatAge(ms) {
   return `${h}h ago`;
 }
 
-const DEMO_STORIES = [
-  { id: 'demo-1', author: 'saatwik007', phase: 'active', hoursLeft: 12 },
-  { id: 'demo-2', author: 'testtest007', phase: 'active', hoursLeft: 19 },
-  { id: 'demo-3', author: 'devraj', phase: 'fading', hoursLeft: 3 },
-  { id: 'demo-4', author: 'lina.codes', phase: 'active', hoursLeft: 8 },
-  { id: 'demo-5', author: 'kentaro', phase: 'fading', hoursLeft: 1 },
-  { id: 'demo-1', author: 'saatwik007', phase: 'active', hoursLeft: 12 },
-  { id: 'demo-2', author: 'testtest007', phase: 'active', hoursLeft: 19 },
-  { id: 'demo-3', author: 'devraj', phase: 'fading', hoursLeft: 3 },
-  { id: 'demo-4', author: 'lina.codes', phase: 'active', hoursLeft: 8 },
-  { id: 'demo-5', author: 'kentaro', phase: 'fading', hoursLeft: 1 },
-];
 /* ────────────────────────────────────────────────────────────────────────
    PROGRESS BAR — thin, single-color-swap bar showing position across the
    48h cycle. Inset below the capsule's top curve rather than flush
@@ -185,7 +173,7 @@ function AddCapsuleTile({ onAddCapsule }) {
   );
 }
 
-export default function Capsules({ stories, onAddCapsule, onOpenCapsule, onRevive }) {
+export default function Capsules({ stories, derived, onAddCapsule, onOpenCapsule, onRevive }) {
   const [now, setNow] = useState(() => Date.now());
   const capsule = useSelector(state => state.capsule?.capsule ?? []);
   const dispatch = useDispatch();
@@ -195,7 +183,7 @@ export default function Capsules({ stories, onAddCapsule, onOpenCapsule, onReviv
     const id = setInterval(() => setNow(Date.now()), 60000);
     return () => clearInterval(id);
   }, []);
-  
+
   const fetchCapsules = async () => {  // ✅ async function inside useEffect
     try {
       const res = await axios.get(`${apiUrl}/api/capsule/feed`, {  // ✅ await
@@ -209,9 +197,9 @@ export default function Capsules({ stories, onAddCapsule, onOpenCapsule, onReviv
       console.error('capsule error', err);
     }
   };
-  
+
   const items = capsule.length ? capsule : [];
-  
+
   useEffect(() => {
     fetchCapsules();
   }, []);
@@ -266,6 +254,7 @@ export default function Capsules({ stories, onAddCapsule, onOpenCapsule, onReviv
       timestamp: activeEntry.derived.elapsed != null  // ✅ removed story.timestamp check
         ? formatAge(activeEntry.derived.elapsed)
         : undefined,
+      opacity: activeEntry.derived.opacity ?? 1,
     }
     : null;
 

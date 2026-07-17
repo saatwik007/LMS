@@ -11,7 +11,7 @@ import {
 } from 'react-icons/fi';
 import gsap from 'gsap';
 
-export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, onDelete }) {
+export default function CapsuleModal({ isOpen, onClose, derived, story, onPrev, onNext, onDelete }) {
   const cardRef = useRef(null);
   const glowRef = useRef(null);
   const backdropRef = useRef(null);
@@ -107,7 +107,7 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
         {/* The capsule itself */}
         <div
           ref={cardRef}
-          className="relative h-165 w-110 rounded-full overflow-hidden bg-[#0d0d0d] flex flex-col items-center"
+          className="relative h-210 w-130 right-10 bottom-20 rounded-full overflow-hidden bg-[#0d0d0d] flex flex-col items-center"
           style={{
             boxShadow:
               '0 0 0 1px rgba(255,255,255,0.14), 0 0 50px 4px rgba(140,190,255,0.22), 0 20px 60px rgba(0,0,0,0.5)',
@@ -146,6 +146,7 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
                   src={story.mediaUrl}
                   alt={`${story.user?.username || 'Capsule'} image`}
                   className="absolute inset-0 h-full w-full object-cover transition-opacity duration-700"
+                  style={{ opacity: story.opacity ?? 1 }}
                   loading="lazy"
                   onError={(e) => {
                     e.currentTarget.style.opacity = '0';

@@ -107,7 +107,7 @@ export default function AppSidebar() {
   console.log('Current dashboardMode:', dashboardMode, 'Nav items:', navItems.map(item => item.key));
   return (
     <>
-      <aside className="hidden z-10 lg:block shrink-0">
+      <aside className="hidden z-10 sticky lg:block shrink-0">
         <div
           onMouseEnter={() => dispatch(setDesktopCollapsed(false))}
           onMouseLeave={() => dispatch(setDesktopCollapsed(true))}

@@ -27,6 +27,7 @@ import LevelPage from './pages/LevelPage.jsx';
 import Messages from './pages/messages.jsx';
 import Comments from './pages/CommentsModal.jsx';
 import SocialProfileSection from './pages/SocialProfilePage.jsx';
+import GlassFeed from './pages/LandinPageExperimental.jsx';
 
 function ProtectedRoute({ children }) {
   const [isChecking, setIsChecking] = useState(true);
@@ -148,10 +149,18 @@ function AppShell() {
               )}
             />
             <Route
-              path="/learn"
+              path="/levels"
               element={(
                 <ProtectedRoute>
-                  <LearnPage />
+                  <LevelsPage />
+                </ProtectedRoute>
+              )}
+            />
+            <Route
+              path="/experimental"
+              element={(
+                <ProtectedRoute>
+                  <GlassFeed />
                 </ProtectedRoute>
               )}
             />
@@ -196,7 +205,7 @@ function AppShell() {
               )}
             />
             <Route
-              path="/socialprofile"
+              path="/socialprofile/:userId?"
               element={(
                 <ProtectedRoute>
                   <SocialProfileSection />
