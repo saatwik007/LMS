@@ -324,6 +324,8 @@ exports.getFriendsLeaderboard = async (req, res) => {
       })
       .lean();
 
+      console.log("current user", currentUser)
+
     if (!currentUser) {
       return res.status(404).json({ message: 'User not found' });
     }

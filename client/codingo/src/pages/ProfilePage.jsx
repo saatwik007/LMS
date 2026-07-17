@@ -17,6 +17,7 @@ import {
 } from 'react-icons/fa';
 import CalendarHeatmap from '../components/shared/CalendarHeatmap';
 
+
 const RARITY_COLORS = {
   Common: 'bg-gray-600 text-gray-100',
   Rare: 'bg-blue-600 text-blue-100',
@@ -45,10 +46,12 @@ function getStoredUser() {
   }
 }
 
-export default function ProfilePage() {
+export default function 
+ProfilePage() {
   const { userId } = useParams();
   const storedUser = getStoredUser();
   const isOwnProfile = !userId || userId === storedUser?.id;
+  console.log('userId', userId)
 
   const [currentUser, setCurrentUser] = useState(isOwnProfile ? storedUser : null);
   const [allBadges, setAllBadges] = useState([]);

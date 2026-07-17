@@ -64,7 +64,7 @@ const getFriendsCapsules = async (req, res) => {
 
     const capsules = await Capsule.find({
       user: { $in: [...user.friends, userId] },  // ✅ use userId not req.user._id
-      expiresAt: { $gt: new Date() },
+      deleteAt: { $gt: new Date() },
     })
       .populate('user', 'username profilePic')
       
@@ -117,7 +117,7 @@ const getUserCapsules = async (req, res) => {
       return res.status(403).json({ message: "This account is private" });
     }
 
-    const stories = await Capsule.find({ user: userId, expiresAt: { $gt: new Date() } })
+    const stories = await Capsule.find({ user: userId, deleteAt: { $gt: new Date() } })
       .sort({ createdAt: -1 });
 
     // Normalize older records to include mediaUrl when missing
