@@ -107,15 +107,13 @@ export default function AppSidebar() {
   console.log('Current dashboardMode:', dashboardMode, 'Nav items:', navItems.map(item => item.key));
   return (
     <>
-      <aside className="hidden z-10 sticky lg:block shrink-0">
+      <aside className="hidden z-10 max-h-screen lg:block shrink-0">
         <div
           onMouseEnter={() => dispatch(setDesktopCollapsed(false))}
           onMouseLeave={() => dispatch(setDesktopCollapsed(true))}
-          className={`sticky top-14 h-full bg-[#2B2B2B] border-r border-[#414141] py-4 transition-width duration-300 ease-in-out will-change-[width] ${isDesktopCollapsed ? 'w-20 px-2' : 'w-45 px-2'
+          className={`sticky flex flex-col justify-between h-screen bg-[#2B2B2B] border-r border-[#414141] py-4 transition-width duration-200 ease-in-out will-change-[width] ${isDesktopCollapsed ? 'w-20 px-2' : 'w-45 px-2'
             }`}
         >
-          <div className="flex items-center justify-center mb-6">
-          </div>
 
           <nav className="space-y-1">
             {navItems.map((item) => (
@@ -128,6 +126,9 @@ export default function AppSidebar() {
               />
             ))}
           </nav>
+          <div className='text-white'>
+            New Post
+          </div>
         </div>
       </aside>
 

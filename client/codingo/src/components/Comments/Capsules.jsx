@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { FiPlus, FiRotateCcw } from 'react-icons/fi';
 import CapsuleModal from './CapsuleModal';
 import axios from "axios";
-import { apiUrl, getAuthHeaders } from "../../utilites/communityHelper";
+import { apiUrl, getAuthHeaders, getStoredUser } from "../../utilites/communityHelper";
 import { useDispatch, useSelector } from "react-redux";
 import { setCapsule } from "../../redux/slices/capsuleSlice";
 
@@ -173,10 +173,11 @@ function AddCapsuleTile({ onAddCapsule }) {
   );
 }
 
-export default function Capsules({ stories, derived, onAddCapsule, onOpenCapsule, onRevive }) {
+export default function Capsules({ onAddCapsule, onOpenCapsule, onRevive }) {
   const [now, setNow] = useState(() => Date.now());
   const capsule = useSelector(state => state.capsule?.capsule ?? []);
   const dispatch = useDispatch();
+  const storedUser = getStoredUser();
 
 
   useEffect(() => {
@@ -190,13 +191,14 @@ export default function Capsules({ stories, derived, onAddCapsule, onOpenCapsule
         withCredentials: true, headers: getAuthHeaders()
       });
       dispatch(setCapsule(res.data))
-      console.log('capsules res length', Array.isArray(res.data) ? res.data.length : typeof res.data);
-      console.log('capsules res first', Array.isArray(res.data) ? res.data[0] : res.data);
-      console.log('capsules res ', res?.mediaUrl);
+      // console.log('capsules res length', Array.isArray(res.data) ? res.data.length : typeof res.data);
+      // console.log('capsules res first', Array.isArray(res.data) ? res.data[0] : res.data);
+      console.log('capsules res ', res?.data);
     } catch (err) {
       console.error('capsule error', err);
     }
   };
+
 
   const items = capsule.length ? capsule : [];
 
@@ -214,79 +216,88 @@ export default function Capsules({ stories, derived, onAddCapsule, onOpenCapsule
           : { phase: 'active', opacity: 1, elapsed: null, remaining: null },
       }))
       .filter(({ derived }) => derived.phase !== 'expired');
-  }, [items, now]);
+  }, [items, now, storedUser?.id]);
+  console.log('visible', visible)
 
   const [openIndex, setOpenIndex] = useState(null); // null = modal closed
 
   const handleOpen = useCallback((storyId) => {
-    onOpenCapsule?.(storyId);
-    setOpenIndex(visible.findIndex(({ story }) => story._id === storyId));  // ✅ _id not id
-  }, [onOpenCapsule, visible]);
+      console.log('handleOpen called:', storyId);           // is this printing?
+      console.log('visible ids:', visible.map(v => v.story._id)); // what ids exist?
+      console.log('match found:', visible.findIndex(({ story }) => String(story._id) === String(storyId)));
 
-  const handleDeleteCapsule = useCallback(async (storyToDelete) => {
-    const capsuleId = storyToDelete?._id;
-    if (!capsuleId) return;
+      onOpenCapsule?.(storyId);
+      setOpenIndex(visible.findIndex(({ story }) => story._id === storyId));  // ✅ _id not id
+    }, [onOpenCapsule, visible]);
 
-    const ok = window.confirm('Delete this capsule? This will also remove its media.');
-    if (!ok) return;
+    const handleDeleteCapsule = useCallback(async (storyToDelete) => {
+      const capsuleId = storyToDelete?._id;
+      if (!capsuleId) return;
 
-    try {
-      await axios.delete(`${apiUrl}/api/capsule/${capsuleId}`, {
-        withCredentials: true,
-        headers: getAuthHeaders(),
-      });
+      const ok = window.confirm('Delete this capsule? This will also remove its media.');
+      if (!ok) return;
 
-      const nextCapsules = (capsule || []).filter((item) => item?._id !== capsuleId);
-      dispatch(setCapsule(nextCapsules));
+      try {
+        await axios.delete(`${apiUrl}/api/capsule/${capsuleId}`, {
+          withCredentials: true,
+          headers: getAuthHeaders(),
+        });
 
-      // Always close modal after deleting a capsule.
-      setOpenIndex(null);
-    } catch (err) {
-      console.error('Failed to delete capsule:', err);
-      window.alert(err?.response?.data?.message || 'Failed to delete capsule');
-    }
-  }, [capsule, dispatch]);
+        const nextCapsules = (capsule || []).filter((item) => item?._id !== capsuleId);
+        dispatch(setCapsule(nextCapsules));
 
-  const activeEntry = openIndex !== null ? visible[openIndex] : null;
-  const modalStory = activeEntry
-    ? {
-      ...activeEntry.story,
-      timestamp: activeEntry.derived.elapsed != null  // ✅ removed story.timestamp check
-        ? formatAge(activeEntry.derived.elapsed)
-        : undefined,
-      opacity: activeEntry.derived.opacity ?? 1,
-    }
-    : null;
+        // Always close modal after deleting a capsule.
+        setOpenIndex(null);
+      } catch (err) {
+        console.error('Failed to delete capsule:', err);
+        window.alert(err?.response?.data?.message || 'Failed to delete capsule');
+      }
+    }, [capsule, dispatch]);
 
-  return (
-    <>
-      <div
-        className="flex items-start gap-3 overflow-x-auto pb-1 mb-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        role="list"
-        aria-label="Stories"
-      >
-        <AddCapsuleTile onAddCapsule={onAddCapsule} />
+    const activeEntry = openIndex !== null ? visible[openIndex] : null;
+    const modalStory = activeEntry
+      ? {
+        ...activeEntry.story,
+        timestamp: activeEntry.derived.elapsed != null
+          ? formatAge(activeEntry.derived.elapsed)
+          : undefined,
+        opacity: activeEntry.derived.opacity ?? 1,
+        isOwner: activeEntry.isOwner,
+      }
+      : null;
+    console.log('openIndex:', openIndex);
+    console.log('visible length:', visible.length);
+    console.log('activeEntry:', activeEntry);
 
-        {visible.map(({ story, derived }, i) => (
-          <CapsuleTile
-            key={`${story._id}-${i}`}  // ✅ _id not id
-            story={story}
-            derived={derived}
-            index={i + 1}
-            onOpenCapsule={handleOpen}
-            onRevive={onRevive}
-          />
-        ))}
-      </div>
+    return (
+      <>
+        <div
+          className="flex items-start gap-3 overflow-x-auto pb-1 mb-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          role="list"
+          aria-label="Stories"
+        >
+          <AddCapsuleTile onAddCapsule={onAddCapsule} />
 
-      <CapsuleModal
-        isOpen={openIndex !== null}
-        story={modalStory}
-        onClose={() => setOpenIndex(null)}
-        onPrev={openIndex > 0 ? () => setOpenIndex((i) => i - 1) : undefined}
-        onNext={openIndex !== null && openIndex < visible.length - 1 ? () => setOpenIndex((i) => i + 1) : undefined}
-        onDelete={handleDeleteCapsule}
-      />
-    </>
-  );
-}
+          {visible.map(({ story, derived }, i) => (
+            <CapsuleTile
+              key={`${story._id}-${i}`}
+              story={story}
+              derived={derived}
+              index={i + 1}
+              onOpenCapsule={handleOpen}
+              onRevive={onRevive}
+            />
+          ))}
+        </div>
+
+        <CapsuleModal
+          isOpen={openIndex !== null}
+          story={modalStory}
+          onClose={() => setOpenIndex(null)}
+          onPrev={openIndex > 0 ? () => setOpenIndex((i) => i - 1) : undefined}
+          onNext={openIndex !== null && openIndex < visible.length - 1 ? () => setOpenIndex((i) => i + 1) : undefined}
+          onDelete={handleDeleteCapsule}
+        />
+      </>
+    );
+  }

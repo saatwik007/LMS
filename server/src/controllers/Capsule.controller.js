@@ -67,7 +67,7 @@ const getFriendsCapsules = async (req, res) => {
       deleteAt: { $gt: new Date() },
     })
       .populate('user', 'username profilePic')
-      
+
       .sort({ createdAt: -1 });
 
     // Debug: surface basic diagnostics to server logs to help client-side debugging
@@ -144,6 +144,26 @@ const viewCapsule = async (req, res) => {
   }
 };
 
+const preserveCapsule = async (req, res) => {
+  try {
+    const userId = String(req.user.id || req.user._id);
+
+    if (!capsule) {
+      return res.status(404).json({ message: 'Capsule not found' });
+    }
+    await Capsule.findByIdAndUpdate(req.params.id, {
+      expiresAt: new Date(now.getTime() + 24 * HOUR),
+      deleteAt: new Date(now.getTime() + 48 * HOUR),
+      revivedFrom: userId
+    });
+    await capsule.save()
+    return res.status(200).json({ message: `Capsule preserved succefully by ${userId}` })
+
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}
+
 const deleteCapsule = async (req, res) => {
   try {
     const capsuleId = req.params.id;
@@ -184,6 +204,7 @@ const getCapsuleMedia = async (req, res) => {
 module.exports = {
   createCapsule,
   viewCapsule,
+  preserveCapsule,
   deleteCapsule,
   getUserCapsules,
   getFriendsCapsules,
