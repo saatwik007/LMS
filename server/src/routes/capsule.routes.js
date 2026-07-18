@@ -27,7 +27,7 @@ router.get('/media/:fileId', getCapsuleMedia);
 router.get('/feed', protect, getFriendsCapsules);
 router.get('/user/:userId', protect, getUserCapsules);
 router.post('/:id/view', protect, viewCapsule);
-router.post('/preserve', protect, preserveCapsule)
+router.post('/:id/preserve', protect, preserveCapsule)
 router.delete('/:id', protect, deleteCapsule);
 
 module.exports = router;

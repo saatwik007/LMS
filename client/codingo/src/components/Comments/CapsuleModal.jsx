@@ -18,19 +18,18 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
   const glowRef = useRef(null);
   const backdropRef = useRef(null);
   const storedUser = getStoredUser();
-  const isOwner = String(story.user?._id) === String(storedUser?.id);
-  const isFading = story.opacity < 1;
-
+  console.log('story', story)
+  
   const preserveCapsule = async () => {
     try {
-      await axios.get(`${apiUrl}/api/capsule/preserve`, {
+      await axios.get(`${apiUrl}/api/capsule/${story._id}/preserve`, {
         withCredentials: true, headers: getAuthHeaders()
       });
     } catch (error) {
       console.error('preserve capsule failed', error)
     }
   }
-
+  
   // Escape to close + body scroll lock while open
   useEffect(() => {
     if (!isOpen) return;
@@ -70,9 +69,11 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
     });
     return () => ctx.revert();
   }, [isOpen]);
-
+  
   if (!isOpen || !story) return null;
-
+  const isOwner = String(story.user?._id) === String(storedUser?.id);
+  const isFading = story.opacity < 1;
+  
   return (
     <div
       ref={backdropRef}
@@ -186,8 +187,8 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
 
             {/* Preseve button */}
             {!isOwner && isFading && (
-              <button className="text-white/80 hover:text-white transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 rounded-full" aria-label="Save">
-                <FiBookmark onClick={preserveCapsule()} size={19} />
+              <button onClick={preserveCapsule} className="text-white/80 hover:text-white transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 rounded-full" aria-label="Save">
+                <FiBookmark size={19} />
               </button>)}
 
             {typeof onDelete === 'function' && (

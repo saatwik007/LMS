@@ -154,8 +154,9 @@ const preserveCapsule = async (req, res) => {
     await Capsule.findByIdAndUpdate(req.params.id, {
       expiresAt: new Date(now.getTime() + 24 * HOUR),
       deleteAt: new Date(now.getTime() + 48 * HOUR),
-      preservedFrom: userId
+      revivedFrom: userId
     });
+    await capsule.save()
     return res.status(200).json({ message: `Capsule preserved succefully by ${userId}` })
 
   } catch (error) {
