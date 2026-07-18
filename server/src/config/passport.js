@@ -56,11 +56,11 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   );
 
   isGoogleEnabled = true;
-  console.log('[PASSPORT] Google OAuth ENABLED');
-  console.log('[PASSPORT] NODE_ENV:', NODE_ENV);
-  console.log('[PASSPORT] BACKEND_URL:', BACKEND_URL);
-  console.log('[PASSPORT] GOOGLE_CLIENT_ID prefix:', process.env.GOOGLE_CLIENT_ID?.slice(0, 20));
-  console.log('[PASSPORT] callbackURL:', `${BACKEND_URL}/api/auth/google/callback`);
+  // console.log('[PASSPORT] Google OAuth ENABLED');
+  // console.log('[PASSPORT] NODE_ENV:', NODE_ENV);
+  // console.log('[PASSPORT] BACKEND_URL:', BACKEND_URL);
+  // console.log('[PASSPORT] GOOGLE_CLIENT_ID prefix:', process.env.GOOGLE_CLIENT_ID?.slice(0, 20));
+  // console.log('[PASSPORT] callbackURL:', `${BACKEND_URL}/api/auth/google/callback`);
 } else {
   console.warn('[PASSPORT] Google OAuth DISABLED: GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET missing');
 }

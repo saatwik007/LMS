@@ -13,7 +13,7 @@ async function connectDrive() {
 
         const res = await drive.files.list({ pageSize: 10 });
         console.log('✅ Connected to Google Drive');
-        console.log('Files:', res.data.files);
+        // console.log('Files:', res.data.files);
         return res;
     } catch (error) {
         console.error('Error connecting to Google Drive:', error);

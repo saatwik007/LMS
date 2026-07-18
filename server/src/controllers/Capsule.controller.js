@@ -72,7 +72,7 @@ const getFriendsCapsules = async (req, res) => {
 
     // Debug: surface basic diagnostics to server logs to help client-side debugging
     try {
-      console.log(`[CAPSULES] fetched ${capsules.length} capsules for user ${userId}`);
+      // console.log(`[CAPSULES] fetched ${capsules.length} capsules for user ${userId}`);
       if (capsules.length > 0) console.log('[CAPSULES] sample:', { id: capsules[0]._id, mediaFileId: capsules[0].mediaFileId, mediaUrl: capsules[0].mediaUrl });
     } catch (logErr) {
       console.warn('[CAPSULES] logging failure', logErr?.message || logErr);
@@ -147,22 +147,27 @@ const viewCapsule = async (req, res) => {
 const preserveCapsule = async (req, res) => {
   try {
     const userId = String(req.user.id || req.user._id);
+    const now = new Date();
 
+    const capsule = await Capsule.findById(req.params.id);
+    console.log('raw capsule', capsule)
+    console.log('capsule', String(capsule.user))
+    console.log('userId', userId)
     if (!capsule) {
       return res.status(404).json({ message: 'Capsule not found' });
     }
-    await Capsule.findByIdAndUpdate(req.params.id, {
-      expiresAt: new Date(now.getTime() + 24 * HOUR),
-      deleteAt: new Date(now.getTime() + 48 * HOUR),
-      revivedFrom: userId
-    });
-    await capsule.save()
-    return res.status(200).json({ message: `Capsule preserved succefully by ${userId}` })
 
+    capsule.expiresAt = new Date(now.getTime() + 24 * HOUR);
+    capsule.deleteAt = new Date(now.getTime() + 48 * HOUR);
+    capsule.streakStartsFrom = now; 
+    capsule.streakCount = (capsule.streakCount || 1) + 1;
+    await capsule.save();
+
+    return res.status(200).json({ message: `Capsule preserved successfully by ${userId}`, capsule });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
-}
+};
 
 const deleteCapsule = async (req, res) => {
   try {
