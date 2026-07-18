@@ -12,7 +12,7 @@ const capsuleSchema = new mongoose.Schema(
 
     streakCount: { type: Number, default: 1 },
     streakStartsFrom: { type: Date, default: Date.now },
-    revivedFrom: { type: mongoose.Schema.Types.ObjectId, ref: "Capsule", default: null },
+    preservedFrom: { type: mongoose.Schema.Types.ObjectId, ref: "Capsule", default: null },
 
     expiresAt: { type: Date, required: true },
     deleteAt: { type: Date, required: true },

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { FiPlus, FiRotateCcw } from 'react-icons/fi';
 import CapsuleModal from './CapsuleModal';
 import axios from "axios";
-import { apiUrl, getAuthHeaders } from "../../utilites/communityHelper";
+import { apiUrl, getAuthHeaders, getStoredUser } from "../../utilites/communityHelper";
 import { useDispatch, useSelector } from "react-redux";
 import { setCapsule } from "../../redux/slices/capsuleSlice";
 
@@ -176,7 +176,9 @@ function AddCapsuleTile({ onAddCapsule }) {
 export default function Capsules({ stories, derived, onAddCapsule, onOpenCapsule, onRevive }) {
   const [now, setNow] = useState(() => Date.now());
   const capsule = useSelector(state => state.capsule?.capsule ?? []);
+  const [isOwnCap, setIsOwnCap] = useState(false);
   const dispatch = useDispatch();
+  const storedUser = getStoredUser();
 
 
   useEffect(() => {
@@ -190,13 +192,14 @@ export default function Capsules({ stories, derived, onAddCapsule, onOpenCapsule
         withCredentials: true, headers: getAuthHeaders()
       });
       dispatch(setCapsule(res.data))
-      console.log('capsules res length', Array.isArray(res.data) ? res.data.length : typeof res.data);
-      console.log('capsules res first', Array.isArray(res.data) ? res.data[0] : res.data);
-      console.log('capsules res ', res?.mediaUrl);
+      // console.log('capsules res length', Array.isArray(res.data) ? res.data.length : typeof res.data);
+      // console.log('capsules res first', Array.isArray(res.data) ? res.data[0] : res.data);
+      console.log('capsules res ', res?.data);
     } catch (err) {
       console.error('capsule error', err);
     }
   };
+
 
   const items = capsule.length ? capsule : [];
 
@@ -214,7 +217,7 @@ export default function Capsules({ stories, derived, onAddCapsule, onOpenCapsule
           : { phase: 'active', opacity: 1, elapsed: null, remaining: null },
       }))
       .filter(({ derived }) => derived.phase !== 'expired');
-  }, [items, now]);
+  }, [items, now, storedUser?.id]);
 
   const [openIndex, setOpenIndex] = useState(null); // null = modal closed
 
@@ -251,10 +254,11 @@ export default function Capsules({ stories, derived, onAddCapsule, onOpenCapsule
   const modalStory = activeEntry
     ? {
       ...activeEntry.story,
-      timestamp: activeEntry.derived.elapsed != null  // ✅ removed story.timestamp check
+      timestamp: activeEntry.derived.elapsed != null
         ? formatAge(activeEntry.derived.elapsed)
         : undefined,
       opacity: activeEntry.derived.opacity ?? 1,
+      isOwner: activeEntry.isOwner, 
     }
     : null;
 
@@ -269,7 +273,7 @@ export default function Capsules({ stories, derived, onAddCapsule, onOpenCapsule
 
         {visible.map(({ story, derived }, i) => (
           <CapsuleTile
-            key={`${story._id}-${i}`}  // ✅ _id not id
+            key={`${story._id}-${i}`}
             story={story}
             derived={derived}
             index={i + 1}
