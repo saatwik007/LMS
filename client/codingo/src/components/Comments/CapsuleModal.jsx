@@ -22,7 +22,7 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
   
   const preserveCapsule = async () => {
     try {
-      await axios.get(`${apiUrl}/api/capsule/${story._id}/preserve`, {
+      await axios.post(`${apiUrl}/api/capsule/${story._id}/preserve`, {}, {
         withCredentials: true, headers: getAuthHeaders()
       });
     } catch (error) {
@@ -121,7 +121,7 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
         {/* The capsule itself */}
         <div
           ref={cardRef}
-          className="relative h-200 w-130 right-10 bottom-20 rounded-full overflow-hidden bg-[#0d0d0d] flex flex-col items-center"
+          className="relative h-155 sm:h-200 w-full sm:w-130 right-0 sm:right-10 bottom-11 sm:bottom-20 rounded-full overflow-hidden bg-[#0d0d0d] flex flex-col items-center"
           style={{
             boxShadow:
               '0 0 0 1px rgba(255,255,255,0.14), 0 0 50px 4px rgba(140,190,255,0.22), 0 20px 60px rgba(0,0,0,0.5)',
@@ -147,7 +147,11 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
               )}
             </div>
             <p className="text-[13px] text-zinc-200">
+              {!isOwner ? (
               <span className="font-medium">@{story.user?.username || 'Unknown'}</span>
+              ) : (
+                <span className="font-medium">Your Capsule</span>
+              )}
               <span className="text-zinc-500"> · {story.timestamp}</span>
             </p>
           </div>
@@ -177,13 +181,18 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
           </div>
 
           {/* Actions */}
+          
           <div className="shrink-0 flex items-center z-10 gap-6 pt-4 pb-9">
+            {!isOwner && ( 
+              <>
             <button className="text-white/80 cursor-pointer hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 rounded-full" aria-label="Like">
               <FiHeart size={19} />
             </button>
             <button className="text-white/80 hover:text-white cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 rounded-full" aria-label="Comment">
               <FiMessageCircle size={19} />
             </button>
+            </>
+          )}
 
             {/* Preseve button */}
             {!isOwner && isFading && (
@@ -191,7 +200,11 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
                 <FiBookmark size={19} />
               </button>)}
 
-            {typeof onDelete === 'function' && (
+              <button className="text-white/80 hover:text-white cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 rounded-full" aria-label="Comment">
+              <FiSend size={19} />
+            </button>
+
+            {typeof onDelete === 'function' && isOwner && (
               <button
                 onClick={() => onDelete(story)}
                 className="text-red-300 hover:text-red-200 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/70 rounded-full"

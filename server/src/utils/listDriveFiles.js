@@ -27,15 +27,15 @@ async function listAllFiles() {
     pageToken = res.data.nextPageToken;
   } while (pageToken);
 
-  console.log(`Total files: ${files.length}\n`);
-  files.forEach((f, i) => {
-    console.log(`${i + 1}. ${f.name}`);
-    console.log(`   id: ${f.id}`);
-    console.log(`   type: ${f.mimeType}`);
-    console.log(`   size: ${f.size ? (f.size / 1024).toFixed(1) + ' KB' : 'n/a'}`);
-    console.log(`   created: ${f.createdTime}`);
-    console.log(`   link: ${f.webViewLink}\n`);
-  });
+  // console.log(`Total files: ${files.length}\n`);
+  // files.forEach((f, i) => {
+  //   console.log(`${i + 1}. ${f.name}`);
+  //   console.log(`   id: ${f.id}`);
+  //   console.log(`   type: ${f.mimeType}`);
+  //   console.log(`   size: ${f.size ? (f.size / 1024).toFixed(1) + ' KB' : 'n/a'}`);
+  //   console.log(`   created: ${f.createdTime}`);
+  //   console.log(`   link: ${f.webViewLink}\n`);
+  // });
 
   return files;
 }

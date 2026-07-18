@@ -8,7 +8,9 @@ import {
   FaGraduationCap,
   FaHome,
   FaMedal,
+  FaPlus,
   FaRegStar,
+  FaSignOutAlt,
   FaTimes,
   FaTrophy,
   FaUser,
@@ -18,6 +20,9 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { setDesktopCollapsed, setMobileMenuOpen } from '../../redux/slices/sideBarSlice';
+import axios from 'axios';
+import { apiUrl, getAuthHeaders } from '../../utilites/DashboardHelper';
+import { setCurrentUser } from '../../redux/slices/dashboardSlice';
 
 // const navItems = [
 //   // { key: 'dashboard', label: 'Dashboard', icon: FaRegStar, to: '/dashboard', match: ['/dashboard'] },
@@ -38,8 +43,6 @@ const communityNavItems = [
   { key: 'friends', label: 'Friends', icon: FaUserFriends, to: '/friends', match: ['/friends'] },
   { key: 'messages', label: 'Messages', icon: FaFacebookMessenger, to: '/messages', match: ['/messages'] },
   { key: 'socialprofile', label: 'Social Profile', icon: FaUser, to: '/socialprofile', match: ['/socialprofile'] },
-  // { key: 'leaderboards', label: 'Leaderboards', icon: FaTrophy, to: '/leaderboard', match: ['/leaderboard'] },
-  // { key: 'profile', label: 'Profile', icon: FaMedal, to: '/profile', match: ['/profile'] },
 ];
 
 const lmsNavItems = [
@@ -52,7 +55,6 @@ const lmsNavItems = [
   { key: 'leaderboards', label: 'Leaderboards', icon: FaTrophy, to: '/leaderboard', match: ['/leaderboard'] },
   { key: 'profile', label: 'Profile', icon: FaMedal, to: '/profile', match: ['/profile'] },
   { key: 'progress', label: 'Progress', icon: FaChartLine, to: '/progress', match: ['/progress'] },
-  // { key: 'more', label: 'More', icon: FaEllipsisH, to: '/dashboard', match: [] }
 ];
 
 function SidebarItem({ item, isActive, collapsed, onClick, iconOnly = false }) {
@@ -81,6 +83,23 @@ export default function AppSidebar() {
   const dispatch = useDispatch();
   const isDesktopCollapsed = useSelector(state => state.sideBar.isDesktopCollapsed);
   const isMobileMenuOpen = useSelector(state => state.sideBar.isMobileMenuOpen);
+
+  const handleLogout = async () => {
+  try {
+    await axios.get(`${apiUrl}/api/auth/user/logout`, {
+      withCredentials: true,
+      headers: getAuthHeaders()
+    });
+  } catch {
+    // Continue local cleanup even if API request fails.
+  }
+
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  setCurrentUser(null);
+  window.dispatchEvent(new Event('auth:user-updated'));
+  navigate('/login');
+};
 
   const handleNavigate = (to) => {
     dispatch(setMobileMenuOpen(false));
@@ -126,8 +145,21 @@ export default function AppSidebar() {
               />
             ))}
           </nav>
-          <div className='text-white'>
-            New Post
+          
+          <div>
+            {/* New Post */}
+          <button className=' flex justify-center w-full cursor-pointer items-center gap-3 text-white mb-5 text-center bg-gray-700 p-2 rounded-3xl'>
+            <span className='py-2'><FaPlus /></span>
+            {!isDesktopCollapsed && (
+            <span>New Post</span>)}
+          </button>
+
+            {/* Log Out */}
+          <button onClick={handleLogout} className='text-white flex justify-center w-full items-center bg-red-700 text-center p-2 rounded-3xl cursor-pointer'>
+            <span className='py-2'><FaSignOutAlt /></span>
+            {!isDesktopCollapsed && (
+            <span>Log-out</span>)}
+          </button>
           </div>
         </div>
       </aside>

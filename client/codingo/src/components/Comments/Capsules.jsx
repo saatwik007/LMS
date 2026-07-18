@@ -207,16 +207,21 @@ export default function Capsules({ onAddCapsule, onOpenCapsule, onRevive }) {
   }, []);
 
   // One pass: compute live phase per story, then drop any that expired.
-  const visible = useMemo(() => {
-    return items
-      .map((story) => ({
+const visible = useMemo(() => {
+  return items
+    .map((story) => {
+      const cycleStart = story.streakStartsFrom || story.createdAt;
+      return {
         story,
-        derived: story.createdAt
-          ? getStoryPhase(new Date(story.createdAt).getTime(), now)  // ✅ createdAt not cycleStart
-          : { phase: 'active', opacity: 1, elapsed: null, remaining: null },
-      }))
-      .filter(({ derived }) => derived.phase !== 'expired');
-  }, [items, now, storedUser?.id]);
+        derived: cycleStart
+          ? getStoryPhase(new Date(cycleStart).getTime(), now)
+          : { phase: 'expired', opacity: 0, elapsed: null, remaining: null },
+        isOwner: String(story.user?._id) === String(storedUser?.id),
+      };
+    })
+    .filter(({ derived }) => derived.phase !== 'expired');
+}, [items, now, storedUser?.id]);
+
   console.log('visible', visible)
 
   const [openIndex, setOpenIndex] = useState(null); // null = modal closed
