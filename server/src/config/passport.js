@@ -44,6 +44,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
               Date.now().toString(36),
             email: email || `${profile.id}@google.oauth`,
             googleId: profile.id,
+            authProvider: 'google',
             profilePic: profile.photos?.[0]?.value || '',
           });
 
