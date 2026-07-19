@@ -1,10 +1,8 @@
 import axios from "axios";
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { useDispatch } from "react-redux";
 // import { setError, setImage, setImagePreview } from "../redux/slices/postSlice";
 
 export const apiUrl = import.meta.env.VITE_API_URL || '';
-// const dispatch = useDispatch();
 
 export const getAuthHeaders = () => {
   const token = localStorage.getItem('token');

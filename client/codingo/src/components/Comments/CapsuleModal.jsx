@@ -10,13 +10,26 @@ import {
   FiTrash2,
 } from 'react-icons/fi';
 import gsap from 'gsap';
+import { apiUrl, getAuthHeaders, getStoredUser } from '../../utilites/communityHelper';
+import axios from 'axios';
 
 export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, onDelete }) {
   const cardRef = useRef(null);
   const glowRef = useRef(null);
   const backdropRef = useRef(null);
-  console.log('capsule modal render', isOpen, story)
-
+  const storedUser = getStoredUser();
+  console.log('story', story)
+  
+  const preserveCapsule = async () => {
+    try {
+      await axios.post(`${apiUrl}/api/capsule/${story._id}/preserve`, {}, {
+        withCredentials: true, headers: getAuthHeaders()
+      });
+    } catch (error) {
+      console.error('preserve capsule failed', error)
+    }
+  }
+  
   // Escape to close + body scroll lock while open
   useEffect(() => {
     if (!isOpen) return;
@@ -46,7 +59,7 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
       gsap.fromTo(
         cardRef.current,
         { opacity: 0, scale: 0.86, y: 14 },
-        { opacity: 1, scale: 1, y: 0, duration: 0.5, ease: 'expo.out' }
+        { opacity: 1, scale: 1, y: 0, duration: 0.1, ease: 'expo.out' }
       );
       gsap.fromTo(
         glowRef.current,
@@ -56,10 +69,11 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
     });
     return () => ctx.revert();
   }, [isOpen]);
-
+  
   if (!isOpen || !story) return null;
-  console.log('capsule url', story?.mediaUrl)
-
+  const isOwner = String(story.user?._id) === String(storedUser?.id);
+  const isFading = story.opacity < 1;
+  
   return (
     <div
       ref={backdropRef}
@@ -107,7 +121,7 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
         {/* The capsule itself */}
         <div
           ref={cardRef}
-          className="relative h-165 w-110 rounded-full overflow-hidden bg-[#0d0d0d] flex flex-col items-center"
+          className="relative h-155 sm:h-200 w-full sm:w-130 right-0 sm:right-10 bottom-11 sm:bottom-20 rounded-full overflow-hidden bg-[#0d0d0d] flex flex-col items-center"
           style={{
             boxShadow:
               '0 0 0 1px rgba(255,255,255,0.14), 0 0 50px 4px rgba(140,190,255,0.22), 0 20px 60px rgba(0,0,0,0.5)',
@@ -124,55 +138,76 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
           {/* Header — inset from the curve on purpose */}
           <div className="flex flex-col z-10 items-center mt-5 shrink-0">
             <div className="h-11 w-11 rounded-full overflow-hidden ring-2 ring-white/20 mb-2">
-                {story.user?.profilePic ? (
-                  <img src={story.user.profilePic} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <div className="h-full w-full bg-[#2b2b2b] flex items-center justify-center text-[13px] text-zinc-200">
-                    {story.user?.username?.[0]?.toUpperCase()}
-                  </div>
-                )}
-              </div>
-              <p className="text-[13px] text-zinc-200">
-                <span className="font-medium">@{story.user?.username || 'Unknown'}</span>
-                <span className="text-zinc-500"> · {story.timestamp}</span>
-              </p>
-            </div>
-
-            {/* Media — flexes to fill remaining space so the oval holds
-                its shape regardless of caption length */}
-            <div className="relative flex-1 min-h-0 w-full px-7 mt-4 overflow-hidden rounded-[28px]">
-              {story?.mediaUrl ? (
-                <img
-                  src={story.mediaUrl}
-                  alt={`${story.user?.username || 'Capsule'} image`}
-                  className="absolute inset-0 h-full w-full object-cover transition-opacity duration-700"
-                  loading="lazy"
-                  onError={(e) => {
-                    e.currentTarget.style.opacity = '0';
-                  }}
-                />
+              {story.user?.profilePic ? (
+                <img src={story.user.profilePic} alt="" className="h-full w-full object-cover" />
               ) : (
-                <div className="absolute inset-0 bg-zinc-950" />
+                <div className="h-full w-full bg-[#2b2b2b] flex items-center justify-center text-[13px] text-zinc-200">
+                  {story.user?.username?.[0]?.toUpperCase()}
+                </div>
               )}
-
-              <div className="pointer-events-none absolute inset-0 bg-black/20" />
             </div>
+            <p className="text-[13px] text-zinc-200">
+              {!isOwner ? (
+              <span className="font-medium">@{story.user?.username || 'Unknown'}</span>
+              ) : (
+                <span className="font-medium">Your Capsule</span>
+              )}
+              <span className="text-zinc-500"> · {story.timestamp}</span>
+            </p>
+          </div>
 
-            {/* Actions */}
+          {/* Media — flexes to fill remaining space so the oval holds
+                its shape regardless of caption length */}
+          <div className="relative flex-1 min-h-0 w-full px-7 mt-4 overflow-hidden rounded-[28px]">
+            {story?.mediaUrl ? (
+              <img
+                src={story.mediaUrl}
+                alt={`${story.user?.username || 'Capsule'} image`}
+                className="absolute inset-0 h-full w-full object-cover transition-opacity duration-700"
+                style={{ opacity: story.opacity ?? 1 }}
+                loading="lazy"
+                onError={(e) => {
+                  e.currentTarget.style.opacity = '0';
+                }}
+              />
+            ) : (
+              <div className="absolute inset-0 bg-zinc-950" />
+            )}
+
+            {/* <div className="pointer-events-none absolute inset-0 bg-black/20" /> */}
+          </div>
+          <div className='text-white text-xl'>
+            {story?.caption}
+          </div>
+
+          {/* Actions */}
+          
           <div className="shrink-0 flex items-center z-10 gap-6 pt-4 pb-9">
-            <button className="text-white/80 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 rounded-full" aria-label="Like">
+            {!isOwner && ( 
+              <>
+            <button className="text-white/80 cursor-pointer hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 rounded-full" aria-label="Like">
               <FiHeart size={19} />
             </button>
-            <button className="text-white/80 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 rounded-full" aria-label="Comment">
+            <button className="text-white/80 hover:text-white cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 rounded-full" aria-label="Comment">
               <FiMessageCircle size={19} />
             </button>
-            <button className="text-white/80 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 rounded-full" aria-label="Save">
-              <FiBookmark size={19} />
+            </>
+          )}
+
+            {/* Preseve button */}
+            {!isOwner && isFading && (
+              <button onClick={preserveCapsule} className="text-white/80 hover:text-white transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 rounded-full" aria-label="Save">
+                <FiBookmark size={19} />
+              </button>)}
+
+              <button className="text-white/80 hover:text-white cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 rounded-full" aria-label="Comment">
+              <FiSend size={19} />
             </button>
-            {typeof onDelete === 'function' && (
+
+            {typeof onDelete === 'function' && isOwner && (
               <button
                 onClick={() => onDelete(story)}
-                className="text-red-300 hover:text-red-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/70 rounded-full"
+                className="text-red-300 hover:text-red-200 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/70 rounded-full"
                 aria-label="Delete capsule"
                 title="Delete capsule"
               >
@@ -180,8 +215,8 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
               </button>
             )}
           </div>
-          </div>
         </div>
       </div>
+    </div>
   );
 }

@@ -64,15 +64,15 @@ const getFriendsCapsules = async (req, res) => {
 
     const capsules = await Capsule.find({
       user: { $in: [...user.friends, userId] },  // ✅ use userId not req.user._id
-      expiresAt: { $gt: new Date() },
+      deleteAt: { $gt: new Date() },
     })
       .populate('user', 'username profilePic')
-      
+
       .sort({ createdAt: -1 });
 
     // Debug: surface basic diagnostics to server logs to help client-side debugging
     try {
-      console.log(`[CAPSULES] fetched ${capsules.length} capsules for user ${userId}`);
+      // console.log(`[CAPSULES] fetched ${capsules.length} capsules for user ${userId}`);
       if (capsules.length > 0) console.log('[CAPSULES] sample:', { id: capsules[0]._id, mediaFileId: capsules[0].mediaFileId, mediaUrl: capsules[0].mediaUrl });
     } catch (logErr) {
       console.warn('[CAPSULES] logging failure', logErr?.message || logErr);
@@ -117,7 +117,7 @@ const getUserCapsules = async (req, res) => {
       return res.status(403).json({ message: "This account is private" });
     }
 
-    const stories = await Capsule.find({ user: userId, expiresAt: { $gt: new Date() } })
+    const stories = await Capsule.find({ user: userId, deleteAt: { $gt: new Date() } })
       .sort({ createdAt: -1 });
 
     // Normalize older records to include mediaUrl when missing
@@ -141,6 +141,31 @@ const viewCapsule = async (req, res) => {
     res.sendStatus(204);
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+};
+
+const preserveCapsule = async (req, res) => {
+  try {
+    const userId = String(req.user.id || req.user._id);
+    const now = new Date();
+
+    const capsule = await Capsule.findById(req.params.id);
+    console.log('raw capsule', capsule)
+    console.log('capsule', String(capsule.user))
+    console.log('userId', userId)
+    if (!capsule) {
+      return res.status(404).json({ message: 'Capsule not found' });
+    }
+
+    capsule.expiresAt = new Date(now.getTime() + 24 * HOUR);
+    capsule.deleteAt = new Date(now.getTime() + 48 * HOUR);
+    capsule.streakStartsFrom = now; 
+    capsule.streakCount = (capsule.streakCount || 1) + 1;
+    await capsule.save();
+
+    return res.status(200).json({ message: `Capsule preserved successfully by ${userId}`, capsule });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
   }
 };
 
@@ -184,6 +209,7 @@ const getCapsuleMedia = async (req, res) => {
 module.exports = {
   createCapsule,
   viewCapsule,
+  preserveCapsule,
   deleteCapsule,
   getUserCapsules,
   getFriendsCapsules,

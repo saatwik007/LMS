@@ -132,6 +132,7 @@ export default function SocialProfileSection() {
     const storedUser = getStoredUser();
     const isOwnProfile = !userId || userId === storedUser?.id;
     const [currentUser, setCurrentUser] = useState(isOwnProfile ? storedUser : null);
+    console.log('currentUser', currentUser)
     const [isEditingUsername, setIsEditingUsername] = useState(false);
     const [editedUsername, setEditedUsername] = useState('');
     const [isEditingBio, setIsEditingBio] = useState(false);
@@ -155,7 +156,7 @@ export default function SocialProfileSection() {
         const fetchUserPosts = async () => {
             const id = userId || storedUser?.id;
             if (!id) return;
-            console.log('Fetching posts for user ID:', id, 'storedUser ID:', storedUser?.id,'isUserId:', userId);
+            console.log('Fetching posts for user ID:', id, 'storedUser ID:', storedUser?.id, 'isUserId:', userId);
 
             setPostsLoading(true);
             try {
@@ -189,14 +190,10 @@ export default function SocialProfileSection() {
     };
 
 
-    useEffect(() => {
-        fetchUserProfile();
-    }, [userId]);
-
-
     function getStoredUser() {
         try {
             const raw = localStorage.getItem('user');
+            // console.log('raw', raw)
             return raw ? JSON.parse(raw) : null;
         } catch {
             return null;
@@ -205,6 +202,7 @@ export default function SocialProfileSection() {
 
     async function fetchUserProfile() {
         try {
+            console.log("fetch user profile");
             const url = isOwnProfile
                 ? `${apiUrl}/api/auth/user/me`
                 : `${apiUrl}/api/auth/user/${userId}/public`;
@@ -213,10 +211,11 @@ export default function SocialProfileSection() {
                 withCredentials: true,
                 headers: getAuthHeaders()
             });
+            console.log('ownprofile', isOwnProfile)
 
             if (response.data?.user) {
                 const userData = response.data.user;
-                setCurrentUser(userData);
+                setCurrentUser(userData)
                 setBio(userData.bio || '');
                 setEditedUsername(userData.username || '');
 
@@ -230,7 +229,11 @@ export default function SocialProfileSection() {
             setError('Failed to load profile.');
             setIsLoading(false);
         }
-    }
+    };
+
+    useEffect(() => {
+        fetchUserProfile();
+    }, [userId]);
 
     const handleAvatarUpload = async (e) => {
         const file = e.target.files?.[0];
@@ -398,6 +401,7 @@ export default function SocialProfileSection() {
     const items = DATA_BY_TAB[activeTab];
     const isLinks = activeTab === "Links";
 
+
     return (
         <div
             ref={rootRef}
@@ -419,7 +423,7 @@ export default function SocialProfileSection() {
                             ref={avatarRef}
                             className="group relative flex h-[190px] w-[190px] shrink-0 items-center justify-center overflow-hidden cursor-pointer rounded-full border border-white/10 bg-neutral-200"
                         >
-                            {isOwnProfile && (
+                            {(
                                 <input
                                     ref={fileInputRef}
                                     type="file"
@@ -429,12 +433,19 @@ export default function SocialProfileSection() {
                                 />
                             )}
 
-                            {/* Profile Pic */}
-                            <img
-                                src={currentUser.profilePic}
-                                alt={currentUser.username}
-                                className="cursor-pointer w-full h-full object-cover rounded-full transition-opacity duration-200 group-hover:opacity-50"
-                            />
+                            {/* Profile Pic (guarded) */}
+                            {currentUser?.profilePic ? (
+                                <img
+                                    src={currentUser.profilePic}
+                                    alt={currentUser?.username || 'Profile'}
+                                    className="cursor-pointer w-full h-full object-cover rounded-full transition-opacity duration-200 group-hover:opacity-50"
+                                />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-neutral-300 text-black text-2xl rounded-full">
+                                    {((currentUser?.username && currentUser.username[0]) || 'U').toUpperCase()}
+                                    {/* {currentUser?.username} */}
+                                </div>
+                            )}
 
                             {/* Overlay Camera Icon */}
                             {isOwnProfile && (
@@ -483,16 +494,13 @@ export default function SocialProfileSection() {
                                 </div>
                             ) : (
                                 <>
-                                    {isOwnProfile && (
+                                    {(
                                         <h1 onClick={() => setIsEditingUsername(true)} className="text-3xl font-bold">{currentUser?.username || 'Learner'}</h1>
-                                        // <button type="button" onClick={() => setIsEditingUsername(true)} className="text-cyan-400 hover:text-cyan-300">
-                                        //     <FaEdit className="text-sm" />
-                                        // </button>
                                     )}
                                 </>
                             )}
 
-                            <p className="mt-2 text-xl text-neutral-300">{PROFILE.title}</p>
+                            {/* <p className="mt-2 text-xl text-neutral-300">{currentUser?.username}</p> */}
                             <p className="mt-1 text-neutral-500">{PROFILE.handle}</p>
 
                             {isOwnProfile && isEditingBio ? (
@@ -531,24 +539,17 @@ export default function SocialProfileSection() {
                             ) : (
                                 <div className="flex items-start justify-between">
 
-                                    {isOwnProfile && (
+                                    {(
                                         <p onClick={() => setIsEditingBio(true)} className="text-gray-300 flex-1">
-                                            {bio || (isOwnProfile ? 'No bio yet. Click edit to add one.' : 'No bio yet.')}
+                                            {currentUser?.bio || (isOwnProfile ? 'No bio yet. Click edit to add one.' : 'No bio yet.')}
                                         </p>
-                                        // <button
-                                        //     type="button"
-                                        //     onClick={() => setIsEditingBio(true)}
-                                        //     className="text-cyan-400 hover:text-cyan-300 ml-4"
-                                        // >
-                                        //     <FaEdit />
-                                        // </button>
                                     )}
                                 </div>
                             )}
 
                             <div className="mt-5 flex items-center gap-3 text-neutral-400">
                                 <span>
-                                    <span className="font-bold text-white">{PROFILE.posts}</span> Posts
+                                    <span className="font-bold text-white">{userPosts?.length}</span> Posts
                                 </span>
                                 <span className="text-neutral-600">|</span>
                                 <span>
@@ -629,8 +630,8 @@ export default function SocialProfileSection() {
                                         )}
                                         <div className="mt-3 flex items-center justify-between text-sm text-gray-400">
                                             <div>
-                                            <span className="mr-5 flex flex-col justify-center"><FaHeart /></span>
-                                            <span>{post.likesCount} likes</span>
+                                                <span className="mr-5 flex flex-col justify-center"><FaHeart /></span>
+                                                <span>{post.likesCount} likes</span>
                                             </div>
                                             <span>{post.commentsCount} comments</span>
                                         </div>

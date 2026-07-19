@@ -296,6 +296,7 @@ function PostCard({ post, currentUserId, onLike, onDelete }) {
   const imageUrl = post.image?.startsWith('/') ? `${apiUrl}${post.image}` : getDisplayImageUrl(post.image);
 
   const handleLikeClick = () => {
+    console.log('post details', post)
     dispatch(setLiked({ postId: post.id, value: !liked }));
     dispatch(setLikeCount({ postId: post.id, value: liked ? likeCount - 1 : likeCount + 1 }));
     if (!liked) {
@@ -326,7 +327,7 @@ function PostCard({ post, currentUserId, onLike, onDelete }) {
             <div
               className="flex items-center gap-[12px] cursor-pointer fill"
               onClick={() =>
-                post.author.id && navigate(`/profile/${post.author.id}`)
+                post.author.id && navigate(`/socialprofile/${post.author.id}`)
               }
             >
               {post.author.profilePic
@@ -355,7 +356,7 @@ function PostCard({ post, currentUserId, onLike, onDelete }) {
 
         {post.image && (
           <div className="p-0 mt-[4px]">
-            <img src={imageUrl} alt="Post" className="w-full max-h-[400px] object-cover border-t border-b border-[#1a2535] block" />
+            <img src={imageUrl} alt="Post" className="w-full max-h-[500px] object-cover border-t border-b border-[#1a2535] block" />
           </div>
         )}
 
@@ -363,7 +364,7 @@ function PostCard({ post, currentUserId, onLike, onDelete }) {
           <button type="button" onClick={handleLikeClick} className="flex items-center gap-[6px] px-[12px] py-[8px]" style={{ color: liked ? '#f87171' : '#aaaaaa', transform: heartAnim ? 'scale(1.25)' : 'scale(1)' }}>
             {liked ? <FaHeart /> : <FaRegHeart />} <span>{likeCount}</span>
           </button>
-          <button type="button" onClick={handleCommentModal} className="flex items-center gap-[6px] px-[12px] py-[8px]" style={{ color: showComments ? '#00e5ff' : '#aaaaaa' }}>
+          <button type="button" onClick={handleCommentModal} className="flex cursor-pointer items-center gap-[6px] px-[12px] py-[8px]" style={{ color: showComments ? '#00e5ff' : '#aaaaaa' }}>
             <FaComment /> <span>{post.commentsCount}</span>
           </button>
         </div>
@@ -396,31 +397,7 @@ function TrendingTopics() {
    so this drops in without touching your build config.
    Respects prefers-reduced-motion.
    ───────────────────────────────────────────────────────────────── */
-function CommunityStyles() {
-  return (
-    <style>{`
-      @keyframes capsulePop {
-        0%   { opacity: 0; transform: scale(0.6) translateY(8px); }
-        60%  { opacity: 1; transform: scale(1.05) translateY(0); }
-        100% { opacity: 1; transform: scale(1) translateY(0); }
-      }
-      @keyframes postRise {
-        0%   { opacity: 0; transform: translateY(18px); }
-        100% { opacity: 1; transform: translateY(0); }
-      }
-      .animate-capsule-pop { animation: capsulePop 420ms cubic-bezier(0.16, 1, 0.3, 1) both; }
-      .animate-post-rise   { animation: postRise 480ms cubic-bezier(0.16, 1, 0.3, 1) both; }
  
-      @media (prefers-reduced-motion: reduce) {
-        .animate-capsule-pop, .animate-post-rise {
-          animation: none !important;
-          opacity: 1 !important;
-          transform: none !important;
-        }
-      }
-    `}</style>
-  );
-}
 
 export default function CommunityPage() {
   const posts = useSelector((state) => state.feed.posts);
@@ -530,13 +507,12 @@ export default function CommunityPage() {
 
   return (
     <>
-      <CommunityStyles />
 
       <div
         className="grid grid-cols-1 lg:grid-cols-[260px_1fr_300px] items-start bg-black gap-6 max-w-full mx-auto px-4 sm:px-5 pt-6 sm:pt-7 pb-16"
         style={{ position: 'relative', zIndex: 1 }}
       >
-        <div className="hidden lg:block z-10 relative">
+        <div className="hidden lg:block z-10 sticky">
           <div className="fixed top-180 min-w-110">
              <PostComposer
             onPostCreated={handlePostCreated}
@@ -606,9 +582,12 @@ export default function CommunityPage() {
         </div>
       </div>
 
-      <div className="hidden lg:block fixed top-25 right-20 max-w-80">
-        <div className="bg-[#2B2B2B] rounded-[16px] px-[18px] py-[16px] mb-[12px]">
-          <div className="font-['Syne'] font-bold text-[13px] text-[#e8f0fe] mb-[14px] tracking-[0.3px]">📡 Community</div>
+       <div className="hidden lg:block sticky top-6 w-full">
+          {/* Mini stats */}
+          <div className="bg-[#111111] border border-white/[0.06] rounded-[16px] px-[18px] py-[16px] mb-[12px]">
+            <div className="font-['Syne'] font-bold text-[13px] text-[#e8f0fe] mb-[14px] tracking-[0.3px]">
+              📡 Community
+            </div>
           <div className="flex flex-col gap-[10px]">
             {[
               { label: 'Posts today', val: posts.length, icon: '📝' },
