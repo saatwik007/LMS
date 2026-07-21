@@ -24,6 +24,7 @@ import gsap from 'gsap';
 
    Nav bar intentionally omitted — this is just the feed: cards +
    like / comment / share.
+   
    ───────────────────────────────────────────────────────────────── */
 
 const SAMPLE_POSTS = [

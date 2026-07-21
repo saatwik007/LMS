@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import axios from 'axios';
 import {
   FaHeart,
@@ -10,7 +10,6 @@ import {
   FaTrash,
   FaFire,
   FaCode,
-  FaClock,
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -38,11 +37,28 @@ import {
   getStoredUser,
   formatTimeAgo,
 } from '../utilites/communityHelper';
-import ParticleCanvas from '../components/LandingPage/ParticleCanvas';
+import gsap from 'gsap';
 import Capsules from '../components/Comments/Capsules';
-import CapsuleModal from '../components/Comments/CapsuleModal';
 import CapsulePostModal from '../components/Comments/CapsulePostModal';
-/* ─── Helpers ─────────────────────────────────────────────────── */
+/* ─── Constants ───────────────────────────────────────────────── */
+
+// Cycled per card — colored ambient glow
+const GLOWS = [
+  'radial-gradient(closest-side, rgba(217,70,239,0.4), rgba(56,189,248,0.2) 60%, transparent 78%)',
+  'radial-gradient(closest-side, rgba(251,146,60,0.4), rgba(244,63,94,0.18) 60%, transparent 78%)',
+  'radial-gradient(closest-side, rgba(52,211,153,0.38), rgba(56,189,248,0.18) 60%, transparent 78%)',
+  'radial-gradient(closest-side, rgba(129,140,248,0.4), rgba(217,70,239,0.18) 60%, transparent 78%)',
+  'radial-gradient(closest-side, rgba(250,204,21,0.38), rgba(251,113,133,0.18) 60%, transparent 78%)',
+];
+
+// Gradient backgrounds for text-only posts
+const TEXT_GRADIENTS = [
+  'linear-gradient(135deg, #0f0c29, #302b63, #24243e)',
+  'linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)',
+  'linear-gradient(135deg, #0d0d1a, #1a0533, #2d1b69)',
+  'linear-gradient(135deg, #0a1628, #1a2a0a, #0a3d1c)',
+  'linear-gradient(135deg, #1a0a00, #3a1a00, #4a2800)',
+];
 
 const AVATAR_PALETTE = [
   ['#00e5ff', '#003040'],
@@ -273,22 +289,21 @@ export function PostComposer({
   );
 }
 
-function PostCard({ post, currentUserId, onLike, onDelete }) {
+function FilmPostCard({ post, cardRef, glow, textGradient, isOwn, onLike, onDelete }) {
   const navigate = useNavigate();
-  const apiUrl = import.meta.env.VITE_API_URL || '';
   const dispatch = useDispatch();
+  const apiUrl = import.meta.env.VITE_API_URL || '';
+  const heartIconRef = useRef(null);
 
   const liked = useSelector((state) => state.feed.liked[post.id] ?? post.isLikedByCurrentUser ?? false);
   const likeCount = useSelector((state) => state.feed.likeCounts[post.id] ?? post.likesCount ?? 0);
   const heartAnim = useSelector((state) => state.feed.heartAnim[post.id] ?? false);
-  const showComments = useSelector((state) => state.feed.showComments?.[post.id] ?? false);
 
   function getDisplayImageUrl(imageUrl) {
     if (!imageUrl) return '';
     const match = imageUrl.match(/[?&]id=([^&]+)/);
     if (match && imageUrl.includes('uc?id=')) {
-      const fileId = match[1];
-      return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+      return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000`;
     }
     return imageUrl;
   }
@@ -296,81 +311,121 @@ function PostCard({ post, currentUserId, onLike, onDelete }) {
   const imageUrl = post.image?.startsWith('/') ? `${apiUrl}${post.image}` : getDisplayImageUrl(post.image);
 
   const handleLikeClick = () => {
-    console.log('post details', post)
     dispatch(setLiked({ postId: post.id, value: !liked }));
     dispatch(setLikeCount({ postId: post.id, value: liked ? likeCount - 1 : likeCount + 1 }));
     if (!liked) {
       dispatch(setHeartAnim({ postId: post.id, value: true }));
       setTimeout(() => dispatch(setHeartAnim({ postId: post.id, value: false })), 600);
+      if (heartIconRef.current) {
+        gsap.fromTo(heartIconRef.current, { scale: 1 }, { scale: 1.4, duration: 0.16, ease: 'power2.out', yoyo: true, repeat: 1 });
+      }
     }
     onLike(post.id);
   };
 
-  const handleCommentModal = () => {
+  const handleCommentClick = () => {
     dispatch(setSelectedPost(post));
     dispatch(setShowModal(true));
   };
 
-  const isOwn = post.author.id === currentUserId;
+  const hasImage = !!post.image;
 
   return (
-    <>
-    <ParticleCanvas />
-      <article
-        className="bg-[#2B2B2B] z-10 rounded-[20px] overflow-hidden transition-colors duration-200 ease-in-out"
-      // onMouseEnter={e => e.currentTarget.style.borderColor = '#313131'}
-      // onMouseLeave={e => e.currentTarget.style.borderColor = '#2B2B2B'}
-      >
-        {/* Card body */}
-        <div className="px-[20px] pt-[20px]">
-          <div className="flex items-start justify-between mb-[14px]">
-            <div
-              className="flex items-center gap-[12px] cursor-pointer fill"
-              onClick={() =>
-                post.author.id && navigate(`/socialprofile/${post.author.id}`)
-              }
-            >
-              {post.author.profilePic
-                ? <img src={post.author.profilePic} alt={post.author.username}
-                  style={{ width: 44, height: 44, borderRadius: '50%', border: '2px solid #1a2535', flexShrink: 0, objectFit: 'cover' }} />
-                : <AvatarInitial name={post.author.username} size={44} />
-              }
-              <div>
-                <span className="font-['Syne'] font-bold text-[15px] text-[#e8f0fe]">{post.author.username}</span>
-                <div className="flex items-center gap-[6px] mt-[2px]">
-                  <span className="text-[#aaaaaa] text-[10px]"><FaClock /></span>
-                  <span className="text-[12px] text-[#919191] font-['DM_Mono']">{formatTimeAgo(post.createdAt)}</span>
-                  <span className="text-[12px] text-[#919191] font-['DM_Mono']">Ago</span>
-                </div>
-              </div>
-            </div>
-            {isOwn && (
-              <button type="button" onClick={() => onDelete(post.id)} className="text-[#aaaaaa] hover:text-[#f87171]">
-                <FaTrash />
-              </button>
-            )}
-          </div>
-          <p className="text-[#c8d8ee] text-[15px] leading-[1.7] whitespace-pre-wrap break-words" style={{ marginBottom: post.image ? '16px' : 0 }}>
-            {post.content}
-          </p>
-        </div>
+    <div
+      ref={cardRef}
+      className="relative h-[95%] w-full max-w-[500px] mx-auto rounded-[2.5rem] overflow-hidden"
+      style={{ transformOrigin: 'center center' }}
+    >
+      {/* Ambient glow */}
+      <div
+        className="pointer-events-none absolute -inset-6 -z-10 blur-2xl"
+        style={{ background: glow }}
+        aria-hidden="true"
+      />
 
-        {post.image && (
-          <div className="p-0 mt-[4px]">
-            <img src={imageUrl} alt="Post" className="w-full max-h-140 object-cover border-t border-b border-[#1a2535] block" />
+      <div
+        className="relative h-full w-full rounded-[2.5rem] overflow-hidden"
+        style={{
+          background: hasImage ? '#111' : textGradient,
+          boxShadow: '0 25px 70px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.1)',
+        }}
+      >
+        {/* Full-bleed image */}
+        {hasImage && (
+          <img src={imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+        )}
+
+        {/* Text-only: centered content */}
+        {!hasImage && (
+          <div className="absolute inset-0 flex items-center justify-center px-8 pointer-events-none">
+            <p className="text-white text-[18px] font-['Plus_Jakarta_Sans'] leading-[1.7] text-center line-clamp-6 [text-shadow:0_2px_8px_rgba(0,0,0,0.6)]">
+              {post.content}
+            </p>
           </div>
         )}
 
-        <div className="flex items-center gap-[4px] px-[16px] py-[10px]">
-          <button type="button" onClick={handleLikeClick} className="flex items-center gap-[6px] px-[12px] py-[8px]" style={{ color: liked ? '#f87171' : '#aaaaaa', transform: heartAnim ? 'scale(1.25)' : 'scale(1)' }}>
-            {liked ? <FaHeart /> : <FaRegHeart />} <span>{likeCount}</span>
-          </button>
-          <button type="button" onClick={handleCommentModal} className="flex cursor-pointer items-center gap-[6px] px-[12px] py-[8px]" style={{ color: showComments ? '#00e5ff' : '#aaaaaa' }}>
-            <FaComment /> <span>{post.commentsCount}</span>
-          </button>
+        {/* Header strip */}
+        <div className="absolute top-0 inset-x-0 z-10 flex items-center gap-3 px-5 pt-5 pb-8 backdrop-blur-sm bg-gradient-to-b from-black/55 via-black/20 to-transparent">
+          <div className="cursor-pointer flex-shrink-0" onClick={() => post.author.id && navigate(`/socialprofile/${post.author.id}`)}>
+            {post.author.profilePic
+              ? <img src={post.author.profilePic} alt="" className="h-9 w-9 rounded-full object-cover ring-1 ring-white/30" />
+              : <AvatarInitial name={post.author.username} size={36} />
+            }
+          </div>
+          <div className="flex-1 cursor-pointer min-w-0" onClick={() => post.author.id && navigate(`/socialprofile/${post.author.id}`)}>
+            <span className="text-[14px] font-semibold text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.5)] font-['Syne'] block truncate">
+              {post.author.username}
+            </span>
+            <span className="text-[11px] text-white/60 font-['DM_Mono']">{formatTimeAgo(post.createdAt)} ago</span>
+          </div>
+          {isOwn && (
+            <button type="button" onClick={() => onDelete(post.id)} className="text-white/60 hover:text-[#f87171] transition-colors flex-shrink-0" aria-label="Delete">
+              <FaTrash size={14} />
+            </button>
+          )}
         </div>
-      </article>
-    </>
+
+        {/* Bottom strip: caption + actions */}
+        <div className="absolute bottom-0 inset-x-0 z-10 backdrop-blur-sm bg-gradient-to-t from-black/60 via-black/20 to-transparent px-5 pt-10 pb-5">
+          {hasImage && (
+            <p className="text-[13px] leading-[1.5] text-white/90 [text-shadow:0_1px_2px_rgba(0,0,0,0.5)] line-clamp-2 mb-3 font-['Plus_Jakarta_Sans']">
+              {post.content}
+            </p>
+          )}
+          <div className="flex items-center gap-5">
+            <button
+              type="button"
+              onClick={handleLikeClick}
+              className="flex items-center gap-1.5 text-white/90 hover:text-white transition-colors focus-visible:outline-none rounded-full"
+              aria-label="Like"
+            >
+              <span ref={heartIconRef} className="inline-flex" style={{ transform: heartAnim ? 'scale(1.25)' : 'scale(1)' }}>
+                {liked ? <FaHeart style={{ color: '#fb7185' }} /> : <FaRegHeart />}
+              </span>
+              <span className="text-[12.5px] font-['DM_Mono']">{likeCount.toLocaleString()}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleCommentClick}
+              className="flex items-center gap-1.5 text-white/90 hover:text-white transition-colors focus-visible:outline-none rounded-full"
+              aria-label="Comment"
+            >
+              <FaComment size={16} />
+              <span className="text-[12.5px] font-['DM_Mono']">{post.commentsCount}</span>
+            </button>
+
+            <button
+              type="button"
+              className="text-white/90 hover:text-white transition-colors ml-auto focus-visible:outline-none rounded-full"
+              aria-label="Share"
+            >
+              <FaPaperPlane size={16} />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -409,37 +464,97 @@ export default function CommunityPage() {
 
   const observerRef = useRef(null);
   const loadingRef = useRef(null);
+  const scrollRef = useRef(null);
+  const cardRefs = useRef([]);
+  const [activeIndex, setActiveIndex] = useState(0);
   const apiUrl = import.meta.env.VITE_API_URL || '';
   const currentUser = getStoredUser();
   const currentUserId = currentUser?.id || currentUser?._id || '';
-  console.log('currentuserid', currentUserId)
-  const [showMobileComposer, setShowMobileComposer] = useState(false);
-
-  // ✅ lifted file/preview state survives composer remount
+  const [showComposer, setShowComposer] = useState(false);
   const [composerFile, setComposerFile] = useState(null);
   const [composerPreview, setComposerPreview] = useState(null);
 
+  // Crossfading ambient backdrop
+  const [bgA, setBgA] = useState('');
+  const [bgB, setBgB] = useState('');
+  const [frontIsA, setFrontIsA] = useState(true);
+
   const dispatch = useDispatch();
   useEffect(() => { dispatch(fetchPosts(1)); }, [dispatch]);
-  const [showCapsuleModal, setShowCapsuleModal] = useState(false);
+
   const [showAddCapsule, setShowAddCapsule] = useState(false);
-  const [selectedCapsuleId, setSelectedCapsuleId] = useState(null);
-  const [selectedImageFile, setSelectedImageFile] = useState(null);
-  const [showPostComposer, setShowPostComposer] = useState(false);
 
-  const handleShowPostComposer = () => {
-    setShowPostComposer(true)
-  };
+  // Update crossfading backdrop when active post changes
+  useEffect(() => {
+    const post = posts[activeIndex];
+    if (!post?.image) return;
+    let nextImage = post.image;
+    if (nextImage.startsWith('/')) nextImage = `${apiUrl}${nextImage}`;
+    else if (nextImage.includes('uc?id=')) {
+      const match = nextImage.match(/[?&]id=([^&]+)/);
+      if (match) nextImage = `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000`;
+    }
+    if (frontIsA) { setBgB(nextImage); } else { setBgA(nextImage); }
+    setFrontIsA((f) => !f);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeIndex]);
 
-  const showCapsule = (id) => {
-    setSelectedCapsuleId(id);
-    setShowCapsuleModal(true);
-  };
+  // GSAP scroll-linked scale/opacity focus effect
+  const updateFocus = useCallback(() => {
+    const scrollEl = scrollRef.current;
+    if (!scrollEl) return;
+    const elRect = scrollEl.getBoundingClientRect();
+    const containerCenter = elRect.top + elRect.height / 2;
+    let closestIndex = 0;
+    let closestDistance = Infinity;
 
-  const addCapsule = () => {
-    setShowAddCapsule(true);
-  }
+    cardRefs.current.forEach((el, i) => {
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const cardCenter = rect.top + rect.height / 2;
+      const distance = Math.abs(cardCenter - containerCenter);
+      const proximity = 1 - Math.min(distance / elRect.height, 1);
+      gsap.set(el, { scale: 0.82 + proximity * 0.18, opacity: 0.35 + proximity * 0.65 });
+      if (distance < closestDistance) { closestDistance = distance; closestIndex = i; }
+    });
 
+    setActiveIndex((prev) => (prev === closestIndex ? prev : closestIndex));
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => { updateFocus(); ticking = false; });
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    updateFocus();
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [updateFocus, posts]);
+
+  // Entrance animation for first card
+  useEffect(() => {
+    const first = cardRefs.current[0];
+    if (!first || posts.length === 0) return;
+    gsap.fromTo(first, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.7, ease: 'expo.out' });
+  }, [posts.length]);
+
+  // Arrow-key navigation
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (!['ArrowDown', 'ArrowUp'].includes(e.key)) return;
+      const dir = e.key === 'ArrowDown' ? 1 : -1;
+      const target = Math.min(posts.length - 1, Math.max(0, activeIndex + dir));
+      cardRefs.current[target]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [activeIndex, posts.length]);
+
+  // Infinite scroll observer
   useEffect(() => {
     if (!loadingRef.current || !hasMore) return;
     const observer = new IntersectionObserver((entries) => {
@@ -449,7 +564,6 @@ export default function CommunityPage() {
         dispatch(fetchPosts(next));
       }
     }, { threshold: 0.1 });
-
     observer.observe(loadingRef.current);
     observerRef.current = observer;
     return () => observerRef.current?.disconnect();
@@ -457,15 +571,7 @@ export default function CommunityPage() {
 
   const handlePostCreated = (newPost) => {
     dispatch(addPostToTop(newPost));
-  };
-
-  const handleComment = async (postId) => {
-    try {
-      const res = await axios.get(`${apiUrl}/api/community/posts/${postId}`, {
-        withCredentials: true, headers: getAuthHeaders(),
-      });
-      dispatch(setPosts(prev => prev.map(p => p.id === postId ? res.data.post : p)));
-    } catch (err) { console.error('Refresh error:', err); }
+    setShowComposer(false);
   };
 
   const handleDelete = async (postId) => {
@@ -475,18 +581,13 @@ export default function CommunityPage() {
         withCredentials: true,
         headers: getAuthHeaders(),
       });
-      dispatch(setPosts(prev => prev.filter(p => p.id !== postId)));
+      dispatch(setPosts((prev) => prev.filter((p) => p.id !== postId)));
     } catch (err) { console.error('Delete error:', err); }
   };
 
   const handleCapsulePost = async (file, caption = '') => {
-    if (!file) {
-      dispatch(setError('Please select an image to post'));
-      return;
-    }
-
+    if (!file) { dispatch(setError('Please select an image to post')); return; }
     dispatch(setError(''));
-
     try {
       const formData = new FormData();
       formData.append('media', file);
@@ -495,13 +596,9 @@ export default function CommunityPage() {
         withCredentials: true,
         headers: { ...getAuthHeaders() },
       });
-
       // clear local selection and preview
-      setSelectedImageFile(null);
       dispatch(setImagePreview(null));
       setShowAddCapsule(false);
-
-      // TODO: refresh capsule feed or notify parent via a prop callback
       return res.data;
     } catch (error) {
       const msg = error?.response?.data?.message || error.message || 'capsule posting error';
@@ -511,140 +608,158 @@ export default function CommunityPage() {
     }
   };
 
-
   return (
-    <>
-
-      <div
-        className="grid grid-cols-1 lg:grid-cols-[260px_1fr_300px] items-start bg-black gap-6 max-w-full mx-auto px-4 sm:px-5 pt-6 sm:pt-7 pb-16"
-        style={{ position: 'relative', zIndex: 1 }}
-      >
-        {/* Reserved space for the app's own sidebar — keeps this column
-            empty so the grid places the feed and right rail correctly */}
-        <div className="hidden lg:block" aria-hidden="true" />
-
-        {/* ── Middle: main feed ─────────────────────────────── */}
-        <div className="mx-auto w-full max-w-2xl px-2 sm:px-0">
-                 <Capsules
-            onOpenCapsule={showCapsule}
-            onAddCapsule={addCapsule}
-          />
-          
-          {showCapsuleModal && (
-            <CapsuleModal capsuleId={selectedCapsuleId} onClose={() => setShowCapsuleModal(false)} />
-          )}
-
-          {showAddCapsule && (
-            <CapsulePostModal
-              isOpen={showAddCapsule}
-              story={{
-                author: currentUser?.username || 'you',
-                timestamp: 'just now',
-                avatar: currentUser?.profilePic || '',
-                caption: '',
-              }}
-              onClose={() => setShowAddCapsule(false)}
-              onAddCapsule={handleCapsulePost}
-            />
-          )}
-          {/* Divider */}
-          <div className="flex items-center gap-[12px] mb-[16px]">
-            <div className="flex-1 h-[1px] bg-[#6b6b6b]" />
-            <span className="text-[11px] text-[#8b8b8b] font-['DM_Mono'] tracking-[1px]">
-              FOR YOU
-            </span>
-            <div className="flex-1 h-[1px] bg-[#6b6b6b]" />
-          </div>
-
-        {error && <div className="bg-[#f8717118] border border-[#f8717144] rounded-[12px] px-[16px] py-[12px] mb-[16px] text-[#f87171] text-[13px]">{error}</div>}
-
-        <div className="flex flex-col gap-[10px]">
-          <div onClick={handleShowPostComposer} className='text-center cursor-pointer text-white bg-[#2B2B2B] rounded-3xl p-2'>
-            NewPost
-          </div>
-          {showPostComposer && (
-            <PostComposer />
-          )}
-          {posts.length === 0 && !isLoading ? (
-            <div className="bg-[#404040] border border-[#1a2535] rounded-[20px] px-[24px] py-[48px] text-center">
-              <div className="text-[40px] mb-[12px]">👩‍💻</div>
-              <p className="text-[#2e4460] text-[14px]">No posts yet — be the first to share!</p>
-            </div>
-          ) : (
-            posts.map((post) => (
-              <PostCard key={post.id} post={post} currentUserId={currentUserId} onLike={handleLike} onDelete={handleDelete} />
-            ))
-          )}
-
-          {isLoading && (
-            <div style={{ textAlign: 'center', padding: '32px 0' }}>
-              <div style={{ width: 36, height: 36, border: '3px solid #00e5ff', borderTopColor: 'transparent', borderRadius: '50%', margin: '0 auto 12px', animation: 'spin 0.75s linear infinite' }} />
-              <p style={{ color: '#2e4460', fontSize: 13 }}>Loading...</p>
-            </div>
-          )}
-
-          {hasMore && !isLoading && <div ref={loadingRef} style={{ height: 20 }} />}
-        </div>
+    <div className="relative h-screen overflow-hidden bg-black">
+      {/* Crossfading ambient backdrop */}
+      <div className="pointer-events-none fixed inset-0 -z-10">
+        <div
+          className="absolute inset-0 bg-cover bg-center scale-125 blur-3xl transition-opacity duration-700 ease-out"
+          style={{ backgroundImage: bgA ? `url('${bgA}')` : 'none', opacity: frontIsA ? 1 : 0 }}
+        />
+        <div
+          className="absolute inset-0 bg-cover bg-center scale-125 blur-3xl transition-opacity duration-700 ease-out"
+          style={{ backgroundImage: bgB ? `url('${bgB}')` : 'none', opacity: frontIsA ? 0 : 1 }}
+        />
+        <div className="absolute inset-0 bg-black/60" />
       </div>
 
-       <div className="hidden lg:block sticky top-6 w-full">
-          {/* Mini stats */}
-          <div className="bg-[#111111] border border-white/[0.06] rounded-[16px] px-[18px] py-[16px] mb-[12px]">
-            <div className="font-['Syne'] font-bold text-[13px] text-[#e8f0fe] mb-[14px] tracking-[0.3px]">
-              📡 Community
+      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr_300px] h-full">
+        {/* Left: reserved for app nav sidebar */}
+        <div className="hidden lg:block" aria-hidden="true" />
+
+        {/* Middle: snap-scroll film-reel feed */}
+        <div className="flex flex-col h-full overflow-hidden">
+          {/* Capsules sticky strip */}
+          <div className="flex-shrink-0 z-20 px-4 pt-4 pb-2 bg-black/50 border-b border-white/[0.06]">
+            <Capsules
+              onAddCapsule={() => setShowAddCapsule(true)}
+            />
+          </div>
+
+          {error && (
+            <div className="flex-shrink-0 px-4 py-2">
+              <div className="bg-[#f8717118] border border-[#f8717144] rounded-[12px] px-4 py-3 text-[#f87171] text-[13px]">{error}</div>
             </div>
-          <div className="flex flex-col gap-[10px]">
-            {[
-              { label: 'Posts today', val: posts.length, icon: '📝' },
-              { label: 'Active devs', val: '—', icon: '👥' },
-              { label: 'Your posts', val: posts.filter((p) => p.author.id === currentUserId).length, icon: '✍️' },
-            ].map((row) => (
-              <div key={row.label} className="flex justify-between items-center px-[12px] py-[8px] bg-[#404040] rounded-[10px]">
-                <span className="text-[12px] text-[#aaaaaa]">{row.icon} {row.label}</span>
-                <span className="text-[14px] font-bold font-['DM_Mono'] text-[#aaaaaa]">{row.val}</span>
+          )}
+
+          {/* Snap-scroll container */}
+          <div
+            ref={scrollRef}
+            className="flex-1 overflow-y-scroll snap-y snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {posts.length === 0 && !isLoading ? (
+              <div className="h-full flex items-center justify-center">
+                <div className="text-center">
+                  <div className="text-[60px] mb-4">👩‍💻</div>
+                  <p className="text-white/60 text-[15px] font-['Plus_Jakarta_Sans']">No posts yet — be the first to share!</p>
+                </div>
+              </div>
+            ) : (
+              posts.map((post, i) => (
+                <div
+                  key={post.id}
+                  className={`${post.image ? 'h-[76vh]' : 'h-[50vh]'} snap-center flex items-center justify-center px-3`}
+                >
+                  <FilmPostCard
+                    post={post}
+                    cardRef={(el) => (cardRefs.current[i] = el)}
+                    glow={GLOWS[i % GLOWS.length]}
+                    textGradient={TEXT_GRADIENTS[i % TEXT_GRADIENTS.length]}
+                    isOwn={post.author.id === currentUserId}
+                    onLike={handleLike}
+                    onDelete={handleDelete}
+                  />
+                </div>
+              ))
+            )}
+
+            {isLoading && (
+              <div className="h-[30vh] snap-center flex items-center justify-center">
+                <div className="w-9 h-9 border-[3px] border-[#00e5ff] border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+
+            {hasMore && !isLoading && <div ref={loadingRef} className="h-5" />}
+          </div>
+        </div>
+
+        {/* Right: sticky sidebar */}
+        <div className="hidden lg:flex flex-col h-full overflow-y-auto px-4 py-5 gap-3 [scrollbar-width:thin] [scrollbar-color:#333_transparent]">
+          <div className="bg-black/40 backdrop-blur-md border border-white/[0.08] rounded-[16px] px-[18px] py-[16px]">
+            <div className="font-['Syne'] font-bold text-[13px] text-[#e8f0fe] mb-[14px] tracking-[0.3px]">📡 Community</div>
+            <div className="flex flex-col gap-[10px]">
+              {[
+                { label: 'Posts today', val: posts.length, icon: '📝' },
+                { label: 'Active devs', val: '—', icon: '👥' },
+                { label: 'Your posts', val: posts.filter((p) => p.author.id === currentUserId).length, icon: '✍️' },
+              ].map((row) => (
+                <div key={row.label} className="flex justify-between items-center px-[12px] py-[8px] bg-white/[0.05] rounded-[10px]">
+                  <span className="text-[12px] text-[#aaaaaa]">{row.icon} {row.label}</span>
+                  <span className="text-[14px] font-bold font-['DM_Mono'] text-[#aaaaaa]">{row.val}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <TrendingTopics />
+
+          <div className="bg-black/40 backdrop-blur-md border border-white/[0.08] rounded-[16px] px-[18px] py-[16px]">
+            <div className="font-['Syne'] font-bold text-[13px] text-[#e8f0fe] mb-[12px] tracking-[0.3px] flex items-center">
+              <FaCode className="text-[#aaaaaa] text-[13px] mr-[7px]" /> Dev Code
+            </div>
+            {["Share what you're building", 'Help each other debug', 'Celebrate small wins', 'Keep it constructive'].map((rule, i) => (
+              <div key={i} className="flex gap-[8px] items-start mb-[8px] text-[12px] text-[#aaaaaa] leading-[1.5]">
+                <span className="text-[#aaaaaa] font-['DM_Mono'] mt-[1px]">{String(i + 1).padStart(2, '0')}</span>
+                {rule}
               </div>
             ))}
           </div>
         </div>
-
-        <TrendingTopics />
-
-        <div className="bg-[#2B2B2B] rounded-[16px] px-[18px] py-[16px]">
-          <div className="font-['Syne'] font-bold text-[13px] text-[#e8f0fe] mb-[12px] tracking-[0.3px] flex items-center">
-            <FaCode className="text-[#aaaaaa] text-[13px] mr-[7px]" />
-            Dev Code
-          </div>
-          {["Share what you're building", 'Help each other debug', 'Celebrate small wins', 'Keep it constructive'].map((rule, i) => (
-            <div key={i} className="flex gap-[8px] items-start mb-[8px] text-[12px] text-[#aaaaaa] leading-[1.5]">
-              <span className="text-[#aaaaaa] font-['DM_Mono'] mt-[1px]">{String(i + 1).padStart(2, '0')}</span>
-              {rule}
-            </div>
-          ))}
-        </div>
       </div>
 
-      <button onClick={() => setShowMobileComposer(true)} className="lg:hidden fixed bottom-6 right-5 w-14 h-14 rounded-full bg-[#00e5ff] text-black text-[28px] font-bold flex items-center justify-center shadow-lg z-50 active:scale-95 transition-transform" aria-label="New post">
+      {/* FAB: new post (all screen sizes) */}
+      <button
+        onClick={() => setShowComposer(true)}
+        className="fixed bottom-8 right-8 w-14 h-14 rounded-full bg-gradient-to-br from-[#00b4cc] to-[#00e5ff] text-black text-[28px] font-bold flex items-center justify-center shadow-[0_4px_24px_#00e5ff55] z-50 active:scale-95 transition-transform"
+        aria-label="New post"
+      >
         +
       </button>
 
-      <div className={`lg:hidden fixed inset-0 bg-black/70 z-[60] items-end sm:items-center justify-center ${showMobileComposer ? 'flex' : 'hidden'}`}>
-        <div className="w-full sm:max-w-md bg-[#0a0f1a] rounded-t-[20px] sm:rounded-[20px] p-4 relative">
-          <button onClick={() => setShowMobileComposer(false)} className="absolute top-3 right-4 text-[#aaaaaa] text-[20px]" aria-label="Close">
-            ✕
-          </button>
-          <PostComposer
-            onPostCreated={(post) => {
-              handlePostCreated(post);
-              setShowMobileComposer(false);
-            }}
-            composerFile={composerFile}
-            setComposerFile={setComposerFile}
-            composerPreview={composerPreview}
-            setComposerPreview={setComposerPreview}
-          />
+      {/* Composer modal */}
+      {showComposer && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center">
+          <div className="w-full sm:max-w-md bg-[#111] rounded-t-[20px] sm:rounded-[20px] p-4 relative border border-white/[0.08]">
+            <button
+              onClick={() => setShowComposer(false)}
+              className="absolute top-3 right-4 text-[#aaaaaa] text-[20px]"
+              aria-label="Close"
+            >✕</button>
+            <PostComposer
+              onPostCreated={handlePostCreated}
+              composerFile={composerFile}
+              setComposerFile={setComposerFile}
+              composerPreview={composerPreview}
+              setComposerPreview={setComposerPreview}
+            />
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Capsule modals */}
+      {showAddCapsule && (
+        <CapsulePostModal
+          isOpen={showAddCapsule}
+          story={{
+            author: currentUser?.username || 'you',
+            timestamp: 'just now',
+            avatar: currentUser?.profilePic || '',
+            caption: '',
+          }}
+          onClose={() => setShowAddCapsule(false)}
+          onAddCapsule={handleCapsulePost}
+        />
+      )}
     </div>
-    </>
   );
 }

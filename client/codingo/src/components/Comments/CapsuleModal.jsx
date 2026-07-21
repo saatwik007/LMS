@@ -112,7 +112,7 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
     <div
       ref={backdropRef}
       onClick={onClose}
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm px-4 py-10"
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-label={`${story.user?.username}'s story`}
@@ -121,7 +121,7 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
       {/* Card + glow, stopPropagation so clicking inside doesn't close */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-[min(400px,88vw)] h-[min(640px,82vh)]"
+        className="relative w-[min(380px,90vw)] h-[min(680px,88vh)]"
       >
         {/* Soft ambient halo behind the card — this is the "glow border" */}
         <div
@@ -136,7 +136,7 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
         {/* The capsule itself */}
         <div
           ref={cardRef}
-          className="relative h-155 sm:h-180 w-full sm:w-120 right-0 sm:right-5 bottom-11 sm:bottom-15 rounded-full overflow-hidden bg-[#0d0d0d] flex flex-col items-center"
+          className="relative h-full w-full rounded-full overflow-hidden bg-[#0d0d0d] flex flex-col items-center"
           style={{
             boxShadow:
               '0 0 0 1px rgba(255,255,255,0.14), 0 0 50px 4px rgba(140,190,255,0.22), 0 20px 60px rgba(0,0,0,0.5)',
