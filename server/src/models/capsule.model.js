@@ -9,6 +9,7 @@ const capsuleSchema = new mongoose.Schema(
     caption: { type: String, default: "", maxlength: 200 },
 
     viewers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    likedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User', default: [] }],
 
     streakCount: { type: Number, default: 1 },
     streakStartsFrom: { type: Date, default: Date.now },

@@ -74,7 +74,7 @@ export function FriendsPage() {
   const friends = useSelector(state => state.friends.friends);
   const friendRequests = useSelector(state => state.friends.friendRequests);
   const searchQuery = useSelector(state => state.friends.searchQuery);
-  const searchResults = useSelector(state => state.friends.searchResults);
+  const searchResults = useSelector(state => state.friends.searchResults ?? []);
   const isLoading = useSelector(state => state.friends.isLoading);
   const error = useSelector(state => state.friends.error);
   const successMessage = useSelector(state => state.friends.successMessage);
@@ -120,11 +120,10 @@ export function FriendsPage() {
       }
 
       // Update search results to show Pending state instead of removing
-      dispatch(setSearchResults(prev =>
-        prev.map(user =>
-          user._id === userId ? { ...user, hasPendingRequest: true } : user
-        )
-      ));
+      const updatedResults = searchResults.map(user =>
+        user._id === userId ? { ...user, hasPendingRequest: true } : user
+      );
+      dispatch(setSearchResults(updatedResults));
     } catch (err) {
       dispatch(setError(err.response?.data?.message || 'Failed to send friend request'));
       setTimeout(() => dispatch(setError(null)), 3000);
@@ -192,7 +191,7 @@ export function FriendsPage() {
           </div>
         )}
         <div
-          
+
           className="w-14 h-14 rounded-full bg-linear-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-xl font-bold shrink-0">
           {friend.profilePic ? (
             <img src={friend.profilePic} alt={friend.username} className="w-full h-full rounded-full object-cover" />
@@ -210,11 +209,11 @@ export function FriendsPage() {
             <span className="font-semibold">{friend.totalXp.toLocaleString()}</span>
           </div> */}
           <button
-              onClick={() => dispatch(setConfirmRemoveId(friend._id))}
-              className="flex-1 px-3 py-2 bg-red-600/20 cursor-pointer hover:bg-red-600/30 text-red-400 rounded-lg text-sm font-semibold transition flex items-center justify-center gap-2"
-            >
-              <FaTrash />
-            </button>
+            onClick={() => dispatch(setConfirmRemoveId(friend._id))}
+            className="flex-1 px-3 py-2 bg-red-600/20 cursor-pointer hover:bg-red-600/30 text-red-400 rounded-lg text-sm font-semibold transition flex items-center justify-center gap-2"
+          >
+            <FaTrash />
+          </button>
         </div>
       </div>
       {!showRank && (

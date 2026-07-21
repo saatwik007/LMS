@@ -12,14 +12,20 @@ import {
 import gsap from 'gsap';
 import { apiUrl, getAuthHeaders, getStoredUser } from '../../utilites/communityHelper';
 import axios from 'axios';
+import { useState } from 'react';
 
 export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, onDelete }) {
+  const currentUser = getStoredUser();
+  const currentUserId = currentUser?.id || currentUser?._id || '';
   const cardRef = useRef(null);
   const glowRef = useRef(null);
   const backdropRef = useRef(null);
   const storedUser = getStoredUser();
   console.log('story', story)
-  
+  // console.log('story._id:', story?._id)
+  // console.log('story.user._id:', story?.user?._id)
+  // const [isLiked, setIsLiked] = useState(false);
+
   const preserveCapsule = async () => {
     try {
       await axios.post(`${apiUrl}/api/capsule/${story._id}/preserve`, {}, {
@@ -29,7 +35,35 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
       console.error('preserve capsule failed', error)
     }
   }
-  
+  const [isLiked, setIsLiked] = useState(
+    story?.likedBy?.includes(currentUserId) ?? false   // ✅ optional chaining on story too
+  );
+  const [likesCount, setLikesCount] = useState(story?.likedBy?.length ?? 0);
+  console.log('length', story?.likedBy?.length)
+
+  const toggleCapsuleLike = async () => {
+    try {
+      const res = await axios.post(
+        `${apiUrl}/api/capsule/${story._id}/like`,
+        {},
+        { withCredentials: true, headers: getAuthHeaders() }
+      );
+      setIsLiked(res?.data?.isLiked);
+      setLikesCount(res?.data?.likesCount);
+      // console.log('likecount', res?.data?.likesCount)
+
+      // console.log('isLiked', res?.data?.isLiked)
+    } catch (error) {
+      console.error('capsule like failed', error);
+    }
+  };
+
+  useEffect(() => {
+  if (!story) return;
+  setIsLiked(story.likedBy?.includes(currentUserId) ?? false);
+  setLikesCount(story.likedBy?.length ?? 0);
+}, [story?._id, currentUserId]);
+
   // Escape to close + body scroll lock while open
   useEffect(() => {
     if (!isOpen) return;
@@ -69,11 +103,11 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
     });
     return () => ctx.revert();
   }, [isOpen]);
-  
+
   if (!isOpen || !story) return null;
   const isOwner = String(story.user?._id) === String(storedUser?.id);
   const isFading = story.opacity < 1;
-  
+
   return (
     <div
       ref={backdropRef}
@@ -83,25 +117,6 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
       aria-modal="true"
       aria-label={`${story.user?.username}'s story`}
     >
-      {/* Prev / Next — only shown if handlers were passed in */}
-      {onPrev && (
-        <button
-          onClick={(e) => { e.stopPropagation(); onPrev(); }}
-          className="hidden sm:flex absolute left-6 md:left-16 top-1/2 -translate-y-1/2 h-11 w-11 items-center justify-center rounded-full bg-white/5 text-white/70 hover:bg-white/10 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70"
-          aria-label="Previous story"
-        >
-          <FiChevronLeft size={20} />
-        </button>
-      )}
-      {onNext && (
-        <button
-          onClick={(e) => { e.stopPropagation(); onNext(); }}
-          className="hidden sm:flex absolute right-6 md:right-16 top-1/2 -translate-y-1/2 h-11 w-11 items-center justify-center rounded-full bg-white/5 text-white/70 hover:bg-white/10 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70"
-          aria-label="Next story"
-        >
-          <FiChevronRight size={20} />
-        </button>
-      )}
 
       {/* Card + glow, stopPropagation so clicking inside doesn't close */}
       <div
@@ -121,7 +136,7 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
         {/* The capsule itself */}
         <div
           ref={cardRef}
-          className="relative h-155 sm:h-200 w-full sm:w-130 right-0 sm:right-10 bottom-11 sm:bottom-20 rounded-full overflow-hidden bg-[#0d0d0d] flex flex-col items-center"
+          className="relative h-155 sm:h-180 w-full sm:w-120 right-0 sm:right-5 bottom-11 sm:bottom-15 rounded-full overflow-hidden bg-[#0d0d0d] flex flex-col items-center"
           style={{
             boxShadow:
               '0 0 0 1px rgba(255,255,255,0.14), 0 0 50px 4px rgba(140,190,255,0.22), 0 20px 60px rgba(0,0,0,0.5)',
@@ -148,7 +163,7 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
             </div>
             <p className="text-[13px] text-zinc-200">
               {!isOwner ? (
-              <span className="font-medium">@{story.user?.username || 'Unknown'}</span>
+                <span className="font-medium">@{story.user?.username || 'Unknown'}</span>
               ) : (
                 <span className="font-medium">Your Capsule</span>
               )}
@@ -181,18 +196,23 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
           </div>
 
           {/* Actions */}
-          
+
           <div className="shrink-0 flex items-center z-10 gap-6 pt-4 pb-9">
-            {!isOwner && ( 
+            {!isOwner && (
               <>
-            <button className="text-white/80 cursor-pointer hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 rounded-full" aria-label="Like">
-              <FiHeart size={19} />
-            </button>
-            <button className="text-white/80 hover:text-white cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 rounded-full" aria-label="Comment">
-              <FiMessageCircle size={19} />
-            </button>
-            </>
-          )}
+                <button
+                  onClick={toggleCapsuleLike}
+                  className="flex items-center gap-1.5 text-white/80 cursor-pointer hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 rounded-full"
+                  aria-label="Like"
+                >
+                  <FiHeart size={19} className={isLiked ? 'fill-red-400 text-red-400' : ''} />
+                  {likesCount > 0 && <span className="text-[12px]">{likesCount}</span>}
+                </button>
+                <button className="text-white/80 hover:text-white cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 rounded-full" aria-label="Comment">
+                  <FiMessageCircle size={19} />
+                </button>
+              </>
+            )}
 
             {/* Preseve button */}
             {!isOwner && isFading && (
@@ -200,7 +220,7 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
                 <FiBookmark size={19} />
               </button>)}
 
-              <button className="text-white/80 hover:text-white cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 rounded-full" aria-label="Comment">
+            <button className="text-white/80 hover:text-white cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 rounded-full" aria-label="Comment">
               <FiSend size={19} />
             </button>
 
