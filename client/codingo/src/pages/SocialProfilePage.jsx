@@ -100,9 +100,9 @@ const DATA_BY_TAB = {
 
 function LinkRow({ label, url }) {
     return (
-        <div className="col-span-1 flex h-[80px] items-center justify-between rounded-2xl border border-white/10 bg-neutral-900/60 px-6">
-            <span className="text-base font-semibold text-white">{label}</span>
-            <span className="text-sm text-neutral-400">{url}</span>
+        <div className="col-span-1 flex h-16 sm:h-[80px] items-center justify-between rounded-lg sm:rounded-2xl border border-white/10 bg-neutral-900/60 px-3 sm:px-6 gap-2 flex-wrap">
+            <span className="text-xs sm:text-base font-semibold text-white truncate">{label}</span>
+            <span className="text-xs sm:text-sm text-neutral-400 truncate">{url}</span>
         </div>
     );
 }
@@ -409,19 +409,19 @@ export default function SocialProfileSection() {
         >
             {/* ---------- Background: dark navy silk texture fading to black ---------- */}
             <div className="pointer-events-none absolute inset-0">
-                <div className="absolute inset-x-0 top-0 h-[420px] bg-gradient-to-b from-[#25406b] via-[#16233d] to-transparent" />
-                <div className="absolute -left-20 top-[-100px] h-[500px] w-[700px] rounded-full bg-[#2f5590]/40 blur-[110px]" />
-                <div className="absolute right-[-150px] top-[-60px] h-[450px] w-[600px] rounded-full bg-[#1c3a66]/50 blur-[120px]" />
+                <div className="absolute inset-x-0 top-0 h-[280px] sm:h-[420px] bg-gradient-to-b from-[#25406b] via-[#16233d] to-transparent" />
+                <div className="hidden sm:block absolute -left-20 top-[-100px] h-[500px] w-[700px] rounded-full bg-[#2f5590]/40 blur-[110px]" />
+                <div className="hidden sm:block absolute right-[-150px] top-[-60px] h-[450px] w-[600px] rounded-full bg-[#1c3a66]/50 blur-[120px]" />
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/60 to-black" />
             </div>
 
-            <div className="relative z-10 mx-auto max-w-6xl px-10 pb-20 pt-16">
+            <div className="relative z-10 mx-auto max-w-6xl px-3 sm:px-6 md:px-10 pb-12 sm:pb-16 md:pb-20 pt-8 sm:pt-12 md:pt-16">
                 {/* ---------------- Header ---------------- */}
-                <div ref={headerRef} className="flex items-start justify-between">
-                    <div className="flex items-start gap-8">
+                <div ref={headerRef} className="flex flex-col sm:flex-row items-start justify-between gap-6 sm:gap-8">
+                    <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6 md:gap-8 w-full sm:w-auto">
                         <div
                             ref={avatarRef}
-                            className="group relative flex h-[190px] w-[190px] shrink-0 items-center justify-center overflow-hidden cursor-pointer rounded-full border border-white/10 bg-neutral-200"
+                            className="group relative flex h-24 w-24 sm:h-32 sm:w-32 md:h-[190px] md:w-[190px] shrink-0 items-center justify-center overflow-hidden cursor-pointer rounded-full border border-white/10 bg-neutral-200"
                         >
                             {(
                                 <input
@@ -465,16 +465,16 @@ export default function SocialProfileSection() {
                         </div>
 
 
-                        <div ref={infoRef} className="pt-2">
+                        <div ref={infoRef} className="pt-0 sm:pt-2 flex-1">
 
                             {/* <h1 className="text-5xl font-extrabold tracking-tight">{currentUser.username}</h1> */}
                             {isOwnProfile && isEditingUsername ? (
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
                                     <input
                                         type="text"
                                         value={editedUsername}
                                         onChange={(e) => setEditedUsername(e.target.value)}
-                                        className="bg-transparent text-white text-3xl font-bold outline-0"
+                                        className="bg-transparent text-white text-xl sm:text-2xl md:text-3xl font-bold outline-0 flex-1 min-w-0"
                                         maxLength={30}
                                         autoFocus
                                         onKeyDown={(e) => {
@@ -495,13 +495,13 @@ export default function SocialProfileSection() {
                             ) : (
                                 <>
                                     {(
-                                        <h1 onClick={() => setIsEditingUsername(true)} className="text-3xl font-bold">{currentUser?.username || 'Learner'}</h1>
+                                        <h1 onClick={() => setIsEditingUsername(true)} className="text-xl sm:text-2xl md:text-3xl font-bold truncate hover:text-white/80 transition">{currentUser?.username || 'Learner'}</h1>
                                     )}
                                 </>
                             )}
 
                             {/* <p className="mt-2 text-xl text-neutral-300">{currentUser?.username}</p> */}
-                            <p className="mt-1 text-neutral-500">{PROFILE.handle}</p>
+                            <p className="mt-1 text-xs sm:text-sm text-neutral-500">{PROFILE.handle}</p>
 
                             {isOwnProfile && isEditingBio ? (
                                 <div>
@@ -509,11 +509,11 @@ export default function SocialProfileSection() {
                                         value={bio}
                                         onChange={(e) => setBio(e.target.value)}
                                         placeholder="Write something about yourself..."
-                                        className="w-full bg-transparent text-white rounded-lg outline-none"
+                                        className="w-full bg-transparent text-white text-xs sm:text-sm rounded-lg outline-none"
                                         rows="3"
                                         maxLength="200"
                                     />
-                                    <div className="flex items-center justify-between mt-2">
+                                    <div className="flex items-center justify-between mt-2 flex-wrap gap-2">
                                         <span className="text-xs text-gray-500">{bio.length}/200</span>
                                         <div className="flex gap-2">
                                             <button
@@ -522,14 +522,14 @@ export default function SocialProfileSection() {
                                                     setBio(currentUser?.bio || '');
                                                     setIsEditingBio(false);
                                                 }}
-                                                className="px-3 py-1 bg-gray-600 hover:bg-gray-700 rounded-lg text-sm font-semibold transition"
+                                                className="px-2 sm:px-3 py-1 bg-gray-600 hover:bg-gray-700 rounded-lg text-xs sm:text-sm font-semibold transition"
                                             >
                                                 <FaTimes className="inline mr-1" /> Cancel
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={handleSaveBio}
-                                                className="px-3 py-1 bg-cyan-600 hover:bg-cyan-700 rounded-lg text-sm font-semibold transition"
+                                                className="px-2 sm:px-3 py-1 bg-cyan-600 hover:bg-cyan-700 rounded-lg text-xs sm:text-sm font-semibold transition"
                                             >
                                                 <FaSave className="inline mr-1" /> Save
                                             </button>
@@ -540,14 +540,12 @@ export default function SocialProfileSection() {
                                 <div className="flex items-start justify-between">
 
                                     {(
-                                        <p onClick={() => setIsEditingBio(true)} className="text-gray-300 flex-1">
-                                            {currentUser?.bio || (isOwnProfile ? 'No bio yet. Click edit to add one.' : 'No bio yet.')}
-                                        </p>
+                                        <p onClick={() => setIsEditingBio(true)} className="text-gray-300 text-xs sm:text-sm flex-1">{currentUser?.bio || (isOwnProfile ? 'No bio yet. Click edit to add one.' : 'No bio yet.')}</p>
                                     )}
                                 </div>
                             )}
 
-                            <div className="mt-5 flex items-center gap-3 text-neutral-400">
+                            <div className="mt-4 sm:mt-5 flex items-center gap-2 sm:gap-3 text-neutral-400 text-xs sm:text-sm flex-wrap">
                                 <span>
                                     <span className="font-bold text-white">{userPosts?.length}</span> Posts
                                 </span>
@@ -555,7 +553,7 @@ export default function SocialProfileSection() {
                                 <span>
                                     <span className="font-bold text-white">{PROFILE.followers}</span> Followers
                                 </span>
-                                <span className="text-neutral-600">|</span>
+                                <span className="text-neutral-600 hidden sm:inline">|</span>
                                 <span>
                                     <span className="font-bold text-white">{PROFILE.following}</span> Following
                                 </span>
@@ -580,7 +578,7 @@ export default function SocialProfileSection() {
                 {/* ---------------- Tabs ---------------- */}
                 <div
                     ref={tabsRef}
-                    className="mt-10 flex items-center justify-center gap-10 border-b border-white/10 pb-4"
+                    className="mt-8 sm:mt-10 flex items-center justify-center gap-6 sm:gap-10 border-b border-white/10 pb-3 sm:pb-4 overflow-x-auto"
                 >
                     {TABS.map((tab) => {
                         const active = tab === activeTab;
@@ -589,7 +587,7 @@ export default function SocialProfileSection() {
                                 key={tab}
                                 data-tab={tab}
                                 onClick={() => handleTabClick(tab)}
-                                className={`relative pb-2 text-lg font-medium transition-colors ${active ? "font-bold text-white" : "text-neutral-500 hover:text-neutral-300"
+                                className={`relative pb-2 text-sm sm:text-lg font-medium transition-colors whitespace-nowrap ${active ? "font-bold text-white" : "text-neutral-500 hover:text-neutral-300"
                                     }`}
                             >
                                 [ {tab} ]
@@ -602,35 +600,35 @@ export default function SocialProfileSection() {
                 </div>
 
                 {/* ---------------- Content grid ---------------- */}
-                <div ref={contentRef} className="mt-10">
+                <div ref={contentRef} className="mt-8 sm:mt-10">
                     {/* <h2 className="text-2xl font-bold mb-6 text-center">Your Posts</h2> */}
 
                     {postsLoading ? (
-                        <div className="text-center text-gray-400">Loading posts...</div>
+                        <div className="text-center text-gray-400 text-sm sm:text-base">Loading posts...</div>
                     ) : userPosts.length === 0 ? (
-                        <div className="text-center text-gray-400">No posts yet.</div>
+                        <div className="text-center text-gray-400 text-sm sm:text-base">No posts yet.</div>
                     ) : (
-                        <div className="grid grid-cols-3 gap-6 max-w-6xl mx-auto">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6 max-w-6xl mx-auto">
                             {userPosts.map((post) => {
                                 const imageUrl = getDisplayImageUrl(post.image);
 
                                 return (
                                     <div
                                         key={post.id}
-                                        className="rounded-2xl border border-white/10 bg-[#2B2B2B] p-4 transition-transform duration-300 hover:scale-105 hover:shadow-lg"
+                                        className="rounded-lg sm:rounded-2xl border border-white/10 bg-[#2B2B2B] p-3 sm:p-4 transition-transform duration-300 hover:scale-105 hover:shadow-lg"
                                     >
-                                        <div className="mb-3 text-sm text-gray-400">
+                                        <div className="mb-3 text-xs sm:text-sm text-gray-400">
                                             {new Date(post.createdAt).toLocaleDateString()}
                                         </div>
-                                        <div className="text-white mb-3">{post.content}</div>
+                                        <div className="text-white text-sm sm:text-base mb-3 line-clamp-3">{post.content}</div>
                                         {post.image && (
-                                            <div className="overflow-hidden rounded-xl aspect-square">
+                                            <div className="overflow-hidden rounded-lg sm:rounded-xl aspect-square mb-3">
                                                 <img src={imageUrl} alt="" className="w-full h-full object-cover" />
                                             </div>
                                         )}
-                                        <div className="mt-3 flex items-center justify-between text-sm text-gray-400">
-                                            <div>
-                                                <span className="mr-5 flex flex-col justify-center"><FaHeart /></span>
+                                        <div className="flex items-center justify-between text-xs sm:text-sm text-gray-400 flex-wrap gap-2">
+                                            <div className="flex items-center gap-1">
+                                                <span className="flex items-center justify-center"><FaHeart size={12} className="sm:w-4 sm:h-4" /></span>
                                                 <span>{post.likesCount} likes</span>
                                             </div>
                                             <span>{post.commentsCount} comments</span>

@@ -182,17 +182,15 @@ export function FriendsPage() {
   const renderFriendCard = (friend, showRank = false, rank = 0) => (
     <div
       key={friend._id}
-      className="bg-[#141b24] rounded-lg p-4 border border-[#1f2a38] cursor-pointer hover:border-cyan-600/50 transition"
+      className="bg-[#0f1620] rounded-lg p-3 sm:p-4 border border-white/5 hover:border-white/10 transition"
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
         {showRank && (
-          <div className="text-2xl font-bold text-cyan-400 w-8 shrink-0">
+          <div className="text-xl sm:text-2xl font-light text-white/60 w-6 sm:w-8 shrink-0">
             #{rank}
           </div>
         )}
-        <div
-
-          className="w-14 h-14 rounded-full bg-linear-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-xl font-bold shrink-0">
+        <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-white/20 to-white/10 flex items-center justify-center text-sm sm:text-xl font-light shrink-0">
           {friend.profilePic ? (
             <img src={friend.profilePic} alt={friend.username} className="w-full h-full rounded-full object-cover" />
           ) : (
@@ -200,131 +198,128 @@ export function FriendsPage() {
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <div onClick={() => friend._id && navigate(`/profile/${friend._id}`)} className="font-bold text-lg truncate">{friend.username}</div>
-          {/* <div className="text-sm text-gray-400">{friend.league}</div> */}
+          <div onClick={() => friend._id && navigate(`/profile/${friend._id}`)} className="font-light text-sm sm:text-lg truncate hover:text-white/80 transition">{friend.username}</div>
         </div>
         <div className="text-right shrink-0">
-          {/* <div className="flex items-center gap-1 text-orange-400 text-sm">
-            <FaStar />
-            <span className="font-semibold">{friend.totalXp.toLocaleString()}</span>
-          </div> */}
           <button
             onClick={() => dispatch(setConfirmRemoveId(friend._id))}
-            className="flex-1 px-3 py-2 bg-red-600/20 cursor-pointer hover:bg-red-600/30 text-red-400 rounded-lg text-sm font-semibold transition flex items-center justify-center gap-2"
+            className="px-2 sm:px-3 py-1 sm:py-2 bg-transparent hover:bg-white/10 text-white/60 hover:text-white rounded-lg text-xs sm:text-sm font-light transition flex items-center justify-center gap-1 sm:gap-2 border border-white/10"
           >
-            <FaTrash />
+            <FaTrash size={10} className="sm:w-4 sm:h-4" />
           </button>
         </div>
       </div>
-      {!showRank && (
+      {!showRank && confirmRemoveId === friend._id && (
         <div className="mt-3 flex gap-2">
-          {confirmRemoveId === friend._id && (
-            <>
-              <span className="flex-1 text-sm text-gray-300 flex items-center">Are you sure?</span>
-              <button
-                onClick={() => handleRemoveFriend(friend._id)}
-                className="px-3 py-2 cursor-pointer bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition"
-              >
-                Yes
-              </button>
-              <button
-                onClick={() => dispatch(setConfirmRemoveId(null))}
-                className="px-3 py-2 bg-[#1a2332] hover:bg-[#243547] cursor-pointer text-gray-400 rounded-lg text-sm font-semibold transition"
-              >
-                Cancel
-              </button>
-            </>
-          )}
+          <span className="flex-1 text-xs sm:text-sm text-white/60 flex items-center font-light">Sure?</span>
+          <button
+            onClick={() => handleRemoveFriend(friend._id)}
+            className="px-2 sm:px-3 py-1 sm:py-2 cursor-pointer bg-white/10 hover:bg-white/15 text-white rounded-lg text-xs sm:text-sm font-light transition border border-white/10"
+          >
+            Yes
+          </button>
+          <button
+            onClick={() => dispatch(setConfirmRemoveId(null))}
+            className="px-2 sm:px-3 py-1 sm:py-2 bg-transparent hover:bg-white/5 cursor-pointer text-white/60 hover:text-white rounded-lg text-xs sm:text-sm font-light transition border border-white/10"
+          >
+            Cancel
+          </button>
         </div>
       )}
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#0f1419] text-white p-4 sm:p-6">
+    <div className="min-h-screen bg-[#0a0e14] text-white p-3 sm:p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="bg-[#1a2332] rounded-2xl p-6 border border-[#2a3a4a] shadow-lg mb-6">
-          <div className="flex items-center gap-3">
-            <FaUserFriends className="text-4xl text-cyan-400" />
+        <div className="bg-gradient-to-r from-[#111820] to-[#0f1620] rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/5 mb-4 sm:mb-6">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <FaUserFriends className="text-2xl sm:text-3xl md:text-4xl text-white/60" />
             <div>
-              <h1 className="text-3xl font-bold">Friends</h1>
-              <p className="text-gray-400 text-sm">Connect with fellow learners</p>
+              <h1 className="text-2xl sm:text-3xl font-light tracking-tight">Friends</h1>
+              <p className="text-white/40 text-xs sm:text-sm font-light">Manage your connections</p>
             </div>
           </div>
         </div>
 
         {/* Messages */}
         {error && (
-          <div className="bg-red-600/20 border border-red-600 rounded-lg p-4 mb-4">
-            <p className="text-red-400">{error}</p>
+          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
+            <p className="text-red-300 text-sm sm:text-base font-light">{error}</p>
           </div>
         )}
         {successMessage && (
-          <div className="bg-emerald-600/20 border border-emerald-600 rounded-lg p-4 mb-4">
-            <p className="text-emerald-400">{successMessage}</p>
+          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
+            <p className="text-emerald-300 text-sm sm:text-base font-light">{successMessage}</p>
           </div>
         )}
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6 overflow-x-auto">
+        <div className="flex gap-1 sm:gap-2 mb-4 sm:mb-6 overflow-x-auto pb-2 scrollbar-hide border-b border-white/5">
           <button
             onClick={() => dispatch(setActiveTab('friends'))}
-            className={`px-4 py-2 rounded-lg font-semibold transition whitespace-nowrap ${activeTab === 'friends'
-              ? 'bg-cyan-600 text-white'
-              : 'bg-[#1a2332] text-gray-400 hover:bg-[#243547]'
-              }`}
+            className={`px-2 sm:px-4 py-2 rounded-none font-light transition whitespace-nowrap text-xs sm:text-sm border-b-2 ${
+              activeTab === 'friends'
+                ? 'text-white border-white/60'
+                : 'text-white/40 border-transparent hover:text-white/60'
+            }`}
           >
-            <FaUserFriends className="inline mr-2" />
-            Friends ({friends.length})
+            <FaUserFriends className="inline mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Friends ({friends.length})</span>
+            <span className="sm:hidden">({friends.length})</span>
           </button>
           <button
             onClick={() => dispatch(setActiveTab('requests'))}
-            className={`px-4 py-2 rounded-lg font-semibold transition whitespace-nowrap relative ${activeTab === 'requests'
-              ? 'bg-cyan-600 text-white'
-              : 'bg-[#1a2332] text-gray-400 hover:bg-[#243547]'
-              }`}
+            className={`px-2 sm:px-4 py-2 rounded-none font-light transition whitespace-nowrap text-xs sm:text-sm border-b-2 relative ${
+              activeTab === 'requests'
+                ? 'text-white border-white/60'
+                : 'text-white/40 border-transparent hover:text-white/60'
+            }`}
           >
-            <FaMedal className="inline mr-2" />
-            Requests
+            <FaMedal className="inline mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Requests</span>
+            <span className="sm:hidden">Req</span>
             {friendRequests.length > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 bg-white/30 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-light">
                 {friendRequests.length}
               </span>
             )}
           </button>
           <button
             onClick={() => dispatch(setActiveTab('search'))}
-            className={`px-4 py-2 rounded-lg font-semibold transition whitespace-nowrap ${activeTab === 'search'
-              ? 'bg-cyan-600 text-white'
-              : 'bg-[#1a2332] text-gray-400 hover:bg-[#243547]'
-              }`}
+            className={`px-2 sm:px-4 py-2 rounded-none font-light transition whitespace-nowrap text-xs sm:text-sm border-b-2 ${
+              activeTab === 'search'
+                ? 'text-white border-white/60'
+                : 'text-white/40 border-transparent hover:text-white/60'
+            }`}
           >
-            <FaSearch className="inline mr-2" />
-            Search
+            <FaSearch className="inline mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Search</span>
+            <span className="sm:hidden">Find</span>
           </button>
         </div>
 
         {/* Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Main Content Area */}
           <div className="lg:col-span-2">
             {/* Friends Tab */}
             {activeTab === 'friends' && (
-              <div className="bg-[#1a2332] rounded-2xl p-6 border border-[#2a3a4a]">
-                <h2 className="text-xl font-bold mb-4">Your Friends</h2>
+              <div className="bg-gradient-to-br from-[#111820] to-[#0f1620] rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/5">
+                <h2 className="text-lg sm:text-xl font-light mb-4 tracking-tight">Your Friends</h2>
                 {isLoading ? (
-                  <div className="text-center py-12">
-                    <div className="animate-spin w-12 h-12 border-4 border-cyan-400 border-t-transparent rounded-full mx-auto mb-4"></div>
-                    <p className="text-gray-400">Loading friends...</p>
+                  <div className="text-center py-8 sm:py-12">
+                    <div className="animate-spin w-10 h-10 sm:w-12 sm:h-12 border border-white/20 border-t-white/60 rounded-full mx-auto mb-4"></div>
+                    <p className="text-white/50 text-sm sm:text-base font-light">Loading friends...</p>
                   </div>
                 ) : friends.length === 0 ? (
-                  <div className="text-center py-12 text-gray-400">
-                    <FaUserFriends className="text-5xl mx-auto mb-4 opacity-50" />
-                    <p>No friends yet. Search for users to connect!</p>
+                  <div className="text-center py-8 sm:py-12 text-white/50">
+                    <FaUserFriends className="text-3xl sm:text-5xl mx-auto mb-4 opacity-30" />
+                    <p className="text-sm sm:text-base font-light">No friends yet</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-2 sm:space-y-3">
                     {friends.map(friend => renderFriendCard(friend))}
                   </div>
                 )}
@@ -333,52 +328,52 @@ export function FriendsPage() {
 
             {/* Friend Requests Tab */}
             {activeTab === 'requests' && (
-              <div className="bg-[#1a2332] rounded-2xl p-6 border border-[#2a3a4a]">
-                <h2 className="text-xl font-bold mb-4">Friend Requests</h2>
+              <div className="bg-gradient-to-br from-[#111820] to-[#0f1620] rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/5">
+                <h2 className="text-lg sm:text-xl font-light mb-4 tracking-tight">Requests</h2>
                 {isLoading ? (
-                  <div className="text-center py-12">
-                    <div className="animate-spin w-12 h-12 border-4 border-cyan-400 border-t-transparent rounded-full mx-auto mb-4"></div>
-                    <p className="text-gray-400">Loading requests...</p>
+                  <div className="text-center py-8 sm:py-12">
+                    <div className="animate-spin w-10 h-10 sm:w-12 sm:h-12 border border-white/20 border-t-white/60 rounded-full mx-auto mb-4"></div>
+                    <p className="text-white/50 text-sm sm:text-base font-light">Loading requests...</p>
                   </div>
                 ) : friendRequests.length === 0 ? (
-                  <div className="text-center py-12 text-gray-400">
-                    <FaMedal className="text-5xl mx-auto mb-4 opacity-50" />
-                    <p>No pending friend requests</p>
+                  <div className="text-center py-8 sm:py-12 text-white/50">
+                    <FaMedal className="text-3xl sm:text-5xl mx-auto mb-4 opacity-30" />
+                    <p className="text-sm sm:text-base font-light">No pending requests</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-2 sm:space-y-3">
                     {friendRequests.map(request => (
                       <div
                         key={request._id}
-                        className="bg-[#141b24] rounded-lg p-4 border border-[#1f2a38]"
+                        className="bg-[#0f1620] rounded-lg p-3 sm:p-4 border border-white/5 hover:border-white/10 transition"
                       >
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-lg font-bold">
+                        <div className="flex items-center gap-2 sm:gap-3 mb-3 flex-wrap sm:flex-nowrap">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-white/20 to-white/10 flex items-center justify-center text-sm sm:text-lg font-light flex-shrink-0">
                             {request.from.profilePic ? (
                               <img src={request.from.profilePic} alt={request.from.username} className="w-full h-full rounded-full object-cover" />
                             ) : (
                               request.from.username[0].toUpperCase()
                             )}
                           </div>
-                          <div className="flex-1">
-                            <div className="font-bold">{request.from.username}</div>
-                            <div className="text-sm text-gray-400">
-                              Level {request.from.level} • {request.from.totalXp.toLocaleString()} XP
+                          <div className="flex-1 min-w-0">
+                            <div className="font-light text-sm sm:text-base truncate">{request.from.username}</div>
+                            <div className="text-xs sm:text-sm text-white/40 font-light">
+                              Level {request.from.level}
                             </div>
                           </div>
                         </div>
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleAcceptRequest(request._id)}
-                            className="flex-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold transition flex items-center justify-center gap-2"
+                            className="flex-1 px-2 sm:px-3 py-2 bg-white/10 hover:bg-white/15 text-white rounded-lg text-xs sm:text-sm font-light transition flex items-center justify-center gap-1 sm:gap-2 border border-white/10"
                           >
-                            <FaCheck /> Accept
+                            <FaCheck size={12} className="sm:w-4 sm:h-4" /> Accept
                           </button>
                           <button
                             onClick={() => handleRejectRequest(request._id)}
-                            className="flex-1 px-3 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg text-sm font-semibold transition flex items-center justify-center gap-2"
+                            className="flex-1 px-2 sm:px-3 py-2 bg-transparent hover:bg-white/5 text-white/60 hover:text-white rounded-lg text-xs sm:text-sm font-light transition flex items-center justify-center gap-1 sm:gap-2 border border-white/10"
                           >
-                            <FaTimes /> Reject
+                            <FaTimes size={12} className="sm:w-4 sm:h-4" /> Reject
                           </button>
                         </div>
                       </div>
@@ -390,67 +385,67 @@ export function FriendsPage() {
 
             {/* Search Tab */}
             {activeTab === 'search' && (
-              <div className="bg-[#1a2332] rounded-2xl p-6 border border-[#2a3a4a]">
-                <h2 className="text-xl font-bold mb-4">Find Friends</h2>
+              <div className="bg-gradient-to-br from-[#111820] to-[#0f1620] rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/5">
+                <h2 className="text-lg sm:text-xl font-light mb-4 tracking-tight">Find Friends</h2>
                 <div className="relative mb-4">
-                  <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/30" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => dispatch(setSearchQuery(e.target.value))}
-                    placeholder="Search by username..."
-                    className="w-full pl-10 pr-4 py-3 bg-[#141b24] border border-[#2a3a4a] rounded-lg focus:outline-none focus:border-cyan-600 text-white"
+                    placeholder="Search username..."
+                    className="w-full pl-10 pr-4 py-2 sm:py-3 bg-[#0f1620] border border-white/10 rounded-lg focus:outline-none focus:border-white/30 text-white text-sm sm:text-base font-light placeholder-white/30"
                   />
                 </div>
                 {isSearching ? (
-                  <div className="text-center py-12">
-                    <div className="animate-spin w-12 h-12 border-4 border-cyan-400 border-t-transparent rounded-full mx-auto mb-4"></div>
-                    <p className="text-gray-400">Searching...</p>
+                  <div className="text-center py-8 sm:py-12">
+                    <div className="animate-spin w-10 h-10 sm:w-12 sm:h-12 border border-white/20 border-t-white/60 rounded-full mx-auto mb-4"></div>
+                    <p className="text-white/50 text-sm sm:text-base font-light">Searching...</p>
                   </div>
                 ) : searchResults.length === 0 && searchQuery.trim() ? (
-                  <div className="text-center py-12 text-gray-400">
-                    <p>No users found</p>
+                  <div className="text-center py-8 sm:py-12 text-white/50">
+                    <p className="text-sm sm:text-base font-light">No users found</p>
                   </div>
                 ) : searchResults.length === 0 ? (
-                  <div className="text-center py-12 text-gray-400">
-                    <FaSearch className="text-5xl mx-auto mb-4 opacity-50" />
-                    <p>Start typing to search for users</p>
+                  <div className="text-center py-8 sm:py-12 text-white/50">
+                    <FaSearch className="text-3xl sm:text-5xl mx-auto mb-4 opacity-30" />
+                    <p className="text-sm sm:text-base font-light">Start typing to search</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-2 sm:space-y-3">
                     {searchResults.map(user => (
                       <div
                         key={user._id}
-                        className="bg-[#141b24] rounded-lg p-4 border border-[#1f2a38] hover:border-cyan-600/50 transition"
+                        className="bg-[#0f1620] rounded-lg p-3 sm:p-4 border border-white/5 hover:border-white/10 transition"
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-lg font-bold">
+                        <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-white/20 to-white/10 flex items-center justify-center text-sm sm:text-lg font-light flex-shrink-0">
                             {user.profilePic ? (
                               <img src={user.profilePic} alt={user.username} className="w-full h-full rounded-full object-cover" />
                             ) : (
                               user.username[0].toUpperCase()
                             )}
                           </div>
-                          <div className="flex-1">
-                            <div className="font-bold">{user.username}</div>
-                            <div className="text-sm text-gray-400">
-                              Level {user.level} • {user.totalXp.toLocaleString()} XP
+                          <div className="flex-1 min-w-0">
+                            <div className="font-light text-sm sm:text-base truncate">{user.username}</div>
+                            <div className="text-xs sm:text-sm text-white/40 font-light">
+                              Level {user.level}
                             </div>
                           </div>
                           {user.isFriend ? (
-                            <div className="px-4 py-2 bg-emerald-600/20 text-emerald-400 rounded-lg text-sm font-semibold">
+                            <div className="px-2 sm:px-4 py-1 sm:py-2 bg-white/10 text-white rounded-lg text-xs sm:text-sm font-light whitespace-nowrap border border-white/10">
                               Friends
                             </div>
                           ) : user.hasPendingRequest ? (
-                            <div className="px-4 py-2 bg-yellow-600/20 text-yellow-400 rounded-lg text-sm font-semibold cursor-default">
+                            <div className="px-2 sm:px-4 py-1 sm:py-2 bg-white/5 text-white/60 rounded-lg text-xs sm:text-sm font-light cursor-default whitespace-nowrap border border-white/10">
                               Pending
                             </div>
                           ) : (
                             <button
                               onClick={() => handleSendRequest(user._id)}
-                              className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg text-sm font-semibold transition flex items-center gap-2"
+                              className="px-2 sm:px-4 py-1 sm:py-2 bg-white/15 hover:bg-white/20 text-white rounded-lg text-xs sm:text-sm font-light transition flex items-center gap-1 sm:gap-2 whitespace-nowrap border border-white/10"
                             >
-                              <FaUserPlus /> Add
+                              <FaUserPlus size={12} className="sm:w-4 sm:h-4" /> Add
                             </button>
                           )}
                         </div>
@@ -461,25 +456,6 @@ export function FriendsPage() {
               </div>
             )}
           </div>
-
-          {/* Sidebar - Friends Leaderboard */}
-          {/* <div className="lg:col-span-1">
-            <div className="bg-[#1a2332] rounded-2xl p-6 border border-[#2a3a4a] sticky top-20">
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <FaTrophy className="text-yellow-400" />
-                Friends Leaderboard
-              </h2>
-              {friends.length === 0 ? (
-                <div className="text-center py-8 text-gray-400">
-                  <p className="text-sm">Add friends to see the leaderboard</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {friends.slice(0, 10).map((friend, index) => renderFriendCard(friend, true, index + 1))}
-                </div>
-              )}
-            </div>
-          </div> */}
         </div>
       </div>
     </div>

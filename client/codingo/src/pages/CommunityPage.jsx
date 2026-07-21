@@ -639,7 +639,7 @@ export default function CommunityPage() {
         {/* Middle: snap-scroll film-reel feed */}
         <div className="flex flex-col h-full overflow-hidden">
           {/* Capsules sticky strip */}
-          <div className="flex-shrink-0 z-20 px-4 pt-4 pb-2 bg-black/50 border-b border-white/[0.06] transition-all duration-300 ease-out overflow-hidden" style={{ transform: showCapsules ? 'translateY(0)' : 'translateY(-100%)', maxHeight: showCapsules ? '20%' : '0%' }}>
+          <div className="flex-shrink-0 z-20 px-4 pt-4 pb-2 bg-black/50 border-b border-white/[0.06] transition-all duration-300 ease-out overflow-hidden" style={{ transform: showCapsules ? '' : 'translateY(-100%)', maxHeight: showCapsules ? '20%' : '0%' }}>
             <Capsules
               onAddCapsule={() => setShowAddCapsule(true)}
             />
