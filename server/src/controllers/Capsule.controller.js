@@ -43,6 +43,8 @@ const createCapsule = async (req, res) => {
       mediaUrl: buildCapsuleMediaUrl(req, fileId),
       mediaType: req.file.mimetype.startsWith('video') ? 'video' : 'image',
       caption: req.body.caption || '',
+      likedBy: [],
+      likeCount: 0,
       expiresAt: new Date(now.getTime() + 24 * HOUR),
       deleteAt: new Date(now.getTime() + 48 * HOUR),
     });
@@ -159,11 +161,60 @@ const preserveCapsule = async (req, res) => {
 
     capsule.expiresAt = new Date(now.getTime() + 24 * HOUR);
     capsule.deleteAt = new Date(now.getTime() + 48 * HOUR);
-    capsule.streakStartsFrom = now; 
+    capsule.streakStartsFrom = now;
     capsule.streakCount = (capsule.streakCount || 1) + 1;
     await capsule.save();
 
     return res.status(200).json({ message: `Capsule preserved successfully by ${userId}`, capsule });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const likeCapsule = async (req, res) => {
+  try {
+    const capsuleId = req.params.id;
+    const userId = req.user.id || req.user._id;
+    const userIdString = String(userId);
+
+    const capsule = await Capsule.findById(capsuleId);
+    if (!capsule) {
+      return res.status(404).json({ message: 'capsule not found' });
+    }
+
+    const likeIndex = capsule.likedBy.findIndex((id) => String(id) === userIdString);
+
+    if (likeIndex > -1) {
+      capsule.likedBy.splice(likeIndex, 1);
+      await capsule.save();
+      return res.status(200).json({
+        message: 'Capsule disliked',
+        likesCount: capsule.likedBy.length,
+        isLiked: false,
+      });
+    } else {
+      capsule.likedBy.push(userId);
+      await capsule.save();
+
+      if (String(capsule.user) !== userIdString) {
+        const liker = await User.findById(userId).select('username');
+        await User.findByIdAndUpdate(capsule.user, {
+          $push: {
+            notifications: {
+              title: 'capsule like',
+              detail: `${liker.username} liked your capsule`,
+            },
+          },
+        });
+      }
+
+      return res.status(200).json({
+        message: 'capsule liked',
+        likesCount: capsule.likedBy.length,
+        isLiked: true,
+      });
+    }
+    console.log('likescount', capsule.likedBy.length)
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -211,6 +262,7 @@ module.exports = {
   viewCapsule,
   preserveCapsule,
   deleteCapsule,
+  likeCapsule,
   getUserCapsules,
   getFriendsCapsules,
   getCapsuleMedia,

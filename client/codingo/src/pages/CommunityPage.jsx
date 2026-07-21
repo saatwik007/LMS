@@ -72,7 +72,7 @@ function AvatarInitial({ name, size = 44 }) {
   );
 }
 
-function PostComposer({
+export function PostComposer({
   onPostCreated,
   composerFile,
   setComposerFile,
@@ -340,6 +340,7 @@ function PostCard({ post, currentUserId, onLike, onDelete }) {
                 <div className="flex items-center gap-[6px] mt-[2px]">
                   <span className="text-[#aaaaaa] text-[10px]"><FaClock /></span>
                   <span className="text-[12px] text-[#919191] font-['DM_Mono']">{formatTimeAgo(post.createdAt)}</span>
+                  <span className="text-[12px] text-[#919191] font-['DM_Mono']">Ago</span>
                 </div>
               </div>
             </div>
@@ -356,7 +357,7 @@ function PostCard({ post, currentUserId, onLike, onDelete }) {
 
         {post.image && (
           <div className="p-0 mt-[4px]">
-            <img src={imageUrl} alt="Post" className="w-full max-h-[500px] object-cover border-t border-b border-[#1a2535] block" />
+            <img src={imageUrl} alt="Post" className="w-full max-h-140 object-cover border-t border-b border-[#1a2535] block" />
           </div>
         )}
 
@@ -411,6 +412,7 @@ export default function CommunityPage() {
   const apiUrl = import.meta.env.VITE_API_URL || '';
   const currentUser = getStoredUser();
   const currentUserId = currentUser?.id || currentUser?._id || '';
+  console.log('currentuserid', currentUserId)
   const [showMobileComposer, setShowMobileComposer] = useState(false);
 
   // ✅ lifted file/preview state survives composer remount
@@ -423,6 +425,11 @@ export default function CommunityPage() {
   const [showAddCapsule, setShowAddCapsule] = useState(false);
   const [selectedCapsuleId, setSelectedCapsuleId] = useState(null);
   const [selectedImageFile, setSelectedImageFile] = useState(null);
+  const [showPostComposer, setShowPostComposer] = useState(false);
+
+  const handleShowPostComposer = () => {
+    setShowPostComposer(true)
+  };
 
   const showCapsule = (id) => {
     setSelectedCapsuleId(id);
@@ -512,20 +519,12 @@ export default function CommunityPage() {
         className="grid grid-cols-1 lg:grid-cols-[260px_1fr_300px] items-start bg-black gap-6 max-w-full mx-auto px-4 sm:px-5 pt-6 sm:pt-7 pb-16"
         style={{ position: 'relative', zIndex: 1 }}
       >
-        <div className="hidden lg:block z-10 sticky">
-          <div className="fixed top-180 min-w-110">
-             <PostComposer
-            onPostCreated={handlePostCreated}
-            composerFile={composerFile}
-            setComposerFile={setComposerFile}
-            composerPreview={composerPreview}
-            setComposerPreview={setComposerPreview}
-          />
-          </div>
-        </div>
+        {/* Reserved space for the app's own sidebar — keeps this column
+            empty so the grid places the feed and right rail correctly */}
+        <div className="hidden lg:block" aria-hidden="true" />
 
         {/* ── Middle: main feed ─────────────────────────────── */}
-        <div className="mx-auto w-full max-w-3xl px-2 sm:px-0">
+        <div className="mx-auto w-full max-w-2xl px-2 sm:px-0">
                  <Capsules
             onOpenCapsule={showCapsule}
             onAddCapsule={addCapsule}
@@ -560,6 +559,12 @@ export default function CommunityPage() {
         {error && <div className="bg-[#f8717118] border border-[#f8717144] rounded-[12px] px-[16px] py-[12px] mb-[16px] text-[#f87171] text-[13px]">{error}</div>}
 
         <div className="flex flex-col gap-[10px]">
+          <div onClick={handleShowPostComposer} className='text-center cursor-pointer text-white bg-[#2B2B2B] rounded-3xl p-2'>
+            NewPost
+          </div>
+          {showPostComposer && (
+            <PostComposer />
+          )}
           {posts.length === 0 && !isLoading ? (
             <div className="bg-[#404040] border border-[#1a2535] rounded-[20px] px-[24px] py-[48px] text-center">
               <div className="text-[40px] mb-[12px]">👩‍💻</div>

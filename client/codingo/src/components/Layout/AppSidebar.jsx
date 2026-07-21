@@ -24,21 +24,7 @@ import axios from 'axios';
 import { apiUrl, getAuthHeaders } from '../../utilites/DashboardHelper';
 import { setCurrentUser } from '../../redux/slices/dashboardSlice';
 
-// const navItems = [
-//   // { key: 'dashboard', label: 'Dashboard', icon: FaRegStar, to: '/dashboard', match: ['/dashboard'] },
-//   { key: 'learn', label: 'Learn', icon: FaGraduationCap, to: '/learn', match: ['/learn', '/levels', '/language'] },
-//   { key: 'community', label: 'Community', icon: FaUsers, to: '/community', match: ['/community'] },
-//   { key: 'friends', label: 'Friends', icon: FaUserFriends, to: '/friends', match: ['/friends'] },
-//   { key: 'messages', label: 'Messages', icon: FaFacebookMessenger, to: '/messages', match: ['/messages'] },
-//   { key: 'challenges', label: 'Challenges', icon: FaFlagCheckered, to: '/challenges', match: ['/challenges'] },
-//   { key: 'leaderboards', label: 'Leaderboards', icon: FaTrophy, to: '/leaderboard', match: ['/leaderboard'] },
-//   { key: 'profile', label: 'Profile', icon: FaMedal, to: '/profile', match: ['/profile'] },
-//   { key: 'progress', label: 'Progress', icon: FaChartLine, to: '/progress', match: ['/progress'] },
-//   { key: 'more', label: 'More', icon: FaEllipsisH, to: '/dashboard', match: [] }
-// ];
-
 const communityNavItems = [
-  // { key: 'dashboard', label: 'Dashboard', icon: FaRegStar, to: '/community', match: ['/community'] },
   { key: 'home', label: 'Home', icon: FaHome, to: '/community', match: ['/community'] },
   { key: 'friends', label: 'Friends', icon: FaUserFriends, to: '/friends', match: ['/friends'] },
   { key: 'messages', label: 'Messages', icon: FaFacebookMessenger, to: '/messages', match: ['/messages'] },
@@ -48,9 +34,6 @@ const communityNavItems = [
 const lmsNavItems = [
   { key: 'dashboard', label: 'Dashboard', icon: FaRegStar, to: '/dashboard', match: ['/dashboard'] },
   { key: 'learn', label: 'Learn', icon: FaGraduationCap, to: '/learn', match: ['/learn', '/levels', '/language'] },
-  // { key: 'community', label: 'Community', icon: FaUsers, to: '/community', match: ['/community'] },
-  // { key: 'friends', label: 'Friends', icon: FaUserFriends, to: '/friends', match: ['/friends'] },
-  // { key: 'messages', label: 'Messages', icon: FaFacebookMessenger, to: '/messages', match: ['/messages'] },
   { key: 'challenges', label: 'Challenges', icon: FaFlagCheckered, to: '/challenges', match: ['/challenges'] },
   { key: 'leaderboards', label: 'Leaderboards', icon: FaTrophy, to: '/leaderboard', match: ['/leaderboard'] },
   { key: 'profile', label: 'Profile', icon: FaMedal, to: '/profile', match: ['/profile'] },
@@ -85,21 +68,21 @@ export default function AppSidebar() {
   const isMobileMenuOpen = useSelector(state => state.sideBar.isMobileMenuOpen);
 
   const handleLogout = async () => {
-  try {
-    await axios.get(`${apiUrl}/api/auth/user/logout`, {
-      withCredentials: true,
-      headers: getAuthHeaders()
-    });
-  } catch {
-    // Continue local cleanup even if API request fails.
-  }
+    try {
+      await axios.get(`${apiUrl}/api/auth/user/logout`, {
+        withCredentials: true,
+        headers: getAuthHeaders()
+      });
+    } catch {
+      // Continue local cleanup even if API request fails.
+    }
 
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
-  setCurrentUser(null);
-  window.dispatchEvent(new Event('auth:user-updated'));
-  navigate('/login');
-};
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setCurrentUser(null);
+    window.dispatchEvent(new Event('auth:user-updated'));
+    navigate('/login');
+  };
 
   const handleNavigate = (to) => {
     dispatch(setMobileMenuOpen(false));
@@ -145,27 +128,27 @@ export default function AppSidebar() {
               />
             ))}
           </nav>
-          
+
           <div>
             {/* New Post */}
-          <button className=' flex justify-center w-full cursor-pointer items-center gap-3 text-white mb-5 text-center bg-gray-700 p-2 rounded-3xl'>
-            <span className='py-2'><FaPlus /></span>
-            {!isDesktopCollapsed && (
-            <span>New Post</span>)}
-          </button>
+            {/* <button className=' flex justify-center w-full cursor-pointer items-center gap-3 text-white mb-5 text-center bg-gray-700 p-2 rounded-3xl'>
+              <span className='py-2'><FaPlus /></span>
+              {!isDesktopCollapsed && (
+                <span>New Post</span>)}
+            </button> */}
 
             {/* Log Out */}
-          <button onClick={handleLogout} className='text-white flex justify-center w-full items-center bg-red-700 text-center p-2 rounded-3xl cursor-pointer'>
-            <span className='py-2'><FaSignOutAlt /></span>
-            {!isDesktopCollapsed && (
-            <span>Log-out</span>)}
-          </button>
+            <button onClick={handleLogout} className='text-white gap-3 flex justify-center w-full items-center bg-red-700 text-center p-2 rounded-3xl cursor-pointer'>
+              <span className='py-2'><FaSignOutAlt /></span>
+              {!isDesktopCollapsed && (
+                <span>Log-out</span>)}
+            </button>
           </div>
         </div>
       </aside>
 
-      <aside className="lg:hidden w-14 shrink-0 bg-[#2B2B2B] border-r border-[#414141]">
-        <div className="sticky top-14 h-[calc(100vh-3.5rem)] py-3 px-2 flex flex-col gap-2 items-center">
+      <aside className="lg:hidden w-10 shrink-0 bg-[#2B2B2B] border-r border-[#414141]">
+        <div className="sticky top-10 h-[calc(100vh-3.5rem)] py-3 px-1 flex flex-col gap-2 items-center">
           <button
             type="button"
             onClick={() => dispatch(setMobileMenuOpen(true))}
@@ -176,31 +159,51 @@ export default function AppSidebar() {
             <FaBars />
           </button>
 
-          {navItems.map((item) => (
-            <SidebarItem
-              key={item.key}
-              item={item}
-              isActive={isActiveItem(item)}
-              collapsed={false}
-              onClick={handleNavigate}
-              iconOnly
-            />
-          ))}
+          <div className='flex flex-col justify-between'>
+            <div>
+            {navItems.map((item) => (
+              <SidebarItem
+                key={item.key}
+                item={item}
+                isActive={isActiveItem(item)}
+                collapsed={false}
+                onClick={handleNavigate}
+                iconOnly
+              />
+            ))}
+            </div>
+
+            <div>
+              {/* New Post */}
+              {/* <button className=' flex justify-center w-full cursor-pointer items-center gap-3 text-white mb-5 text-center bg-gray-700 p-2 rounded-3xl'>
+                <span className='py-2'><FaPlus /></span>
+                {!isDesktopCollapsed && (
+                  <span>New Post</span>)}
+              </button> */}
+
+              {/* Log Out */}
+              <button onClick={handleLogout} className='text-white gap-3 flex justify-center w-full items-center bg-red-700 text-center p-2 rounded-3xl cursor-pointer'>
+                <span className='py-2'><FaSignOutAlt /></span>
+                {!isDesktopCollapsed && (
+                  <span>Log-out</span>)}
+              </button>
+            </div>
+          </div>
         </div>
       </aside>
 
       {isMobileMenuOpen ? (
-        <div className="fixed top-14 left-0 right-0 bottom-0 z-40 lg:hidden">
+        <div className="fixed top-16 left-0 right-0 bottom-0 z-40 lg:hidden">
           <button
             type="button"
-            className="absolute inset-0 bg-black/60"
+            className="absolute min-h-screen inset-0 bg-black/60"
             onClick={() => dispatch(setMobileMenuOpen(false))}
             aria-label="Close sidebar menu backdrop"
           />
 
-          <div className="absolute left-0 top-0 h-full w-64 bg-[#2B2B2B] border-r border-[#414141] p-3 shadow-2xl">
+          <div className="absolute bottom-0.5 min-h-screen h-full w-50 bg-[#2B2B2B] border-r border-[#414141] p-3 shadow-2xl">
             <div className="flex items-center justify-between mb-5 px-1">
-              <div className="text-xl font-extrabold text-cyan-400">Codify</div>
+              <div className="text-xl font-extrabold text-cyan-400">Orbit</div>
               <button
                 type="button"
                 onClick={() => dispatch(setMobileMenuOpen(false))}
@@ -210,18 +213,36 @@ export default function AppSidebar() {
                 <FaTimes />
               </button>
             </div>
+            <div className=' flex flex-col justify-between'>
+              <nav className="space-y-1">
+                {navItems.map((item) => (
+                  <SidebarItem
+                    key={`mobile-${item.key}`}
+                    item={item}
+                    isActive={isActiveItem(item)}
+                    collapsed={false}
+                    onClick={handleNavigate}
+                  />
+                ))}
+              </nav>
 
-            <nav className="space-y-1">
-              {navItems.map((item) => (
-                <SidebarItem
-                  key={`mobile-${item.key}`}
-                  item={item}
-                  isActive={isActiveItem(item)}
-                  collapsed={false}
-                  onClick={handleNavigate}
-                />
-              ))}
-            </nav>
+
+              <div>
+                {/* New Post */}
+                {/* <button className=' flex justify-center w-full cursor-pointer items-center gap-3 text-white mb-5 text-center bg-gray-700 p-2 rounded-3xl'>
+                  <span className='py-2'><FaPlus /></span>
+                  <span>New Post</span>
+                </button> */}
+
+                {/* Log Out */}
+                <button onClick={handleLogout} className='text-white flex gap-3 justify-center w-full items-center bg-red-700 text-center p-2 rounded-3xl cursor-pointer'>
+                  <span className='py-2'><FaSignOutAlt /></span>
+                  {/* {!isDesktopCollapsed && (
+            <span>Log-out</span>)} */}
+                  <span>Log-Out</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       ) : null}

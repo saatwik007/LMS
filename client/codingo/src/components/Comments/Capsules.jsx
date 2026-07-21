@@ -112,7 +112,7 @@ function CapsuleTile({ story, derived, index, onOpenCapsule, onRevive }) {
         'w-[75px] h-[130px] mt-1 rounded-full overflow-hidden',
         'ring-2 transition-transform duration-200',
         'hover:scale-[1.04] active:scale-95',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:ring-cyan-400/70',
+        'focus-visible:outline-none cursor-pointer focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:ring-cyan-400/70',
         isFading ? 'ring-amber-400/50' : 'ring-emerald-400/50',
       ].join(' ')}
     >
@@ -191,14 +191,10 @@ export default function Capsules({ onAddCapsule, onOpenCapsule, onRevive }) {
         withCredentials: true, headers: getAuthHeaders()
       });
       dispatch(setCapsule(res.data))
-      // console.log('capsules res length', Array.isArray(res.data) ? res.data.length : typeof res.data);
-      // console.log('capsules res first', Array.isArray(res.data) ? res.data[0] : res.data);
-      console.log('capsules res ', res?.data);
     } catch (err) {
       console.error('capsule error', err);
     }
   };
-
 
   const items = capsule.length ? capsule : [];
 
@@ -222,14 +218,14 @@ const visible = useMemo(() => {
     .filter(({ derived }) => derived.phase !== 'expired');
 }, [items, now, storedUser?.id]);
 
-  console.log('visible', visible)
+  // console.log('visible', visible)
 
   const [openIndex, setOpenIndex] = useState(null); // null = modal closed
 
   const handleOpen = useCallback((storyId) => {
-      console.log('handleOpen called:', storyId);           // is this printing?
-      console.log('visible ids:', visible.map(v => v.story._id)); // what ids exist?
-      console.log('match found:', visible.findIndex(({ story }) => String(story._id) === String(storyId)));
+      console.log('handleOpen called:', storyId);
+      // console.log('visible ids:', visible.map(v => v.story._id));
+      // console.log('match found:', visible.findIndex(({ story }) => String(story._id) === String(storyId)));
 
       onOpenCapsule?.(storyId);
       setOpenIndex(visible.findIndex(({ story }) => story._id === storyId));  // ✅ _id not id
@@ -270,14 +266,14 @@ const visible = useMemo(() => {
         isOwner: activeEntry.isOwner,
       }
       : null;
-    console.log('openIndex:', openIndex);
-    console.log('visible length:', visible.length);
-    console.log('activeEntry:', activeEntry);
+    // console.log('openIndex:', openIndex);
+    // console.log('visible length:', visible.length);
+    // console.log('activeEntry:', activeEntry);
 
     return (
       <>
         <div
-          className="flex items-start gap-3 overflow-x-auto pb-1 mb-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="flex items-start gap-3 z-10 overflow-x-auto pb-1 mb-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           role="list"
           aria-label="Stories"
         >
