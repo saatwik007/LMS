@@ -473,6 +473,8 @@ export default function CommunityPage() {
   const [showComposer, setShowComposer] = useState(false);
   const [composerFile, setComposerFile] = useState(null);
   const [composerPreview, setComposerPreview] = useState(null);
+  const [showCapsules, setShowCapsules] = useState(true);
+  const lastScrollPos = useRef(0);
 
   // Crossfading ambient backdrop
   const [bgA, setBgA] = useState('');
@@ -528,7 +530,14 @@ export default function CommunityPage() {
     const onScroll = () => {
       if (ticking) return;
       ticking = true;
-      requestAnimationFrame(() => { updateFocus(); ticking = false; });
+      requestAnimationFrame(() => {
+        const currentPos = el.scrollTop;
+        const isScrollingDown = currentPos > lastScrollPos.current;
+        lastScrollPos.current = currentPos;
+        setShowCapsules(!isScrollingDown);
+        updateFocus();
+        ticking = false;
+      });
     };
     el.addEventListener('scroll', onScroll, { passive: true });
     updateFocus();
@@ -630,7 +639,7 @@ export default function CommunityPage() {
         {/* Middle: snap-scroll film-reel feed */}
         <div className="flex flex-col h-full overflow-hidden">
           {/* Capsules sticky strip */}
-          <div className="flex-shrink-0 z-20 px-4 pt-4 pb-2 bg-black/50 border-b border-white/[0.06]">
+          <div className="flex-shrink-0 z-20 px-4 pt-4 pb-2 bg-black/50 border-b border-white/[0.06] transition-all duration-300 ease-out overflow-hidden" style={{ transform: showCapsules ? 'translateY(0)' : 'translateY(-100%)', maxHeight: showCapsules ? '20%' : '0%' }}>
             <Capsules
               onAddCapsule={() => setShowAddCapsule(true)}
             />
