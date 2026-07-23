@@ -10,6 +10,7 @@ import {
   FaTrash,
   FaFire,
   FaCode,
+  FaHeartBroken,
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -40,6 +41,7 @@ import {
 import gsap from 'gsap';
 import Capsules from '../components/Comments/Capsules';
 import CapsulePostModal from '../components/Comments/CapsulePostModal';
+import { FiMessageCircle, FiSend } from 'react-icons/fi';
 /* ─── Constants ───────────────────────────────────────────────── */
 
 // Cycled per card — colored ambient glow
@@ -289,7 +291,7 @@ export function PostComposer({
   );
 }
 
-function FilmPostCard({ post, cardRef, glow, textGradient, isOwn, onLike, onDelete }) {
+function FilmPostCard({ post, cardRef, textGradient, isOwn, onLike, onDelete }) {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const apiUrl = import.meta.env.VITE_API_URL || '';
@@ -329,11 +331,15 @@ function FilmPostCard({ post, cardRef, glow, textGradient, isOwn, onLike, onDele
   };
 
   const hasImage = !!post.image;
+  const glow = hasImage
+    ? 'radial-gradient(circle, rgba(124,108,240,0.35), transparent 70%)'
+    : post.glow || 'radial-gradient(circle, rgba(244,114,182,0.35), transparent 70%)';
+  // const textGradient = post.textGradient || 'linear-gradient(160deg,#7c6cf0,#f472b6)';
 
   return (
     <div
       ref={cardRef}
-      className="relative h-[95%] w-full max-w-[500px] mx-auto rounded-[2.5rem] overflow-hidden"
+      className="relative h-165 w-full max-w-[380px] z-10 mx-auto rounded-[2.5rem] overflow-hidden"
       style={{ transformOrigin: 'center center' }}
     >
       {/* Ambient glow */}
@@ -342,56 +348,88 @@ function FilmPostCard({ post, cardRef, glow, textGradient, isOwn, onLike, onDele
         style={{ background: glow }}
         aria-hidden="true"
       />
-
+ 
       <div
-        className="relative h-full w-full rounded-[2.5rem] overflow-hidden"
+        className="relative h-full w-full rounded-[2.5rem] overflow-hidden flex flex-col"
         style={{
-          background: hasImage ? '#111' : textGradient,
-          boxShadow: '0 25px 70px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.1)',
+          background: hasImage
+            ? 'linear-gradient(160deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.05) 100%)'
+            : textGradient,
+          backdropFilter: 'blur(24px) saturate(160%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(160%)',
+          border: '1px solid rgba(255,255,255,0.35)',
+          boxShadow:
+            '0 25px 70px rgba(0,0,0,0.45), inset 0 1px 1px rgba(255,255,255,0.5), inset 0 0 0 1px rgba(255,255,255,0.12)',
         }}
       >
-        {/* Full-bleed image */}
-        {hasImage && (
-          <img src={imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
-        )}
-
-        {/* Text-only: centered content */}
-        {!hasImage && (
-          <div className="absolute inset-0 flex items-center justify-center px-8 pointer-events-none">
-            <p className="text-white text-[18px] font-['Plus_Jakarta_Sans'] leading-[1.7] text-center line-clamp-6 [text-shadow:0_2px_8px_rgba(0,0,0,0.6)]">
-              {post.content}
-            </p>
+        {/* Header strip — sits on the glass, not on the photo */}
+        <div className="relative z-10 flex items-center gap-3 px-5 pt-5 pb-4 flex-shrink-0">
+          <div className="cursor-pointer flex-shrink-0">
+            {post.author.profilePic ? (
+              <img
+                src={post.author.profilePic}
+                alt=""
+                className="h-9 w-9 rounded-full object-cover ring-2 ring-white/50"
+              />
+            ) : (
+              <AvatarInitial name={post.author.username} size={36} />
+            )}
           </div>
-        )}
-
-        {/* Header strip */}
-        <div className="absolute top-0 inset-x-0 z-10 flex items-center gap-3 px-5 pt-5 pb-8 backdrop-blur-sm bg-gradient-to-b from-black/55 via-black/20 to-transparent">
-          <div className="cursor-pointer flex-shrink-0" onClick={() => post.author.id && navigate(`/socialprofile/${post.author.id}`)}>
-            {post.author.profilePic
-              ? <img src={post.author.profilePic} alt="" className="h-9 w-9 rounded-full object-cover ring-1 ring-white/30" />
-              : <AvatarInitial name={post.author.username} size={36} />
-            }
-          </div>
-          <div className="flex-1 cursor-pointer min-w-0" onClick={() => post.author.id && navigate(`/socialprofile/${post.author.id}`)}>
-            <span className="text-[14px] font-semibold text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.5)] font-['Syne'] block truncate">
+          <div className="flex-1 cursor-pointer min-w-0">
+            <span
+              className="text-[14px] font-semibold text-white block truncate [text-shadow:0_1px_3px_rgba(0,0,0,0.35)]"
+              style={{ fontFamily: "'Syne'" }}
+            >
               {post.author.username}
             </span>
-            <span className="text-[11px] text-white/60 font-['DM_Mono']">{formatTimeAgo(post.createdAt)} ago</span>
           </div>
           {isOwn && (
-            <button type="button" onClick={() => onDelete(post.id)} className="text-white/60 hover:text-[#f87171] transition-colors flex-shrink-0" aria-label="Delete">
-              <FaTrash size={14} />
+            <button
+              type="button"
+              onClick={() => onDelete && onDelete(post.id)}
+              className="text-white/70 hover:text-[#f87171] transition-colors flex-shrink-0 rounded-full p-1.5"
+              aria-label="Delete"
+            >
+              <FaTrash size={15} />
             </button>
           )}
         </div>
-
-        {/* Bottom strip: caption + actions */}
-        <div className="absolute bottom-0 inset-x-0 z-10 backdrop-blur-sm bg-gradient-to-t from-black/60 via-black/20 to-transparent px-5 pt-10 pb-5">
-          {hasImage && (
-            <p className="text-[13px] leading-[1.5] text-white/90 [text-shadow:0_1px_2px_rgba(0,0,0,0.5)] line-clamp-2 mb-3 font-['Plus_Jakarta_Sans']">
+ 
+        {/* Photo — inset with a glass gutter around it, not full-bleed */}
+        {hasImage ? (
+          <div
+            className="relative mx-4 flex-1 min-h-0 rounded-[1.75rem] overflow-hidden"
+            style={{ boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.4), 0 8px 24px rgba(0,0,0,0.25)' }}
+          >
+            <img src={imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+          </div>
+        ) : (
+          <div className="relative flex-1 min-h-0 flex items-center justify-center px-8">
+            <p
+              className="text-white text-[18px] leading-[1.7] text-center line-clamp-6 [text-shadow:0_2px_8px_rgba(0,0,0,0.25)]"
+              style={{ fontFamily: "'Plus Jakarta Sans'" }}
+            >
               {post.content}
             </p>
+          </div>
+        )}
+ 
+        {/* Footer — caption + actions, on the glass */}
+        <div className="relative z-10 flex-shrink-0 px-5 pt-3 pb-5">
+          {hasImage && (
+            <div className="flex items-start gap-2 mb-3">
+              <p
+                className="text-[13px] leading-[1.5] text-white/95 [text-shadow:0_1px_2px_rgba(0,0,0,0.2)] line-clamp-2 flex-1"
+                style={{ fontFamily: "'Plus Jakarta Sans'" }}
+              >
+                {post.content}
+              </p>
+              <button type="button" className="text-white/80 hover:text-white transition-colors flex-shrink-0 mt-0.5" aria-label="Share">
+                <FiSend size={14} />
+              </button>
+            </div>
           )}
+ 
           <div className="flex items-center gap-5">
             <button
               type="button"
@@ -399,29 +437,34 @@ function FilmPostCard({ post, cardRef, glow, textGradient, isOwn, onLike, onDele
               className="flex items-center gap-1.5 text-white/90 hover:text-white transition-colors focus-visible:outline-none rounded-full"
               aria-label="Like"
             >
-              <span ref={heartIconRef} className="inline-flex" style={{ transform: heartAnim ? 'scale(1.25)' : 'scale(1)' }}>
-                {liked ? <FaHeart style={{ color: '#fb7185' }} /> : <FaRegHeart />}
+              <span ref={heartIconRef} className="inline-flex" style={{ transform: heartAnim ? 'scale(1.25)' : 'scale(1)', transition: 'transform 0.18s ease' }}>
+                <FaHeart size={17} fill={liked ? '#fb7185' : 'none'} color={liked ? '#fb7185' : 'currentColor'} />
               </span>
-              <span className="text-[12.5px] font-['DM_Mono']">{likeCount.toLocaleString()}</span>
+              <span className="text-[12.5px]" style={{ fontFamily: "'DM Mono'" }}>{likeCount.toLocaleString()}</span>
             </button>
-
+ 
             <button
               type="button"
               onClick={handleCommentClick}
               className="flex items-center gap-1.5 text-white/90 hover:text-white transition-colors focus-visible:outline-none rounded-full"
               aria-label="Comment"
             >
-              <FaComment size={16} />
-              <span className="text-[12.5px] font-['DM_Mono']">{post.commentsCount}</span>
+              <FiMessageCircle size={17} />
+              <span className="text-[12.5px]" style={{ fontFamily: "'DM Mono'" }}>{post.commentsCount}</span>
             </button>
-
-            <button
-              type="button"
-              className="text-white/90 hover:text-white transition-colors ml-auto focus-visible:outline-none rounded-full"
-              aria-label="Share"
+ 
+            {!hasImage && (
+              <button type="button" className="text-white/80 hover:text-white transition-colors ml-auto" aria-label="Share">
+                <FiSend size={16} />
+              </button>
+            )}
+ 
+            <span
+              className={`text-[11px] text-white/70 ${hasImage ? 'ml-auto' : ''}`}
+              style={{ fontFamily: "'DM Mono'" }}
             >
-              <FaPaperPlane size={16} />
-            </button>
+              {formatTimeAgo(post.createdAt)} ago
+            </span>
           </div>
         </div>
       </div>
@@ -523,26 +566,39 @@ export default function CommunityPage() {
     setActiveIndex((prev) => (prev === closestIndex ? prev : closestIndex));
   }, []);
 
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    let ticking = false;
-    const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(() => {
-        const currentPos = el.scrollTop;
-        const isScrollingDown = currentPos > lastScrollPos.current;
+useEffect(() => {
+  const el = scrollRef.current;
+  if (!el) return;
+  let ticking = false;
+  const SCROLL_THRESHOLD = 12; // px of movement needed before we react
+
+  const onScroll = () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      const maxScroll = el.scrollHeight - el.clientHeight;
+      // clamp to guard against elastic/rubber-band overscroll on mobile
+      const currentPos = Math.max(0, Math.min(el.scrollTop, maxScroll));
+      const delta = currentPos - lastScrollPos.current;
+
+      if (currentPos <= 0) {
+        // always show at the very top
+        setShowCapsules(true);
+        lastScrollPos.current = 0;
+      } else if (Math.abs(delta) > SCROLL_THRESHOLD) {
+        setShowCapsules(delta < 0); // scrolling up -> show, down -> hide
         lastScrollPos.current = currentPos;
-        setShowCapsules(!isScrollingDown);
-        updateFocus();
-        ticking = false;
-      });
-    };
-    el.addEventListener('scroll', onScroll, { passive: true });
-    updateFocus();
-    return () => el.removeEventListener('scroll', onScroll);
-  }, [updateFocus, posts]);
+      }
+
+      updateFocus();
+      ticking = false;
+    });
+  };
+
+  el.addEventListener('scroll', onScroll, { passive: true });
+  updateFocus();
+  return () => el.removeEventListener('scroll', onScroll);
+}, [updateFocus, posts]);
 
   // Entrance animation for first card
   useEffect(() => {
@@ -667,7 +723,7 @@ export default function CommunityPage() {
               posts.map((post, i) => (
                 <div
                   key={post.id}
-                  className={`${post.image ? 'h-[76vh]' : 'h-[50vh]'} snap-center flex items-center justify-center px-3`}
+                  className={`${post.image ? 'h-[73vh]' : 'h-[73vh]'} z-10 mt-5 snap-center flex items-center justify-center px-3`}
                 >
                   <FilmPostCard
                     post={post}

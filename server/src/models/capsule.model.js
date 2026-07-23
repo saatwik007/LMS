@@ -1,5 +1,36 @@
 const mongoose = require('mongoose');
 
+const capsuleCommentSchema = new mongoose.Schema({
+  author: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  content: {
+    type: String,
+    trim: true,
+    maxlength: 500
+  },
+  // image: {
+  //   type: String,
+  //   default: '',
+  // },
+  voiceNote: {
+    url: { type: String, default: '' },
+    duration: { type: Number, default: 0 }
+  },
+  likes: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: []
+  }],
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  // replies: [replySchema]
+}, { _id: true });
+
 const capsuleSchema = new mongoose.Schema(
   {
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
@@ -7,6 +38,7 @@ const capsuleSchema = new mongoose.Schema(
     mediaUrl: { type: String, required: true },
     mediaType: { type: String, enum: ['image', 'video'], default: "image" },
     caption: { type: String, default: "", maxlength: 200 },
+    comments: [capsuleCommentSchema],
 
     viewers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     likedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User', default: [] }],
@@ -25,4 +57,6 @@ const capsuleSchema = new mongoose.Schema(
 capsuleSchema.index({ deleteAt: 1 }, { expireAfterSeconds: 0 });
 capsuleSchema.index({ user: 1, createdAt: -1 });
 
-module.exports = mongoose.model("Capsule", capsuleSchema);
+const Capsule = mongoose.model("Capsule", capsuleSchema);
+const CapsuleComment = mongoose.model('CapsuleComment', capsuleCommentSchema);
+module.exports = { Capsule, CapsuleComment };

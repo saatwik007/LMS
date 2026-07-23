@@ -1,5 +1,5 @@
 // const { default: Capsule } = require('../../../client/codingo/src/components/Comments/CapsuleModal');
-const Capsule = require('../models/capsule.model')
+const {Capsule} = require('../models/capsule.model')
 const User = require('../models/user.model');
 const { uploadBufferToDrive } = require('../utils/driveUpload');
 const { streamFileFromDrive } = require('../utils/driveUpload');
