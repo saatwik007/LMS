@@ -224,8 +224,6 @@ const visible = useMemo(() => {
 
   const handleOpen = useCallback((storyId) => {
       console.log('handleOpen called:', storyId);
-      // console.log('visible ids:', visible.map(v => v.story._id));
-      // console.log('match found:', visible.findIndex(({ story }) => String(story._id) === String(storyId)));
 
       onOpenCapsule?.(storyId);
       setOpenIndex(visible.findIndex(({ story }) => story._id === storyId));  // ✅ _id not id
@@ -266,9 +264,6 @@ const visible = useMemo(() => {
         isOwner: activeEntry.isOwner,
       }
       : null;
-    // console.log('openIndex:', openIndex);
-    // console.log('visible length:', visible.length);
-    // console.log('activeEntry:', activeEntry);
 
     return (
       <>
