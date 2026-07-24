@@ -1,5 +1,5 @@
 // const { default: Capsule } = require('../../../client/codingo/src/components/Comments/CapsuleModal');
-const {Capsule} = require('../models/capsule.model')
+const { Capsule } = require('../models/capsule.model')
 const User = require('../models/user.model');
 const { uploadBufferToDrive } = require('../utils/driveUpload');
 const { streamFileFromDrive } = require('../utils/driveUpload');
@@ -53,6 +53,82 @@ const createCapsule = async (req, res) => {
   } catch (err) {
     console.error('Create capsule error:', err);
     res.status(500).json({ message: err.message });
+  }
+};
+
+const createCapsuleComment = async (req, res) => {
+  try {
+    const userId = req.user.id || req.user._id;
+    const { content } = req.body;
+
+    const capsule = await Capsule.findById(req.params.id);
+    if (!capsule) {
+      return res.status(404).json({ message: 'capsule not found' });
+    }
+    
+    console.log('capsule', capsule)
+
+    const hasComment = content && content.trim().length > 0;
+    const hasVoiceNote = req.file?.fieldname === 'voiceNote';
+
+    if (!hasComment && !hasVoiceNote) {
+      return res.status(400).json({ message: 'Comment must have some content' });
+    }
+
+    if (hasComment && content.length > 500) {
+      return res.status(400).json({ message: 'Comment exceeds 500 characters' });
+    }
+
+    const comment = {
+      author: userId,
+      content: hasComment ? content.trim() : '',
+      voiceNote: hasVoiceNote
+        ? { url: req.file.path || req.file.location, duration: req.body.duration || 0 }
+        : undefined,
+      createdAt: new Date()
+    };
+
+    capsule.comments.push(comment);
+    await capsule.save();
+
+    // Notify capsule owner (if not self-comment)
+    if (String(capsule.user) !== String(userId)) {
+      const commenter = await User.findById(userId).select('username');
+      await User.findByIdAndUpdate(capsule.user, {
+        $push: {
+          notifications: {
+            title: '💬 New Comment',
+            detail: `${commenter.username} commented on your post`
+          }
+        }
+      });
+    }
+
+    await capsule.populate('comments.author', 'username profilePic');
+    const newComment = capsule.comments[capsule.comments.length - 1];
+
+    return res.status(201).json({
+      message: 'Comment added',
+      comment: {
+        id: String(newComment._id),
+        capsuleId: String(capsule._id),
+        author: {
+          id: String(newComment.author._id),
+          username: newComment.author.username,
+          profilePic: newComment.author.profilePic || ''
+        },
+        content: newComment.content,
+        createdAt: newComment.createdAt,
+        likesCount: 0,
+        isLikedByCurrentUser: false,
+        replies: []
+      },
+      commentsCount: capsule.comments.length
+    });
+
+  } catch (error) {
+    console.error('capsule comment posting error', error);
+    return res.status(500).json({ message: 'capsule comment posting error', error: error.message });
   }
 };
 
@@ -266,4 +342,5 @@ module.exports = {
   getUserCapsules,
   getFriendsCapsules,
   getCapsuleMedia,
+  createCapsuleComment
 }

@@ -253,7 +253,6 @@ export const CommentCard = ({ postId, comment }) => {
             placeholder="Write a reply..."
             value={replyText}
             onChange={e => dispatch(setReplyText({ commentId: comment.id, value: e.target.value }))}
-            // onKeyDown={e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handlePostReply(); }}
             autoFocus
           />
           <button

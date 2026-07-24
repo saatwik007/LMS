@@ -1,303 +1,463 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { FiHeart, FiMessageCircle, FiSend, FiMoreHorizontal } from 'react-icons/fi';
-import gsap from 'gsap';
-// npm install gsap  — if it's not already in your project.
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { X, Heart, Send, Mic, Smile, Play, Pause, MessageCircle, MoreHorizontal } from 'lucide-react';
 
-/* ─────────────────────────────────────────────────────────────────
-   GlassFeed
-   ─────────────────────────────────────────────────────────────────
-   Vertical snap-scrolling "film reel" feed. Each post's card is
-   sized to noticeably less than the viewport height (76vh), so the
-   real edges of the previous and next cards are always visibly
-   peeking above and below the focused one — not a subtle byproduct,
-   an intentional ~11vh strip on each side.
+const AVATAR_COLORS = ['#52525b', '#57534e', '#3f3f46', '#44403c', '#525252', '#71717a', '#4b5563', '#5b5b62'];
+const EMOJIS = ['😀','😂','😍','🥰','😎','🤔','👍','👏','🔥','🎉','❤️','😢','😮','🙌','💯','😅','🙏','✨','😁','😊','🥳','😴','👀','💀'];
 
-   Cards are full-bleed photo (the image IS the card, edge to edge)
-   with the header and caption/actions floating on frosted glass
-   strips directly over the image — this is what guarantees the peek
-   strips show actual photo content rather than empty card margin or
-   header chrome.
+function hashCode(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) { h = (h << 5) - h + str.charCodeAt(i); h |= 0; }
+  return h;
+}
+function pickColor(name) { return AVATAR_COLORS[Math.abs(hashCode(name)) % AVATAR_COLORS.length]; }
+function initials(name) { return name.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase(); }
+function formatLikes(n) { return n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n); }
+function formatTime(s) { const m = Math.floor(s / 60); const sec = s % 60; return `${m}:${sec < 10 ? '0' : ''}${sec}`; }
+function parseDuration(str) { if (!str) return 0; const [m, s] = str.split(':').map(Number); return m * 60 + s; }
+function genLiveBars() { return Array.from({ length: 20 }, () => 8 + Math.random() * 16); }
 
-   As you scroll, the card nearest viewport-center scales up and
-   brightens; neighbors shrink and dim — driven by GSAP reading
-   scroll position directly, not a separate racing animation.
-
-   Nav bar intentionally omitted — this is just the feed: cards +
-   like / comment / share.
-   
-   ───────────────────────────────────────────────────────────────── */
-
-const SAMPLE_POSTS = [
+const initialComments = [
   {
-    id: 1,
-    author: 'Liam_Styles',
-    avatar: 'https://i.pravatar.cc/80?img=12',
-    image: 'https://picsum.photos/id/1005/900/1400',
-    caption: 'Sunny brunch with bestie ☀️ @sarah_j',
-    likes: 2456,
-    comments: 112,
-    time: '1 hr ago',
+    id: 1, user: { name: 'Maya Chen' },
+    text: "This is honestly one of the best shots I've seen this week 🔥 the lighting is unreal.",
+    time: '2h', likes: 214, liked: false,
+    replies: [
+      { id: 2, user: { name: 'Theo Park' }, text: 'Agreed, the color grading is insane.', time: '1h', likes: 12, liked: false },
+      { id: 3, user: { name: 'Aria Singh' }, text: 'The way the shadows fall though 😍', time: '40m', likes: 6, liked: false },
+    ],
+  },
+  { id: 4, user: { name: 'Jordan Lee' }, text: 'This lives in my head rent free 😭', time: '3h', likes: 89, liked: false, replies: [] },
+  {
+    id: 5, user: { name: 'Sam Okafor' }, time: '4h', likes: 34, liked: false, replies: [],
+    voice: { duration: '0:18', bars: [30,60,45,80,55,90,40,65,50,75,35,60,85,45,70,55,30,65,50,80,40,60,45,70] },
   },
   {
-    id: 2,
-    author: 'mara.codes',
-    avatar: 'https://i.pravatar.cc/80?img=32',
-    image: 'https://picsum.photos/id/1011/900/1400',
-    caption: 'Golden hour on the coast never misses.',
-    likes: 1893,
-    comments: 64,
-    time: '3 hr ago',
+    id: 6, user: { name: 'Priya Nair' }, text: 'Okay but the composition here is a masterclass in negative space.',
+    time: '5h', likes: 156, liked: false,
+    replies: [{ id: 7, user: { name: 'Liam Brooks' }, text: 'Underrated comment right here.', time: '4h', likes: 9, liked: false }],
   },
-  {
-    id: 3,
-    author: 'devraj',
-    avatar: 'https://i.pravatar.cc/80?img=51',
-    image: 'https://picsum.photos/id/1015/900/1400',
-    caption: 'Trail day. Legs are done, heart is full.',
-    likes: 3120,
-    comments: 208,
-    time: '5 hr ago',
-  },
-  {
-    id: 4,
-    author: 'noor.k',
-    avatar: 'https://i.pravatar.cc/80?img=45',
-    image: 'https://picsum.photos/id/1025/900/1400',
-    caption: 'This good boy owns the block now.',
-    likes: 5410,
-    comments: 340,
-    time: '8 hr ago',
-  },
-  {
-    id: 5,
-    author: 'kentaro.v',
-    avatar: 'https://i.pravatar.cc/80?img=15',
-    image: 'https://picsum.photos/id/1035/900/1400',
-    caption: 'Found this pocket of forest an hour out of the city.',
-    likes: 972,
-    comments: 41,
-    time: '12 hr ago',
-  },
+  { id: 8, user: { name: 'Devon Marsh' }, text: 'wait is this shot on film or digital??', time: '6h', likes: 21, liked: false, replies: [] },
+  { id: 9, user: { name: 'Aiko Tanaka' }, text: 'saving this for inspiration, thank you for sharing your process 🙏', time: '1d', likes: 47, liked: false, replies: [] },
+  { id: 10, user: { name: 'Noah Kim' }, text: '🔥🔥🔥', time: '1d', likes: 12, liked: false, replies: [] },
 ];
 
-// Cycled per card — colored glow instead of grey iOS blur.
-const GLOWS = [
-  'radial-gradient(closest-side, rgba(217,70,239,0.4), rgba(56,189,248,0.2) 60%, transparent 78%)',
-  'radial-gradient(closest-side, rgba(251,146,60,0.4), rgba(244,63,94,0.18) 60%, transparent 78%)',
-  'radial-gradient(closest-side, rgba(52,211,153,0.38), rgba(56,189,248,0.18) 60%, transparent 78%)',
-  'radial-gradient(closest-side, rgba(129,140,248,0.4), rgba(217,70,239,0.18) 60%, transparent 78%)',
-  'radial-gradient(closest-side, rgba(250,204,21,0.38), rgba(251,113,133,0.18) 60%, transparent 78%)',
-];
+const SEED_TOP_LEVEL_COUNT = 7;
 
-function PostCard({ post, cardRef, glow, isLiked, onLike }) {
-  const heartRef = useRef(null);
-
-  const handleLike = () => {
-    onLike(post.id);
-    if (heartRef.current) {
-      gsap.fromTo(
-        heartRef.current,
-        { scale: 1 },
-        { scale: 1.35, duration: 0.16, ease: 'power2.out', yoyo: true, repeat: 1 }
-      );
-    }
-  };
+function CommentRow({
+  comment, isReply, delay, expanded, onToggleExpand, onReplyClick,
+  replyOpen, replyValue, onReplyChange, onReplySubmit,
+  onLikeById, pulseId, playingVoiceId, onTogglePlay,
+}) {
+  const c = comment;
+  const pulsing = pulseId === c.id;
+  const avatarSize = isReply ? 'w-7 h-7' : 'w-9 h-9';
 
   return (
-    <div
-      ref={cardRef}
-      className="relative h-[98%] w-full max-w-[380px] mx-auto rounded-[2.5rem] overflow-hidden"
-      style={{ transformOrigin: 'center center' }}
-    >
-      {/* Colored ambient glow, unique per card, bleeds past the rounded edge */}
-      <div
-        className="pointer-events-none absolute -inset-6 -z-10 blur-2xl"
-        style={{ background: glow }}
-        aria-hidden="true"
-      />
-
-      {/* Full-bleed photo — this IS the card */}
-      <div
-        className="relative h-full w-full rounded-[2.5rem] overflow-hidden bg-[#111]"
-        style={{ boxShadow: '0 25px 70px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(255,255,255,0.12)' }}
-      >
-        <img src={post.image} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
-
-        {/* Header — frosted strip floating on the photo */}
-        <div className="absolute top-0 inset-x-0 z-10 flex items-center gap-3 px-5 pt-5 pb-8 backdrop-blur-sm bg-gradient-to-b from-black/50 via-black/15 to-transparent">
-          <img src={post.avatar} alt="" className="h-9 w-9 rounded-full object-cover ring-1 ring-white/30" />
-          <span className="flex-1 text-[14px] font-semibold text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">
-            {post.author}
-          </span>
-          <button className="text-white/80 hover:text-white transition-colors" aria-label="More">
-            <FiMoreHorizontal size={18} />
-          </button>
-        </div>
-
-        {/* Caption + actions — frosted strip floating on the photo */}
-        <div className="absolute bottom-0 inset-x-0 z-10 backdrop-blur-sm bg-gradient-to-t from-black/55 via-black/15 to-transparent px-5 pt-10 pb-5">
-          <p className="text-[13px] leading-[1.5] text-white/95 [text-shadow:0_1px_2px_rgba(0,0,0,0.5)] line-clamp-2 mb-3">
-            {post.caption}
-          </p>
-          <div className="flex items-center gap-5">
-            <button
-              onClick={handleLike}
-              className="flex items-center gap-1.5 text-white/90 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-full"
-              aria-label="Like"
-            >
-              <span ref={heartRef} className="inline-flex">
-                <FiHeart size={18} fill={isLiked ? '#fb7185' : 'none'} color={isLiked ? '#fb7185' : 'currentColor'} />
-              </span>
-              <span className="text-[12.5px] font-['DM_Mono']">
-                {(post.likes + (isLiked ? 1 : 0)).toLocaleString()}
-              </span>
-            </button>
-
-            <button className="flex items-center gap-1.5 text-white/90 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-full" aria-label="Comment">
-              <FiMessageCircle size={18} />
-              <span className="text-[12.5px] font-['DM_Mono']">{post.comments}</span>
-            </button>
-
-            <button className="text-white/90 hover:text-white transition-colors ml-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-full" aria-label="Share">
-              <FiSend size={18} />
-            </button>
-
-            <span className="text-[11px] text-white/60">{post.time}</span>
-          </div>
-        </div>
+    <div className={`flex gap-2.5 ${isReply ? 'py-1.5 pl-3 border-l border-neutral-800 ml-1' : 'py-2'} comment-pop-anim`} style={{ animationDelay: `${delay}ms` }}>
+      <div className={`${avatarSize} flex-shrink-0 rounded-full flex items-center justify-center font-semibold text-xs text-white`} style={{ background: pickColor(c.user.name) }}>
+        {initials(c.user.name)}
       </div>
+
+      <div className="flex-1 min-w-0">
+        {c.voice ? (
+          <div className="bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2.5 w-64 max-w-full">
+            <div className="text-xs font-semibold mb-1.5">{c.user.name}</div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onTogglePlay(c.id, c.voice.duration)}
+                aria-label={playingVoiceId === c.id ? 'Pause voice note' : 'Play voice note'}
+                className="w-7 h-7 flex-shrink-0 rounded-full bg-neutral-700 border border-neutral-600 flex items-center justify-center text-neutral-100"
+              >
+                {playingVoiceId === c.id ? <Pause size={11} /> : <Play size={11} fill="currentColor" />}
+              </button>
+              <div className="flex-1 flex items-center h-6 min-w-0 overflow-hidden" style={{ gap: '2px' }}>
+                {c.voice.bars.map((h, i) => (
+                  <span
+                    key={i}
+                    className={`flex-shrink-0 rounded-sm ${playingVoiceId === c.id ? 'bg-neutral-300 wave-bar-anim' : 'bg-neutral-500'}`}
+                    style={{ width: '2.5px', height: `${h}%`, animationDelay: playingVoiceId === c.id ? `${-(i * 0.05)}s` : undefined }}
+                  />
+                ))}
+              </div>
+              <span className="text-xs text-neutral-500 flex-shrink-0">{c.voice.duration}</span>
+            </div>
+          </div>
+        ) : (
+          <div className="text-sm leading-relaxed break-words">
+            <span className="font-semibold mr-1">{c.user.name}</span>{c.text}
+          </div>
+        )}
+
+        <div className="flex items-center gap-3 mt-1 text-xs text-neutral-500">
+          <span>{c.time}</span>
+          {c.likes > 0 && <span className="font-semibold text-neutral-500">{formatLikes(c.likes)} likes</span>}
+          {!isReply && (
+            <button onClick={onReplyClick} className="font-semibold hover:text-neutral-300 transition-colors">Reply</button>
+          )}
+        </div>
+
+        {!isReply && c.replies && c.replies.length > 0 && (
+          <button onClick={onToggleExpand} className="block mt-1.5 text-xs font-semibold text-neutral-500 hover:text-neutral-300 transition-colors">
+            {expanded ? '— Hide replies' : `— View ${c.replies.length} ${c.replies.length === 1 ? 'reply' : 'replies'}`}
+          </button>
+        )}
+
+        {!isReply && expanded && c.replies && c.replies.map((r, i) => (
+          <CommentRow
+            key={r.id}
+            comment={r}
+            isReply={true}
+            delay={i * 60}
+            onLikeById={onLikeById}
+            pulseId={pulseId}
+            playingVoiceId={playingVoiceId}
+            onTogglePlay={onTogglePlay}
+          />
+        ))}
+
+        {!isReply && (
+          <div className={`items-center gap-2 mt-2.5 ${replyOpen ? 'flex' : 'hidden'}`}>
+            <div className="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-semibold" style={{ background: pickColor('You') }}>Y</div>
+            <input
+              autoFocus={replyOpen}
+              value={replyValue || ''}
+              onChange={(e) => onReplyChange(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onReplySubmit(); } }}
+              placeholder={`Reply to ${c.user.name}...`}
+              type="text"
+              className="flex-1 min-w-0 bg-neutral-800 border border-neutral-700 text-neutral-100 placeholder-neutral-500 text-xs rounded-full px-3 py-1.5 focus:outline-none focus:border-neutral-500"
+            />
+            <button onClick={onReplySubmit} className="text-xs font-bold text-red-500 flex-shrink-0 px-1">Post</button>
+          </div>
+        )}
+      </div>
+
+      <button
+        onClick={() => onLikeById(c.id)}
+        aria-label={isReply ? 'Like reply' : 'Like comment'}
+        className={`flex-shrink-0 self-start mt-0.5 p-1 transition-colors ${c.liked ? 'text-red-500' : 'text-neutral-500 hover:text-neutral-300'} ${pulsing ? 'heart-pop-anim' : ''}`}
+      >
+        <Heart size={isReply ? 13 : 15} fill={c.liked ? 'currentColor' : 'none'} />
+      </button>
     </div>
   );
 }
 
-export default function GlassFeed({ posts = SAMPLE_POSTS }) {
-  const scrollRef = useRef(null);
-  const cardRefs = useRef([]);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [likedIds, setLikedIds] = useState(() => new Set());
+export default function CommentModal() {
+  const [comments, setComments] = useState(initialComments);
+  const [isOpen, setIsOpen] = useState(false);
+  const [entered, setEntered] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [expandedReplies, setExpandedReplies] = useState(() => new Set([1]));
+  const [activeReplyId, setActiveReplyId] = useState(null);
+  const [replyText, setReplyText] = useState('');
+  const [inputValue, setInputValue] = useState('');
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  const [pulseId, setPulseId] = useState(null);
+  const [playingVoiceId, setPlayingVoiceId] = useState(null);
+  const [recording, setRecording] = useState(false);
+  const [recordSeconds, setRecordSeconds] = useState(0);
+  const [liveBars, setLiveBars] = useState(genLiveBars);
 
-  // Crossfading ambient background — two stacked layers, whichever is
-  // "front" fades in via opacity transition when the active post changes.
-  const [bgA, setBgA] = useState(posts[0]?.image);
-  const [bgB, setBgB] = useState(posts[0]?.image);
-  const [frontIsA, setFrontIsA] = useState(true);
+  const idCounter = useRef(100);
+  const newId = () => { idCounter.current += 1; return idCounter.current; };
+
+  const listRef = useRef(null);
+  const firstRenderRef = useRef(true);
+  const emojiRef = useRef(null);
+  const emojiBtnRef = useRef(null);
+  const closeTimeoutRef = useRef(null);
+
+  const totalCount = useMemo(
+    () => comments.reduce((sum, c) => sum + 1 + (c.replies ? c.replies.length : 0), 0),
+    [comments]
+  );
 
   useEffect(() => {
-    const nextImage = posts[activeIndex]?.image;
-    if (!nextImage) return;
-    if (frontIsA) {
-      setBgB(nextImage);
-    } else {
-      setBgA(nextImage);
-    }
-    setFrontIsA((f) => !f);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeIndex]);
+    const check = () => setIsMobile(window.innerWidth <= 640);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
-  const toggleLike = useCallback((id) => {
-    setLikedIds((prev) => {
+  const openModal = () => {
+    if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+    setIsOpen(true);
+    requestAnimationFrame(() => requestAnimationFrame(() => setEntered(true)));
+  };
+
+  const closeModal = () => {
+    setEntered(false);
+    setEmojiOpen(false);
+    if (recording) { setRecording(false); setRecordSeconds(0); }
+    closeTimeoutRef.current = setTimeout(() => setIsOpen(false), 320);
+  };
+
+  useEffect(() => {
+    const t = setTimeout(openModal, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = isOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const onKey = (e) => { if (e.key === 'Escape') closeModal(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (firstRenderRef.current) { firstRenderRef.current = false; return; }
+    if (listRef.current) listRef.current.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
+  }, [comments.length]);
+
+  useEffect(() => {
+    if (!emojiOpen) return undefined;
+    const onClick = (e) => {
+      if (
+        emojiRef.current && !emojiRef.current.contains(e.target) &&
+        emojiBtnRef.current && !emojiBtnRef.current.contains(e.target)
+      ) setEmojiOpen(false);
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [emojiOpen]);
+
+  useEffect(() => {
+    if (!recording) return undefined;
+    const t = setInterval(() => setRecordSeconds((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [recording]);
+
+  const toggleExpand = (id) => {
+    setExpandedReplies((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
-  }, []);
+  };
 
-  // Scroll-linked scale/opacity — the card nearest viewport-center gets
-  // full scale + opacity, everything else shrinks and dims. gsap.set
-  // (no easing) so it's attached to scroll position, not chasing it.
-  const updateFocus = useCallback(() => {
-    const viewportCenter = window.innerHeight / 2;
-    let closestIndex = 0;
-    let closestDistance = Infinity;
-
-    cardRefs.current.forEach((el, i) => {
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const cardCenter = rect.top + rect.height / 2;
-      const distance = Math.abs(cardCenter - viewportCenter);
-      const proximity = 1 - Math.min(distance / window.innerHeight, 1);
-      const scale = 0.82 + proximity * 0.18;
-      const opacity = 0.32 + proximity * 0.68;
-      gsap.set(el, { scale, opacity });
-
-      if (distance < closestDistance) {
-        closestDistance = distance;
-        closestIndex = i;
+  const toggleLike = (id) => {
+    setComments((prev) => prev.map((c) => {
+      if (c.id === id) return { ...c, liked: !c.liked, likes: c.likes + (!c.liked ? 1 : -1) };
+      if (c.replies && c.replies.length) {
+        const nextReplies = c.replies.map((r) => (r.id === id ? { ...r, liked: !r.liked, likes: r.likes + (!r.liked ? 1 : -1) } : r));
+        if (nextReplies !== c.replies) return { ...c, replies: nextReplies };
       }
-    });
+      return c;
+    }));
+    setPulseId(id);
+    setTimeout(() => setPulseId((curr) => (curr === id ? null : curr)), 300);
+  };
 
-    setActiveIndex((prev) => (prev === closestIndex ? prev : closestIndex));
-  }, []);
+  const togglePlay = (id, durationStr) => {
+    if (playingVoiceId === id) {
+      setPlayingVoiceId(null);
+      return;
+    }
+    setPlayingVoiceId(id);
+    const secs = parseDuration(durationStr) || 1;
+    setTimeout(() => setPlayingVoiceId((curr) => (curr === id ? null : curr)), secs * 1000);
+  };
 
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    let ticking = false;
-    const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(() => {
-        updateFocus();
-        ticking = false;
-      });
-    };
-    el.addEventListener('scroll', onScroll, { passive: true });
-    updateFocus(); // initial pass
-    return () => el.removeEventListener('scroll', onScroll);
-  }, [updateFocus]);
+  const openReplyBox = (id) => {
+    setActiveReplyId((prev) => (prev === id ? null : id));
+    setReplyText('');
+  };
 
-  // Entrance animation for the first card on mount
-  useEffect(() => {
-    const first = cardRefs.current[0];
-    if (!first) return;
-    gsap.fromTo(first, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.7, ease: 'expo.out' });
-  }, []);
+  const submitReply = (parentId) => {
+    const val = replyText.trim();
+    if (!val) return;
+    const reply = { id: newId(), user: { name: 'You' }, text: val, time: 'now', likes: 0, liked: false };
+    setComments((prev) => prev.map((c) => (c.id === parentId ? { ...c, replies: [...c.replies, reply] } : c)));
+    setExpandedReplies((prev) => new Set(prev).add(parentId));
+    setActiveReplyId(null);
+    setReplyText('');
+  };
 
-  // Optional: arrow-key paging, handy on desktop
-  useEffect(() => {
-    const onKeyDown = (e) => {
-      if (!['ArrowDown', 'ArrowUp'].includes(e.key)) return;
-      const dir = e.key === 'ArrowDown' ? 1 : -1;
-      const target = Math.min(posts.length - 1, Math.max(0, activeIndex + dir));
-      cardRefs.current[target]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [activeIndex, posts.length]);
+  const submitComment = () => {
+    const val = inputValue.trim();
+    if (!val) return;
+    const c = { id: newId(), user: { name: 'You' }, text: val, time: 'now', likes: 0, liked: false, replies: [] };
+    setComments((prev) => [...prev, c]);
+    setInputValue('');
+  };
+
+  const startRecording = () => { setRecording(true); setRecordSeconds(0); setLiveBars(genLiveBars()); };
+  const cancelRecording = () => { setRecording(false); setRecordSeconds(0); };
+  const sendRecording = () => {
+    const secs = recordSeconds || 1;
+    const bars = Array.from({ length: 24 }, () => 25 + Math.random() * 70);
+    const c = { id: newId(), user: { name: 'You' }, time: 'now', likes: 0, liked: false, replies: [], voice: { duration: formatTime(secs), bars } };
+    setComments((prev) => [...prev, c]);
+    setRecording(false);
+    setRecordSeconds(0);
+  };
+
+  const modalStyle = isMobile
+    ? { width: '100%', height: '82vh', maxHeight: '88vh' }
+    : { width: 'clamp(380px, 27vw, 460px)', maxWidth: '92vw', height: 'clamp(500px, 64vh, 720px)', maxHeight: '90vh' };
+
+  const modalTransformClass = isMobile
+    ? (entered ? 'translate-y-0' : 'translate-y-full')
+    : (entered ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-2');
 
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-black">
-      {/* Ambient crossfading backdrop */}
-      <div className="pointer-events-none fixed inset-0 -z-10">
-        <div
-          className="absolute inset-0 bg-cover bg-center scale-125 blur-3xl transition-opacity duration-700 ease-out"
-          style={{ backgroundImage: `url('${bgA}')`, opacity: frontIsA ? 1 : 0 }}
-        />
-        <div
-          className="absolute inset-0 bg-cover bg-center scale-125 blur-3xl transition-opacity duration-700 ease-out"
-          style={{ backgroundImage: `url('${bgB}')`, opacity: frontIsA ? 0 : 1 }}
-        />
-        <div className="absolute inset-0 bg-black/55" />
+    <div className="min-h-screen w-full bg-neutral-950 flex items-center justify-center p-6 font-sans text-neutral-100">
+      <style>{`
+        @keyframes commentPop { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+        .comment-pop-anim { animation: commentPop 0.35s ease-out both; }
+        @keyframes heartPop { 0% { transform: scale(1); } 40% { transform: scale(1.3); } 100% { transform: scale(1); } }
+        .heart-pop-anim { animation: heartPop 0.3s ease-out; }
+        @keyframes recDotPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .45; transform: scale(.8); } }
+        .rec-dot-anim { animation: recDotPulse 1.1s ease-in-out infinite; }
+        @keyframes recBar { 0%, 100% { transform: scaleY(.35); } 50% { transform: scaleY(1); } }
+        .rec-bar-anim { animation: recBar .8s ease-in-out infinite; }
+        @keyframes waveBounce { 0%, 100% { transform: scaleY(.5); } 50% { transform: scaleY(1); } }
+        .wave-bar-anim { animation: waveBounce .9s ease-in-out infinite; }
+        .comments-scroll::-webkit-scrollbar { width: 6px; }
+        .comments-scroll::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 9999px; }
+        .comments-scroll { scrollbar-width: thin; scrollbar-color: #3f3f46 transparent; }
+        @media (prefers-reduced-motion: reduce) {
+          .comment-pop-anim, .heart-pop-anim, .rec-dot-anim, .rec-bar-anim, .wave-bar-anim { animation: none !important; }
+        }
+      `}</style>
+
+      {/* mock post, for context */}
+      <div className="w-full max-w-sm bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden">
+        <div className="flex items-center gap-2.5 px-4 py-3.5">
+          <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0" style={{ background: '#52525b' }}>WS</div>
+          <div className="flex flex-col leading-tight">
+            <span className="text-sm font-semibold">wanderlust.studio</span>
+            <span className="text-xs text-neutral-500">Kyoto, Japan</span>
+          </div>
+          <button aria-label="More options" className="ml-auto text-neutral-500 hover:text-neutral-300 px-1">
+            <MoreHorizontal size={20} />
+          </button>
+        </div>
+        <div className="w-full h-64" style={{ background: 'linear-gradient(160deg, #1c1c20, #101012 70%)' }} />
+        <div className="flex items-center gap-4 px-4 pt-3 pb-1">
+          <button aria-label="Like post" className="text-neutral-300 hover:text-red-500 transition-colors">
+            <Heart size={22} />
+          </button>
+          <button onClick={openModal} className="flex items-center gap-1.5 text-neutral-100 hover:text-neutral-300 transition-colors">
+            <MessageCircle size={22} />
+            <span className="text-sm">{totalCount} comments</span>
+          </button>
+        </div>
+        <div className="px-4 pb-4 pt-1.5 text-sm text-neutral-400 leading-relaxed">
+          <span className="font-semibold text-neutral-100">wanderlust.studio</span> golden hour through the bamboo grove — some places don't need a filter.
+        </div>
       </div>
 
-      {/* Snap-scroll feed — 76vh slides (shorter than the 100vh viewport)
-          is what creates the ~11vh peek of neighboring cards above/below */}
-      <div
-        ref={scrollRef}
-        className="h-full w-full overflow-y-scroll snap-y snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
-        {posts.map((post, i) => (
-          <div key={post.id} className="h-[76vh] snap-center flex items-center justify-center">
-            <PostCard
-              post={post}
-              cardRef={(el) => (cardRefs.current[i] = el)}
-              glow={GLOWS[i % GLOWS.length]}
-              isLiked={likedIds.has(post.id)}
-              onLike={toggleLike}
-            />
+      {isOpen && (
+        <div
+          className={`fixed inset-0 z-50 flex ${isMobile ? 'items-end' : 'items-center'} justify-center bg-black bg-opacity-60 backdrop-blur-sm transition-opacity duration-300 ${entered ? 'opacity-100' : 'opacity-0'}`}
+          onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Comments"
+            style={modalStyle}
+            className={`relative flex flex-col bg-neutral-900 border border-neutral-800 shadow-2xl overflow-hidden transition-all duration-300 ease-out ${isMobile ? 'rounded-t-3xl' : 'rounded-3xl'} ${modalTransformClass}`}
+          >
+            {isMobile && <div className="w-9 h-1 rounded-full bg-neutral-700 mx-auto mt-2.5 flex-shrink-0" />}
+
+            <div className="flex items-center justify-between px-4 py-3.5 border-b border-neutral-800 flex-shrink-0">
+              <h2 className="text-sm font-semibold flex items-baseline gap-1.5 m-0">
+                Comments <span className="text-neutral-500 font-medium text-xs">{totalCount}</span>
+              </h2>
+              <button onClick={closeModal} aria-label="Close comments" className="w-8 h-8 flex items-center justify-center rounded-full text-neutral-400 hover:bg-neutral-800 hover:text-neutral-100 transition-colors">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div ref={listRef} className="comments-scroll flex-1 min-h-0 overflow-y-auto px-4 pt-3 pb-1">
+              {comments.map((c, idx) => (
+                <CommentRow
+                  key={c.id}
+                  comment={c}
+                  isReply={false}
+                  delay={idx < SEED_TOP_LEVEL_COUNT ? 150 + idx * 70 : 0}
+                  expanded={expandedReplies.has(c.id)}
+                  onToggleExpand={() => toggleExpand(c.id)}
+                  onReplyClick={() => openReplyBox(c.id)}
+                  replyOpen={activeReplyId === c.id}
+                  replyValue={activeReplyId === c.id ? replyText : ''}
+                  onReplyChange={setReplyText}
+                  onReplySubmit={() => submitReply(c.id)}
+                  onLikeById={toggleLike}
+                  pulseId={pulseId}
+                  playingVoiceId={playingVoiceId}
+                  onTogglePlay={togglePlay}
+                />
+              ))}
+            </div>
+
+            <div className="flex-shrink-0 border-t border-neutral-800 bg-neutral-900 px-3 py-2.5 relative">
+              {emojiOpen && (
+                <div ref={emojiRef} className="absolute left-3 right-3 bottom-full mb-2 bg-neutral-800 border border-neutral-700 rounded-2xl p-2.5 grid grid-cols-6 gap-1 shadow-xl">
+                  {EMOJIS.map((e) => (
+                    <button key={e} onClick={() => setInputValue((v) => v + e)} className="text-lg py-1.5 rounded-lg hover:bg-neutral-700 leading-none">
+                      {e}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {!recording ? (
+                <div className="flex items-center gap-1.5">
+                  <button ref={emojiBtnRef} onClick={() => setEmojiOpen((o) => !o)} aria-label="Add emoji" className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full text-neutral-400 hover:bg-neutral-800 hover:text-neutral-100 transition-colors">
+                    <Smile size={19} />
+                  </button>
+                  <input
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); submitComment(); } }}
+                    type="text"
+                    placeholder="Add a comment..."
+                    className="flex-1 min-w-0 bg-neutral-800 border border-neutral-700 text-neutral-100 placeholder-neutral-500 text-sm rounded-full px-3.5 py-2 focus:outline-none focus:border-neutral-500"
+                  />
+                  <button onClick={startRecording} aria-label="Record voice note" className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full text-neutral-400 hover:bg-neutral-800 hover:text-neutral-100 transition-colors">
+                    <Mic size={18} />
+                  </button>
+                  <button
+                    onClick={submitComment}
+                    disabled={!inputValue.trim()}
+                    aria-label="Post comment"
+                    className={`w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full transition-colors ${inputValue.trim() ? 'text-red-500 hover:bg-neutral-800' : 'text-neutral-600'}`}
+                  >
+                    <Send size={18} />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2.5 px-1">
+                  <button onClick={cancelRecording} aria-label="Cancel recording" className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full bg-neutral-800 text-neutral-400 hover:text-neutral-100 transition-colors">
+                    <X size={15} />
+                  </button>
+                  <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0 rec-dot-anim" />
+                  <div className="flex-1 flex items-center h-6 min-w-0 overflow-hidden" style={{ gap: '2px' }}>
+                    {liveBars.map((h, i) => (
+                      <span key={i} className="flex-shrink-0 rounded-sm bg-red-500 rec-bar-anim" style={{ width: '2.5px', height: `${h}px`, animationDelay: `${-(i * 0.05)}s` }} />
+                    ))}
+                  </div>
+                  <span className="text-xs text-neutral-400 flex-shrink-0 tabular-nums w-9">{formatTime(recordSeconds)}</span>
+                  <button onClick={sendRecording} aria-label="Send voice note" className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full bg-red-500 bg-opacity-20 text-red-500">
+                    <Send size={15} />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
