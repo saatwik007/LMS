@@ -106,7 +106,7 @@ export default function AppSidebar() {
     };
   }, []);
   const navItems = dashboardMode === 'community' ? communityNavItems : lmsNavItems;
-  console.log('Current dashboardMode:', dashboardMode, 'Nav items:', navItems.map(item => item.key));
+  // console.log('Current dashboardMode:', dashboardMode, 'Nav items:', navItems.map(item => item.key));
   return (
     <>
       <aside className="hidden z-10 max-h-screen lg:block shrink-0">

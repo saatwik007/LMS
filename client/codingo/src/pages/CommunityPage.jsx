@@ -42,6 +42,7 @@ import gsap from 'gsap';
 import Capsules from '../components/Comments/Capsules';
 import CapsulePostModal from '../components/Comments/CapsulePostModal';
 import { FiMessageCircle, FiSend } from 'react-icons/fi';
+import Comments from './CommentsModal';
 /* ─── Constants ───────────────────────────────────────────────── */
 
 // Cycled per card — colored ambient glow
@@ -209,9 +210,8 @@ export function PostComposer({
 
   return (
     <div
-      className={`bg-[#2B2B2B] rounded-[20px] px-[20px] pt-[20px] pb-[16px] mb-[8px] transition-colors duration-200 ease-in-out ${
-        focused ? 'border border-[#aaaaaa]' : 'border border-[#2B2B2B]'
-      }`}
+      className={`bg-[#2B2B2B] rounded-[20px] px-[20px] pt-[20px] pb-[16px] mb-[8px] transition-colors duration-200 ease-in-out ${focused ? 'border border-[#aaaaaa]' : 'border border-[#2B2B2B]'
+        }`}
     >
       <div className="flex gap-[14px]">
         {currentUser?.username ? (
@@ -276,11 +276,10 @@ export function PostComposer({
               type="button"
               onClick={handlePost}
               disabled={!content.trim() || isPosting}
-              className={`flex items-center gap-[7px] px-[20px] py-[8px] border-none rounded-[10px] font-['Syne'] font-extrabold text-[13px] tracking-[0.3px] transition-all duration-200 ease-in-out ${
-                content.trim()
+              className={`flex items-center gap-[7px] px-[20px] py-[8px] border-none rounded-[10px] font-['Syne'] font-extrabold text-[13px] tracking-[0.3px] transition-all duration-200 ease-in-out ${content.trim()
                   ? 'bg-gradient-to-br from-[#00b4cc] to-[#00e5ff] text-black cursor-pointer shadow-[0_4px_16px_#00e5ff33]'
                   : 'bg-[#404040] text-[#aaaaaa] cursor-not-allowed'
-              }`}
+                }`}
             >
               {isPosting ? 'Posting' : <><FaPaperPlane style={{ fontSize: 12 }} /> Post</>}
             </button>
@@ -300,6 +299,7 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, onLike, onDelete }) 
   const liked = useSelector((state) => state.feed.liked[post.id] ?? post.isLikedByCurrentUser ?? false);
   const likeCount = useSelector((state) => state.feed.likeCounts[post.id] ?? post.likesCount ?? 0);
   const heartAnim = useSelector((state) => state.feed.heartAnim[post.id] ?? false);
+  const showModal = useSelector((state) => state.feed.showModal[post.id] ?? false);
 
   function getDisplayImageUrl(imageUrl) {
     if (!imageUrl) return '';
@@ -325,10 +325,10 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, onLike, onDelete }) 
     onLike(post.id);
   };
 
-  const handleCommentClick = () => {
-    dispatch(setSelectedPost(post));
-    dispatch(setShowModal(true));
-  };
+  // const handleCommentClick = () => {
+  //   dispatch(setSelectedPost(post));
+  //   dispatch(setShowModal(true));
+  // };
 
   const hasImage = !!post.image;
   const glow = hasImage
@@ -348,7 +348,7 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, onLike, onDelete }) 
         style={{ background: glow }}
         aria-hidden="true"
       />
- 
+
       <div
         className="relative h-full w-full rounded-[2.5rem] overflow-hidden flex flex-col"
         style={{
@@ -382,6 +382,12 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, onLike, onDelete }) 
             >
               {post.author.username}
             </span>
+            <span
+              className={`text-[11px] text-white/70 ${hasImage ? 'ml-auto' : ''}`}
+              style={{ fontFamily: "'DM Mono'" }}
+            >
+              {formatTimeAgo(post.createdAt)} ago
+            </span>
           </div>
           {isOwn && (
             <button
@@ -394,7 +400,7 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, onLike, onDelete }) 
             </button>
           )}
         </div>
- 
+
         {/* Photo — inset with a glass gutter around it, not full-bleed */}
         {hasImage ? (
           <div
@@ -413,7 +419,7 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, onLike, onDelete }) 
             </p>
           </div>
         )}
- 
+
         {/* Footer — caption + actions, on the glass */}
         <div className="relative z-10 flex-shrink-0 px-5 pt-3 pb-5">
           {hasImage && (
@@ -429,7 +435,7 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, onLike, onDelete }) 
               </button>
             </div>
           )}
- 
+
           <div className="flex items-center gap-5">
             <button
               type="button"
@@ -438,33 +444,30 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, onLike, onDelete }) 
               aria-label="Like"
             >
               <span ref={heartIconRef} className="inline-flex" style={{ transform: heartAnim ? 'scale(1.25)' : 'scale(1)', transition: 'transform 0.18s ease' }}>
-                <FaHeart size={17} fill={liked ? '#fb7185' : 'none'} color={liked ? '#fb7185' : 'currentColor'} />
+                <FaHeart size={17} fill={liked ? '#fb7185' : 'currentColor'} color={liked ? '#fb7185' : 'currentColor'} />
               </span>
               <span className="text-[12.5px]" style={{ fontFamily: "'DM Mono'" }}>{likeCount.toLocaleString()}</span>
             </button>
- 
+
             <button
               type="button"
-              onClick={handleCommentClick}
+              onClick={() => { setShowModal(true) }}
               className="flex items-center gap-1.5 text-white/90 hover:text-white transition-colors focus-visible:outline-none rounded-full"
               aria-label="Comment"
             >
               <FiMessageCircle size={17} />
               <span className="text-[12.5px]" style={{ fontFamily: "'DM Mono'" }}>{post.commentsCount}</span>
             </button>
- 
+
+            {showModal && (
+              <Comments />
+            )}
+
             {!hasImage && (
               <button type="button" className="text-white/80 hover:text-white transition-colors ml-auto" aria-label="Share">
                 <FiSend size={16} />
               </button>
             )}
- 
-            <span
-              className={`text-[11px] text-white/70 ${hasImage ? 'ml-auto' : ''}`}
-              style={{ fontFamily: "'DM Mono'" }}
-            >
-              {formatTimeAgo(post.createdAt)} ago
-            </span>
           </div>
         </div>
       </div>
@@ -496,7 +499,7 @@ function TrendingTopics() {
    so this drops in without touching your build config.
    Respects prefers-reduced-motion.
    ───────────────────────────────────────────────────────────────── */
- 
+
 
 export default function CommunityPage() {
   const posts = useSelector((state) => state.feed.posts);
@@ -541,7 +544,7 @@ export default function CommunityPage() {
     }
     if (frontIsA) { setBgB(nextImage); } else { setBgA(nextImage); }
     setFrontIsA((f) => !f);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeIndex]);
 
   // GSAP scroll-linked scale/opacity focus effect
@@ -566,39 +569,39 @@ export default function CommunityPage() {
     setActiveIndex((prev) => (prev === closestIndex ? prev : closestIndex));
   }, []);
 
-useEffect(() => {
-  const el = scrollRef.current;
-  if (!el) return;
-  let ticking = false;
-  const SCROLL_THRESHOLD = 12; // px of movement needed before we react
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    let ticking = false;
+    const SCROLL_THRESHOLD = 120; // px of movement needed before we react
 
-  const onScroll = () => {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(() => {
-      const maxScroll = el.scrollHeight - el.clientHeight;
-      // clamp to guard against elastic/rubber-band overscroll on mobile
-      const currentPos = Math.max(0, Math.min(el.scrollTop, maxScroll));
-      const delta = currentPos - lastScrollPos.current;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const maxScroll = el.scrollHeight - el.clientHeight;
+        // clamp to guard against elastic/rubber-band overscroll on mobile
+        const currentPos = Math.max(0, Math.min(el.scrollTop, maxScroll));
+        const delta = currentPos - lastScrollPos.current;
 
-      if (currentPos <= 0) {
-        // always show at the very top
-        setShowCapsules(true);
-        lastScrollPos.current = 0;
-      } else if (Math.abs(delta) > SCROLL_THRESHOLD) {
-        setShowCapsules(delta < 0); // scrolling up -> show, down -> hide
-        lastScrollPos.current = currentPos;
-      }
+        if (currentPos <= 0) {
+          // always show at the very top
+          setShowCapsules(true);
+          lastScrollPos.current = 0;
+        } else if (Math.abs(delta) > SCROLL_THRESHOLD) {
+          setShowCapsules(delta < 0); // scrolling up -> show, down -> hide
+          lastScrollPos.current = currentPos;
+        }
 
-      updateFocus();
-      ticking = false;
-    });
-  };
+        updateFocus();
+        ticking = false;
+      });
+    };
 
-  el.addEventListener('scroll', onScroll, { passive: true });
-  updateFocus();
-  return () => el.removeEventListener('scroll', onScroll);
-}, [updateFocus, posts]);
+    el.addEventListener('scroll', onScroll, { passive: true });
+    updateFocus();
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [updateFocus, posts]);
 
   // Entrance animation for first card
   useEffect(() => {
@@ -723,7 +726,7 @@ useEffect(() => {
               posts.map((post, i) => (
                 <div
                   key={post.id}
-                  className={`${post.image ? 'h-[73vh]' : 'h-[73vh]'} z-10 mt-5 snap-center flex items-center justify-center px-3`}
+                  className={`${post.image ? 'h-[73vh]' : 'h-[73vh]'} z-10 snap-center flex items-center justify-center px-3`}
                 >
                   <FilmPostCard
                     post={post}

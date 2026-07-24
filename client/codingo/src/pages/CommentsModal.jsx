@@ -189,13 +189,13 @@ export function VoiceNote({ duration }) {
 export default function Comments({ post, onComment }) {
   const apiUrl = import.meta.env.VITE_API_URL || '';
   const [pendingFiles, setPendingFiles] = useState([]);
-  const [localComments, setLocalComments] = useState(post.comments);
+  const [localComments, setLocalComments] = useState(post?.comments);
   const [hasVoice, setHasVoice] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recSeconds, setRecSeconds] = useState(0);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [voiceDuration, setVoiceDuration] = useState(0);
-  const commentText = useSelector(state => state.feed.commentText[post.id] ?? '');
+  const commentText = useSelector(state => state.feed.commentText[post?.id] ?? '');
 
   const dispatch = useDispatch();
   const mainInputRef = useRef(null);
@@ -230,17 +230,17 @@ export default function Comments({ post, onComment }) {
   };
 
   /* Page-load GSAP stagger */
-  useEffect(() => {
-    const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
-    tl.fromTo(headerRef.current, { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.5 })
-      .fromTo(inputAreaRef.current, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.4 }, "-=0.2")
-      .fromTo(
-        threadRef.current?.children ? Array.from(threadRef.current.children) : [],
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.35, stagger: 0.08 },
-        "-=0.1"
-      );
-  }, []);
+  // useEffect(() => {
+  //   const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+  //   tl.fromTo(headerRef.current, { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.5 })
+  //     .fromTo(inputAreaRef.current, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.4 }, "-=0.2")
+  //     .fromTo(
+  //       threadRef.current?.children ? Array.from(threadRef.current.children) : [],
+  //       { opacity: 0, y: 20 },
+  //       { opacity: 1, y: 0, duration: 0.35, stagger: 0.08 },
+  //       "-=0.1"
+  //     );
+  // }, []);
 
   /* Close emoji on outside click */
   useEffect(() => {

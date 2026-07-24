@@ -1,6 +1,6 @@
 const express = require('express');
 const { protect } = require('../middlewares/auth.middleware');
-const { createCapsule, getFriendsCapsules, getUserCapsules, viewCapsule, getCapsuleMedia, deleteCapsule, preserveCapsule, likeCapsule } = require('../controllers/Capsule.controller');
+const { createCapsule, getFriendsCapsules, getUserCapsules, viewCapsule, getCapsuleMedia, deleteCapsule, preserveCapsule, likeCapsule, createCapsuleComment } = require('../controllers/Capsule.controller');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -28,7 +28,8 @@ router.get('/feed', protect, getFriendsCapsules);
 router.get('/user/:userId', protect, getUserCapsules);
 router.post('/:id/view', protect, viewCapsule);
 router.post(`/:id/like`, protect, likeCapsule);
-router.post('/:id/preserve', protect, preserveCapsule)
+router.post('/:id/preserve', protect, preserveCapsule);
+router.post('/:id/capsulecomment', protect, createCapsuleComment);
 router.delete('/:id', protect, deleteCapsule);
 
 module.exports = router;

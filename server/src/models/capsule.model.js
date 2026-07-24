@@ -11,10 +11,6 @@ const capsuleCommentSchema = new mongoose.Schema({
     trim: true,
     maxlength: 500
   },
-  // image: {
-  //   type: String,
-  //   default: '',
-  // },
   voiceNote: {
     url: { type: String, default: '' },
     duration: { type: Number, default: 0 }
