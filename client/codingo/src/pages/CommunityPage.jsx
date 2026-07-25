@@ -277,8 +277,8 @@ export function PostComposer({
               onClick={handlePost}
               disabled={!content.trim() || isPosting}
               className={`flex items-center gap-[7px] px-[20px] py-[8px] border-none rounded-[10px] font-['Syne'] font-extrabold text-[13px] tracking-[0.3px] transition-all duration-200 ease-in-out ${content.trim()
-                  ? 'bg-gradient-to-br from-[#00b4cc] to-[#00e5ff] text-black cursor-pointer shadow-[0_4px_16px_#00e5ff33]'
-                  : 'bg-[#404040] text-[#aaaaaa] cursor-not-allowed'
+                ? 'bg-gradient-to-br from-[#00b4cc] to-[#00e5ff] text-black cursor-pointer shadow-[0_4px_16px_#00e5ff33]'
+                : 'bg-[#404040] text-[#aaaaaa] cursor-not-allowed'
                 }`}
             >
               {isPosting ? 'Posting' : <><FaPaperPlane style={{ fontSize: 12 }} /> Post</>}
@@ -339,7 +339,7 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, onLike, onDelete }) 
   return (
     <div
       ref={cardRef}
-      className="relative h-165 w-full max-w-[380px] z-10 mx-auto rounded-[2.5rem] overflow-hidden"
+      className="relative h-165 w-full max-w-[420px] z-10 mx-auto rounded-[2.5rem] overflow-hidden"
       style={{ transformOrigin: 'center center' }}
     >
       {/* Ambient glow */}
@@ -377,6 +377,7 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, onLike, onDelete }) 
           </div>
           <div className="flex-1 cursor-pointer min-w-0">
             <span
+            onClick={() => post.author.id && navigate(`/socialprofile/${post.author.id}`)}
               className="text-[14px] font-semibold text-white block truncate [text-shadow:0_1px_3px_rgba(0,0,0,0.35)]"
               style={{ fontFamily: "'Syne'" }}
             >
@@ -443,9 +444,14 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, onLike, onDelete }) 
               className="flex items-center gap-1.5 text-white/90 hover:text-white transition-colors focus-visible:outline-none rounded-full"
               aria-label="Like"
             >
-              <span ref={heartIconRef} className="inline-flex" style={{ transform: heartAnim ? 'scale(1.25)' : 'scale(1)', transition: 'transform 0.18s ease' }}>
-                <FaHeart size={17} fill={liked ? '#fb7185' : 'currentColor'} color={liked ? '#fb7185' : 'currentColor'} />
-              </span>
+              {!liked ? (
+                <span ref={heartIconRef} className="inline-flex" style={{ transform: heartAnim ? 'scale(1.25)' : 'scale(1)', transition: 'transform 0.18s ease' }}>
+                  <FaHeartBroken size={17} fill={liked ? '#fb7185' : 'currentColor'} color={liked ? '#fb7185' : 'currentColor'} />
+                </span>
+              ) : (
+                <span ref={heartIconRef} className="inline-flex" style={{ transform: heartAnim ? 'scale(1.25)' : 'scale(1)', transition: 'transform 0.18s ease' }}>
+                  <FaHeart size={17} fill={liked ? '#fb7185' : 'currentColor'} color={liked ? '#fb7185' : 'currentColor'} />
+                </span>)}
               <span className="text-[12.5px]" style={{ fontFamily: "'DM Mono'" }}>{likeCount.toLocaleString()}</span>
             </button>
 
@@ -573,7 +579,7 @@ export default function CommunityPage() {
     const el = scrollRef.current;
     if (!el) return;
     let ticking = false;
-    const SCROLL_THRESHOLD = 120; // px of movement needed before we react
+    const SCROLL_THRESHOLD = 200; // px of movement needed before we react
 
     const onScroll = () => {
       if (ticking) return;

@@ -15,16 +15,21 @@ import axios from 'axios';
 import { useState } from 'react';
 import { setCommentText } from '../../redux/slices/feedSlice';
 import CapsuleCommentModal from './CapsuleCommentModal';
+import { useDispatch, useSelector } from 'react-redux';
+import { setCapsuleCommenting, setCapsuleInputText } from '../../redux/slices/capsuleSlice';
 
-export default function CapsuleModal({ isOpen, onClose, comments, story, onPrev, onNext, onDelete }) {
+export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, onDelete }) {
   const currentUser = getStoredUser();
   const currentUserId = currentUser?.id || currentUser?._id || '';
   const cardRef = useRef(null);
   const glowRef = useRef(null);
   const backdropRef = useRef(null);
   const storedUser = getStoredUser();
-  const [capsuleCommenting, setCapsuleCommenting] = useState(false);
-  const [capsuleCommentText, setCapsuleCommentText] = useState('');
+  const capsuleCommenting = useSelector((state) => state.capsule.capsuleCommenting ?? false);
+  const capsuleInputText = useSelector((state) => state.capsule.capsuleInputText ?? '');
+  const dispatch = useDispatch();
+
+
   console.log('story', story)
   console.log('story comments', story?.comments)
 
@@ -68,38 +73,43 @@ export default function CapsuleModal({ isOpen, onClose, comments, story, onPrev,
     setLikesCount(story.likedBy?.length ?? 0);
   }, [story?._id, currentUserId]);
 
-const toggleCapsuleComment = async (voiceNoteFile) => {
-  try {
-    let body, headers;
+  const toggleCapsuleComment = async (voiceNoteFile) => {
+    try {
+      let body, headers;
 
-    if (voiceNoteFile) {
-      const formData = new FormData();
-      formData.append('content', capsuleCommentText || '');
-      formData.append('voiceNote', voiceNoteFile);
-      body = formData;
-      headers = { ...getAuthHeaders(), 'Content-Type': 'multipart/form-data' };
-    } else {
-      body = { content: capsuleCommentText };
-      headers = getAuthHeaders();
+      if (voiceNoteFile) {
+        const formData = new FormData();
+        formData.append('content', capsuleInputText || '');
+        formData.append('voiceNote', voiceNoteFile);
+        body = formData;
+        headers = { ...getAuthHeaders(), 'Content-Type': 'multipart/form-data' };
+      } else {
+        body = { content: capsuleInputText };
+        headers = getAuthHeaders();
+      }
+
+      const res = await axios.post(
+        `${apiUrl}/api/capsule/${story._id}/capsulecomment`,
+        { content: capsuleInputText.trim() },
+        { withCredentials: true, headers: getAuthHeaders() }
+      );
+      console.log('url', `${apiUrl}/api/capsule/${story._id}/capsulecomment`)
+      console.log('text', capsuleInputText)
+      dispatch(setCapsuleInputText(''));
+      return res.data.comment; // use this to append to local state
+    } catch (error) {
+      console.error('capsule comment posting error', error);
     }
-
-    const res = await axios.post(
-      `${apiUrl}/api/capsule/${story._id}/capsulecomment`,
-      { content: capsuleCommentText.trim() },
-      { withCredentials: true, headers: getAuthHeaders() }
-    );
-    console.log('url',  `${apiUrl}/api/capsule/${story._id}/capsulecomment`)
-    console.log('text', capsuleCommentText)
-
-    return res.data.comment; // use this to append to local state
-  } catch (error) {
-    console.error('capsule comment posting error', error);
-  }
-};
+  };
 
   // Capsule Comment Open
   const capsuleCommetingOpen = () => {
-    setCapsuleCommenting(true);
+    dispatch(setCapsuleCommenting(true));
+  }
+
+  // close comment modal
+  const capsuleCommentingCLose = () => {
+    dispatch(setCapsuleCommenting(false));
   }
 
   // Escape to close + body scroll lock while open
@@ -168,15 +178,15 @@ const toggleCapsuleComment = async (voiceNoteFile) => {
           style={{
             background:
               'radial-gradient(closest-side, rgba(140,190,255,0.45), rgba(80,140,255,0.18) 55%, transparent 75%)',
-            }}
+          }}
         />
-            <button
-              onClick={onClose}
-              className="absolute top-6 right-8 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white/70 hover:text-white hover:bg-black/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70"
-              aria-label="Close"
-            >
-              <FiX size={16} />
-            </button>
+        <button
+          onClick={onClose}
+          className="absolute top-6 right-8 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white/70 hover:text-white hover:bg-black/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70"
+          aria-label="Close"
+        >
+          <FiX size={16} />
+        </button>
 
         {/* The capsule itself */}
         <div
@@ -242,7 +252,7 @@ const toggleCapsuleComment = async (voiceNoteFile) => {
                   onClick={toggleCapsuleLike}
                   className="flex items-center gap-1.5 text-white/80 cursor-pointer hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 rounded-full"
                   aria-label="Like"
-                >
+                  >
                   <FiHeart size={19} className={isLiked ? 'fill-red-400 text-red-400' : ''} />
                   {likesCount > 0 && <span className="text-[12px]">{likesCount}</span>}
                 </button>
@@ -252,35 +262,6 @@ const toggleCapsuleComment = async (voiceNoteFile) => {
                   <span><FiMessageCircle size={19} /></span>
                   <span>{story?.comments?.length}</span>
                 </button>
-                {capsuleCommenting && (
-                  // <div
-                  //   // ref={replyWrapRef}
-                  //   className="reply-wrap-focus flex gap-2 items-start mt-2.5 p-2.5 rounded-xl transition-colors"
-                  //   style={{ border: "1px solid var(--border)", background: "var(--surface2)" }}
-                  // >
-                  //   {/* <Avatar initials="Y" size={28} self /> */}
-                  //   <textarea
-                  //     className="flex-1 bg-transparent border-none outline-none coder-text font-mono-coder resize-none"
-                  //     style={{ fontSize: 12, lineHeight: 1.6, minHeight: 40 }}
-                  //     placeholder="Write a reply..."
-                  //     value={capsuleCommentText}
-                  //     onChange={e => setCapsuleCommentText(e.target.value) }
-                  //     autoFocus
-                  //   />
-                  //   <button
-                  //     onClick={() => {
-                  //       setCapsuleCommentText('');
-                  //       toggleCapsuleComment();
-                  //       setCapsuleCommenting(false);
-                  //     }}
-                  //     className="text-white rounded-lg px-3 py-1.5 font-mono-coder transition-opacity hover:opacity-85"
-                  //     style={{ fontSize: 11, background: "var(--accent)", border: "none", cursor: "pointer" }}
-                  //   >
-                  //     ↩
-                  //   </button>
-                  // </div>
-                  <CapsuleCommentModal ogcomments={story?.comments} />
-                )}
               </>
             )}
 
@@ -296,16 +277,19 @@ const toggleCapsuleComment = async (voiceNoteFile) => {
 
             {typeof onDelete === 'function' && isOwner && (
               <button
-                onClick={() => onDelete(story)}
-                className="text-red-300 hover:text-red-200 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/70 rounded-full"
-                aria-label="Delete capsule"
-                title="Delete capsule"
+              onClick={() => onDelete(story)}
+              className="text-red-300 hover:text-red-200 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/70 rounded-full"
+              aria-label="Delete capsule"
+              title="Delete capsule"
               >
                 <FiTrash2 size={19} />
               </button>
             )}
           </div>
         </div>
+            {capsuleCommenting && (
+              <CapsuleCommentModal onClose={capsuleCommentingCLose} onComment={toggleCapsuleComment} ogcomments={story?.comments} />
+            )}
       </div>
     </div>
   );

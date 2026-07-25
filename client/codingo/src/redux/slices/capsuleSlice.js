@@ -5,7 +5,9 @@ const capsuleSlice = createSlice ({
     initialState: {
         capsule: [],
         caption: '',
+        capsuleInputText: '',
         isCapsulePosting: false,
+        capsuleCommenting: false,
         error: null
     },
     reducers: {
@@ -15,8 +17,14 @@ const capsuleSlice = createSlice ({
         setCaption: (state, action) => {
             state.caption = action.payload
         },
+        setCapsuleInputText: (state, action) =>{
+            state.capsuleInputText = action.payload
+        },
         setIsCapsulePosting: (state, action) => {
             state.isCapsulePosting = action.payload;
+        },
+        setCapsuleCommenting: (state, action) => {
+            state.capsuleCommenting = action.payload;
         },
         setError: (state, action) => {
             state.error = action.payload
@@ -24,5 +32,5 @@ const capsuleSlice = createSlice ({
     },
 })
 
-export const {setCapsule, setCaption, setIsCapsulePosting, setError} = capsuleSlice.actions;
+export const {setCapsule, setCaption, setCapsuleInputText, setCapsuleCommenting, setIsCapsulePosting, setError} = capsuleSlice.actions;
 export default capsuleSlice.reducer;

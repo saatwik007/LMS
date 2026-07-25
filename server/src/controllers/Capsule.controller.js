@@ -63,10 +63,8 @@ const createCapsuleComment = async (req, res) => {
 
     const capsule = await Capsule.findById(req.params.id);
     if (!capsule) {
-      return res.status(404).json({ message: 'capsule not found' });
+      return res.status(404).json({ message: 'Capsule not found' });
     }
-    
-    console.log('capsule', capsule)
 
     const hasComment = content && content.trim().length > 0;
     const hasVoiceNote = req.file?.fieldname === 'voiceNote';
@@ -91,21 +89,25 @@ const createCapsuleComment = async (req, res) => {
     capsule.comments.push(comment);
     await capsule.save();
 
-    // Notify capsule owner (if not self-comment)
-    if (String(capsule.user) !== String(userId)) {
-      const commenter = await User.findById(userId).select('username');
-      await User.findByIdAndUpdate(capsule.user, {
+    // ✅ populate after save — both user and comments.author in one call
+    await capsule.populate([
+      { path: 'user', select: 'username profilePic' },
+      { path: 'comments.author', select: 'username profilePic' }
+    ]);
+
+    const newComment = capsule.comments[capsule.comments.length - 1];
+
+    // ✅ now capsule.user is populated object, use ._id
+    if (String(capsule.user._id) !== String(userId)) {
+      await User.findByIdAndUpdate(capsule.user._id, {
         $push: {
           notifications: {
             title: '💬 New Comment',
-            detail: `${commenter.username} commented on your post`
+            detail: `${newComment.author.username} commented on your capsule`
           }
         }
       });
     }
-
-    await capsule.populate('comments.author', 'username profilePic');
-    const newComment = capsule.comments[capsule.comments.length - 1];
 
     return res.status(201).json({
       message: 'Comment added',
@@ -114,21 +116,21 @@ const createCapsuleComment = async (req, res) => {
         capsuleId: String(capsule._id),
         author: {
           id: String(newComment.author._id),
-          username: newComment.author.username,
-          profilePic: newComment.author.profilePic || ''
+          username: newComment.author.username,       // ✅ populated
+          profilePic: newComment.author.profilePic || '' // ✅ populated
         },
         content: newComment.content,
+        voiceNote: newComment.voiceNote,
         createdAt: newComment.createdAt,
         likesCount: 0,
         isLikedByCurrentUser: false,
-        replies: []
       },
       commentsCount: capsule.comments.length
     });
 
   } catch (error) {
     console.error('capsule comment posting error', error);
-    return res.status(500).json({ message: 'capsule comment posting error', error: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 
@@ -145,6 +147,7 @@ const getFriendsCapsules = async (req, res) => {
       deleteAt: { $gt: new Date() },
     })
       .populate('user', 'username profilePic')
+      .populate('comments.author', 'username profilePic')
 
       .sort({ createdAt: -1 });
 
@@ -170,6 +173,21 @@ const getFriendsCapsules = async (req, res) => {
           obj.user.profilePic = `${req.protocol}://${req.get('host')}${obj.user.profilePic}`;
         }
       }
+
+      // ✅ format comments with author details
+      obj.comments = (obj.comments || []).map(comment => ({
+        id: String(comment._id),
+        author: {
+          id: String(comment.author?._id || comment.author),
+          username: comment.author?.username || '',        // ✅ populated field
+          profilePic: comment.author?.profilePic || ''     // ✅ populated field
+        },
+        content: comment.content,
+        voiceNote: comment.voiceNote,
+        createdAt: comment.createdAt,
+        likesCount: comment.likes?.length || 0,
+        isLikedByCurrentUser: false
+      }));
       return obj;
     });
 
