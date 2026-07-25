@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { X, Heart, Send, Mic, Smile, Play, Pause, MessageCircle, MoreHorizontal } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
+import { setCapsuleInputText } from '../../redux/slices/capsuleSlice';
 
 const AVATAR_COLORS = ['#52525b', '#57534e', '#3f3f46', '#44403c', '#525252', '#71717a', '#4b5563', '#5b5b62'];
 const EMOJIS = ['😀', '😂', '😍', '🥰', '😎', '🤔', '👍', '👏', '🔥', '🎉', '❤️', '😢', '😮', '🙌', '💯', '😅', '🙏', '✨', '😁', '😊', '🥳', '😴', '👀', '💀'];
@@ -38,7 +40,8 @@ function mapBackendComment(c) {
     const hasVoice = !!(c.voiceNote && c.voiceNote.url);
     return {
         id: c._id,
-        user: { name: 'Vivek' }, // backend doesn't send a display name yet
+        user: { name: c.author.username }, // backend doesn't send a display name yet
+        profilePic: c.author.profilePic,
         text: c.content,
         time: formatRelativeTime(c.createdAt),
         likes: Array.isArray(c.likes) ? c.likes.length : 0,
@@ -66,8 +69,21 @@ function CommentRow({
 
     return (
         <div className={`flex gap-2.5 ${isReply ? 'py-1.5 pl-3 border-l border-neutral-800 ml-1' : 'py-2'} comment-pop-anim`} style={{ animationDelay: `${delay}ms` }}>
-            <div className={`${avatarSize} flex-shrink-0 rounded-full flex items-center justify-center font-semibold text-xs text-white`} style={{ background: pickColor(c.user.name) }}>
-                {initials(c.user.name)}
+            <div className={`${avatarSize} flex-shrink-0 rounded-full overflow-hidden`}>
+                {c.profilePic ? (
+                    <img
+                        src={c.profilePic}
+                        alt={c.user.name}
+                        className="w-full h-full object-cover"
+                    />
+                ) : (
+                    <div
+                        className="w-full h-full flex items-center justify-center font-semibold text-xs text-white"
+                        style={{ background: pickColor(c.user.name) }}
+                    >
+                        {c.user.name?.[0]?.toUpperCase()}
+                    </div>
+                )}
             </div>
 
             <div className="flex-1 min-w-0">
@@ -155,21 +171,22 @@ function CommentRow({
     );
 }
 
-const CapsuleCommentModal = ({ ogcomments }) => {
+const CapsuleCommentModal = ({ ogcomments, onComment, onClose }) => {
     const [comments, setComments] = useState([]);
-    const [isOpen, setIsOpen] = useState(false);
+    // const [isOpen, setIsOpen] = useState(false);
     const [entered, setEntered] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
     const [expandedReplies, setExpandedReplies] = useState(() => new Set());
     const [activeReplyId, setActiveReplyId] = useState(null);
     const [replyText, setReplyText] = useState('');
-    const [inputValue, setInputValue] = useState('');
+    const capsuleInputText = useSelector((state) => state.capsule.capsuleInputText ?? '');
     const [emojiOpen, setEmojiOpen] = useState(false);
     const [pulseId, setPulseId] = useState(null);
     const [playingVoiceId, setPlayingVoiceId] = useState(null);
     const [recording, setRecording] = useState(false);
     const [recordSeconds, setRecordSeconds] = useState(0);
     const [liveBars, setLiveBars] = useState(genLiveBars);
+    const dispatch = useDispatch();
 
     const idCounter = useRef(100);
     const newId = () => { idCounter.current += 1; return idCounter.current; };
@@ -201,35 +218,15 @@ const CapsuleCommentModal = ({ ogcomments }) => {
 
     const openModal = () => {
         if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
-        setIsOpen(true);
+        // setIsOpen(true);
         requestAnimationFrame(() => requestAnimationFrame(() => setEntered(true)));
     };
 
-    const closeModal = () => {
-        setEntered(false);
-        setEmojiOpen(false);
-        if (recording) { setRecording(false); setRecordSeconds(0); }
-        closeTimeoutRef.current = setTimeout(() => setIsOpen(false), 320);
-    };
-
     useEffect(() => {
-        const t = setTimeout(openModal, 300);
+        const t = setTimeout(openModal, 100);
         return () => clearTimeout(t);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
-
-    useEffect(() => {
-        document.body.style.overflow = isOpen ? 'hidden' : '';
-        return () => { document.body.style.overflow = ''; };
-    }, [isOpen]);
-
-    useEffect(() => {
-        if (!isOpen) return undefined;
-        const onKey = (e) => { if (e.key === 'Escape') closeModal(); };
-        document.addEventListener('keydown', onKey);
-        return () => document.removeEventListener('keydown', onKey);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isOpen]);
 
     useEffect(() => {
         if (firstRenderRef.current) { firstRenderRef.current = false; return; }
@@ -301,11 +298,11 @@ const CapsuleCommentModal = ({ ogcomments }) => {
     };
 
     const submitComment = () => {
-        const val = inputValue.trim();
+        const val = capsuleInputText.trim();
         if (!val) return;
         const c = { id: newId(), user: { name: 'You' }, text: val, time: 'now', likes: 0, liked: false, replies: [] };
         setComments((prev) => [...prev, c]);
-        setInputValue('');
+        dispatch(setCapsuleInputText(''));
     };
 
     const startRecording = () => { setRecording(true); setRecordSeconds(0); setLiveBars(genLiveBars()); };
@@ -329,8 +326,8 @@ const CapsuleCommentModal = ({ ogcomments }) => {
     return (
         <div>
             <div
-                className={`fixed inset-0 z-50 flex ${isMobile ? 'items-end' : 'items-center'} justify-center text-white z-10 bg-black bg-opacity-60 backdrop-blur-sm transition-opacity duration-300 ${entered ? 'opacity-100' : 'opacity-0'}`}
-                onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
+                className={`fixed inset-0 z-50 flex ${isMobile ? 'items-end' : 'items-center'} justify-center text-white z-10 bg-black/20 bg-opacity-60 backdrop-blur-sm transition-opacity duration-300 ${entered ? 'opacity-100' : 'opacity-0'}`}
+            // onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
             >
                 <div
                     role="dialog"
@@ -345,7 +342,7 @@ const CapsuleCommentModal = ({ ogcomments }) => {
                         <h2 className="text-sm font-semibold flex items-baseline gap-1.5 m-0">
                             Comments <span className="text-neutral-500 font-medium text-xs">{totalCount}</span>
                         </h2>
-                        <button onClick={closeModal} aria-label="Close comments" className="w-8 h-8 flex items-center justify-center rounded-full text-neutral-400 hover:bg-neutral-800 hover:text-neutral-100 transition-colors">
+                        <button onClick={onClose} aria-label="Close comments" className="w-8 h-8 flex items-center justify-center rounded-full text-neutral-400 hover:bg-neutral-800 hover:text-neutral-100 transition-colors">
                             <X size={18} />
                         </button>
                     </div>
@@ -353,7 +350,7 @@ const CapsuleCommentModal = ({ ogcomments }) => {
                     <div ref={listRef} className="comments-scroll flex-1 min-h-0 overflow-y-auto px-4 pt-3 pb-1">
                         {comments.map((c, idx) => (
                             <CommentRow
-                                key={c.id}
+                                key={c?.author?.id}
                                 comment={c}
                                 isReply={false}
                                 delay={idx < SEED_TOP_LEVEL_COUNT ? 150 + idx * 70 : 0}
@@ -376,7 +373,7 @@ const CapsuleCommentModal = ({ ogcomments }) => {
                         {emojiOpen && (
                             <div ref={emojiRef} className="absolute left-3 right-3 bottom-full mb-2 bg-neutral-800 border border-neutral-700 rounded-2xl p-2.5 grid grid-cols-6 gap-1 shadow-xl">
                                 {EMOJIS.map((e) => (
-                                    <button key={e} onClick={() => setInputValue((v) => v + e)} className="text-lg py-1.5 rounded-lg hover:bg-neutral-700 leading-none">
+                                    <button key={e} onClick={() => dispatch(setCapsuleInputText((v) => v + e))} className="text-lg py-1.5 rounded-lg hover:bg-neutral-700 leading-none">
                                         {e}
                                     </button>
                                 ))}
@@ -389,8 +386,8 @@ const CapsuleCommentModal = ({ ogcomments }) => {
                                     <Smile size={19} />
                                 </button>
                                 <input
-                                    value={inputValue}
-                                    onChange={(e) => setInputValue(e.target.value)}
+                                    value={capsuleInputText}
+                                    onChange={(e) => dispatch(setCapsuleInputText(e.target.value))}
                                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); submitComment(); } }}
                                     type="text"
                                     placeholder="Add a comment..."
@@ -400,10 +397,10 @@ const CapsuleCommentModal = ({ ogcomments }) => {
                                     <Mic size={18} />
                                 </button>
                                 <button
-                                    onClick={submitComment}
-                                    disabled={!inputValue.trim()}
+                                    onClick={onComment}
+                                    disabled={!capsuleInputText.trim()}
                                     aria-label="Post comment"
-                                    className={`w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full transition-colors ${inputValue.trim() ? 'text-red-500 hover:bg-neutral-800' : 'text-neutral-600'}`}
+                                    className={`w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full transition-colors ${capsuleInputText.trim() ? 'text-red-500 hover:bg-neutral-800' : 'text-neutral-600'}`}
                                 >
                                     <Send size={18} />
                                 </button>
