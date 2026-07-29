@@ -11,6 +11,10 @@ import {
   FaFire,
   FaCode,
   FaHeartBroken,
+  FaVideo,
+  FaPlay,
+  FaVolumeMute,
+  FaVolumeUp
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -27,7 +31,6 @@ import {
   setLiked,
   setPage,
   setPosts,
-  setSelectedPost,
   setShowModal,
   addPostToTop,
 } from '../redux/slices/feedSlice';
@@ -91,6 +94,12 @@ function AvatarInitial({ name, size = 44 }) {
   );
 }
 
+
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg', 'image/heic', 'image/heif'];
+const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime', 'video/mov'];
+const MAX_IMAGE_SIZE = 8 * 1024 * 1024;   // 8MB
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024;  // 50MB — match your multer limit
+
 export function PostComposer({
   onPostCreated,
   composerFile,
@@ -98,8 +107,10 @@ export function PostComposer({
   composerPreview,
   setComposerPreview,
 }) {
-  const fileInputRef = useRef(null);
-  const inputIdRef = useRef(`post-image-input-${Math.random().toString(36).slice(2)}`);
+  const imageInputRef = useRef(null);
+  const videoInputRef = useRef(null);
+  const imageInputId = useRef(`post-image-input-${Math.random().toString(36).slice(2)}`);
+  const videoInputId = useRef(`post-video-input-${Math.random().toString(36).slice(2)}`);
   const apiUrl = import.meta.env.VITE_API_URL || '';
   const currentUser = getStoredUser();
   const dispatch = useDispatch();
@@ -109,38 +120,29 @@ export function PostComposer({
   const isPosting = useSelector((state) => state.post.isPosting);
   const error = useSelector((state) => state.post.error);
 
-  const handleImageSelect = (e) => {
+  const isVideoFile = composerFile?.type?.startsWith('video/');
+
+  const handleMediaSelect = (e) => {
     const file = e.target?.files?.[0] || null;
-    console.log('[DBG] handleImageSelect fired');
-    console.log('[DBG] input files length:', e.target?.files?.length);
-    console.log('[DBG] input file[0]:', file);
+    if (!file) return;
 
-    if (!file) {
-      setComposerFile(null);
-      setComposerPreview(null);
-      dispatch(setImagePreview(null));
-      dispatch(setError('No file selected'));
-      return;
-    }
+    const isImage = ALLOWED_IMAGE_TYPES.includes(file.type);
+    const isVideo = ALLOWED_VIDEO_TYPES.includes(file.type);
 
-    const allowed = [
-      'image/jpeg',
-      'image/png',
-      'image/webp',
-      'image/jpg',
-      'image/heic',
-      'image/heif',
-    ];
-
-    if (!allowed.includes(file.type)) {
+    if (!isImage && !isVideo) {
       dispatch(setError(`Unsupported type: ${file.type || 'unknown'}`));
+      e.target.value = '';
       return;
     }
 
-    if (file.size > 8 * 1024 * 1024) {
-      dispatch(setError('Image must be < 8MB'));
+    const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
+    if (file.size > maxSize) {
+      dispatch(setError(isVideo ? 'Video must be < 50MB' : 'Image must be < 8MB'));
+      e.target.value = '';
       return;
     }
+
+    if (composerPreview) URL.revokeObjectURL(composerPreview);
 
     const objectUrl = URL.createObjectURL(file);
     setComposerFile(file);
@@ -148,43 +150,40 @@ export function PostComposer({
     dispatch(setImagePreview(objectUrl));
     dispatch(setError(''));
 
-    console.log('[DBG] assigned composerFile:', file);
+    e.target.value = ''; // allow re-selecting the same file later
   };
 
-  const removeImage = () => {
+  const removeMedia = () => {
     setComposerFile(null);
     if (composerPreview) URL.revokeObjectURL(composerPreview);
     setComposerPreview(null);
     dispatch(setImagePreview(null));
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (imageInputRef.current) imageInputRef.current.value = '';
+    if (videoInputRef.current) videoInputRef.current.value = '';
   };
 
   const handlePost = async () => {
-    if (!content.trim()) return dispatch(setError('Write something first'));
+    const trimmedContent = content.trim();
+    const fileToSend =
+      composerFile ||
+      imageInputRef.current?.files?.[0] ||
+      videoInputRef.current?.files?.[0] ||
+      null;
+
+    if (!trimmedContent && !fileToSend) {
+      return dispatch(setError('Write something or attach an image/video'));
+    }
     if (content.length > 2000) return dispatch(setError('Exceeds 2000 chars'));
 
     dispatch(setIsPosting(true));
     dispatch(setError(''));
 
     try {
-      console.log('[DBG] handlePost fired');
-      console.log('[DBG] composerFile:', composerFile);
-      console.log('[DBG] input file:', fileInputRef.current?.files?.[0]);
-
       const formData = new FormData();
-      formData.append('content', content.trim());
+      if (trimmedContent) formData.append('content', trimmedContent);
 
-      const fileToSend = composerFile || fileInputRef.current?.files?.[0] || null;
       if (fileToSend) {
-        formData.append('image', fileToSend, fileToSend.name || 'upload.jpg');
-      }
-
-      for (const [k, v] of formData.entries()) {
-        console.log(
-          '[DBG] formData entry:',
-          k,
-          v instanceof File ? `${v.name} ${v.type} ${v.size}` : v
-        );
+        formData.append('media', fileToSend, fileToSend.name || 'upload');
       }
 
       const res = await axios.post(`${apiUrl}/api/community/posts`, formData, {
@@ -198,7 +197,8 @@ export function PostComposer({
       setComposerFile(null);
       setComposerPreview(null);
       dispatch(setImagePreview(null));
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (imageInputRef.current) imageInputRef.current.value = '';
+      if (videoInputRef.current) videoInputRef.current.value = '';
 
       if (onPostCreated) onPostCreated(res.data.post);
     } catch (err) {
@@ -207,6 +207,8 @@ export function PostComposer({
       dispatch(setIsPosting(false));
     }
   };
+
+  const canPost = (content.trim().length > 0 || !!composerFile) && !isPosting;
 
   return (
     <div
@@ -234,14 +236,22 @@ export function PostComposer({
 
           {composerPreview && (
             <div className="relative inline-block mb-3">
-              <img
-                src={composerPreview}
-                alt="Preview"
-                className="max-w-full max-h-[240px] rounded-xl border border-[#1a2535] block"
-              />
+              {isVideoFile ? (
+                <video
+                  src={composerPreview}
+                  controls
+                  className="max-w-full max-h-[240px] rounded-xl border border-[#1a2535] block"
+                />
+              ) : (
+                <img
+                  src={composerPreview}
+                  alt="Preview"
+                  className="max-w-full max-h-[240px] rounded-xl border border-[#1a2535] block"
+                />
+              )}
               <button
                 type="button"
-                onClick={removeImage}
+                onClick={removeMedia}
                 className="absolute top-2 right-2 w-7 h-7 rounded-full bg-red-500 text-white flex items-center justify-center"
               >
                 <FaTimes />
@@ -254,19 +264,35 @@ export function PostComposer({
           <div className="flex items-center justify-between pt-3 border-t border-[#1a2535]">
             <div className="flex items-center gap-2">
               <input
-                ref={fileInputRef}
+                ref={imageInputRef}
                 type="file"
                 accept="image/*"
-                onChange={handleImageSelect}
+                onChange={handleMediaSelect}
                 className="hidden"
-                id={inputIdRef.current}
+                id={imageInputId.current}
               />
               <label
-                htmlFor={inputIdRef.current}
+                htmlFor={imageInputId.current}
                 className="flex items-center gap-[6px] px-[14px] py-[7px] bg-[#404040] rounded-[10px] cursor-pointer text-[#aaaaaa] text-[13px] font-semibold font-['Plus_Jakarta_Sans'] transition-all duration-150 hover:text-white"
               >
                 <FaImage className="text-[13px]" /> Image
               </label>
+
+              <input
+                ref={videoInputRef}
+                type="file"
+                accept="video/*"
+                onChange={handleMediaSelect}
+                className="hidden"
+                id={videoInputId.current}
+              />
+              <label
+                htmlFor={videoInputId.current}
+                className="flex items-center gap-[6px] px-[14px] py-[7px] bg-[#404040] rounded-[10px] cursor-pointer text-[#aaaaaa] text-[13px] font-semibold font-['Plus_Jakarta_Sans'] transition-all duration-150 hover:text-white"
+              >
+                <FaVideo className="text-[13px]" /> Video
+              </label>
+
               <span className="text-[11px] text-[#aaaaaa] font-['DM_Mono']">
                 {content.length}/2000
               </span>
@@ -275,8 +301,8 @@ export function PostComposer({
             <button
               type="button"
               onClick={handlePost}
-              disabled={!content.trim() || isPosting}
-              className={`flex items-center gap-[7px] px-[20px] py-[8px] border-none rounded-[10px] font-['Syne'] font-extrabold text-[13px] tracking-[0.3px] transition-all duration-200 ease-in-out ${content.trim()
+              disabled={!canPost}
+              className={`flex items-center gap-[7px] px-[20px] py-[8px] border-none rounded-[10px] font-['Syne'] font-extrabold text-[13px] tracking-[0.3px] transition-all duration-200 ease-in-out ${canPost
                 ? 'bg-gradient-to-br from-[#00b4cc] to-[#00e5ff] text-black cursor-pointer shadow-[0_4px_16px_#00e5ff33]'
                 : 'bg-[#404040] text-[#aaaaaa] cursor-not-allowed'
                 }`}
@@ -295,6 +321,11 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, onLike, onDelete }) 
   const dispatch = useDispatch();
   const apiUrl = import.meta.env.VITE_API_URL || '';
   const heartIconRef = useRef(null);
+  const videoRef = useRef(null);
+  const mediaContainerRef = useRef(null);
+
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(true); // must start muted for autoplay to be allowed by browsers
 
   const liked = useSelector((state) => state.feed.liked[post.id] ?? post.isLikedByCurrentUser ?? false);
   const likeCount = useSelector((state) => state.feed.likeCounts[post.id] ?? post.likesCount ?? 0);
@@ -311,6 +342,55 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, onLike, onDelete }) 
   }
 
   const imageUrl = post.image?.startsWith('/') ? `${apiUrl}${post.image}` : getDisplayImageUrl(post.image);
+  const videoUrl = post.video?.startsWith('/') ? `${apiUrl}${post.video}` : post.video;
+
+  const hasImage = !!post.image;
+  const hasVideo = !!post.video;
+  const hasMedia = hasImage || hasVideo;
+
+  // Autoplay when the video scrolls into view, pause when it leaves
+  useEffect(() => {
+    if (!hasVideo || !mediaContainerRef.current) return;
+
+    const node = mediaContainerRef.current;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const vid = videoRef.current;
+          if (!vid) return;
+          if (entry.isIntersecting) {
+            vid.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+          } else {
+            vid.pause();
+            setIsPlaying(false);
+          }
+        });
+      },
+      { threshold: 0.6 } // video needs to be ~60% visible to trigger
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasVideo]);
+
+  const toggleVideoPlay = () => {
+    const vid = videoRef.current;
+    if (!vid) return;
+    if (vid.paused) {
+      vid.play().then(() => setIsPlaying(true)).catch(() => { });
+    } else {
+      vid.pause();
+      setIsPlaying(false);
+    }
+  };
+
+  const toggleMute = (e) => {
+    e.stopPropagation(); // don't let this bubble into toggleVideoPlay
+    const vid = videoRef.current;
+    if (!vid) return;
+    vid.muted = !vid.muted;
+    setIsMuted(vid.muted);
+  };
 
   const handleLikeClick = () => {
     dispatch(setLiked({ postId: post.id, value: !liked }));
@@ -325,16 +405,9 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, onLike, onDelete }) 
     onLike(post.id);
   };
 
-  // const handleCommentClick = () => {
-  //   dispatch(setSelectedPost(post));
-  //   dispatch(setShowModal(true));
-  // };
-
-  const hasImage = !!post.image;
-  const glow = hasImage
+  const glow = hasMedia
     ? 'radial-gradient(circle, rgba(124,108,240,0.35), transparent 70%)'
     : post.glow || 'radial-gradient(circle, rgba(244,114,182,0.35), transparent 70%)';
-  // const textGradient = post.textGradient || 'linear-gradient(160deg,#7c6cf0,#f472b6)';
 
   return (
     <div
@@ -342,7 +415,6 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, onLike, onDelete }) 
       className="relative h-165 w-full max-w-[420px] z-10 mx-auto rounded-[2.5rem] overflow-hidden"
       style={{ transformOrigin: 'center center' }}
     >
-      {/* Ambient glow */}
       <div
         className="pointer-events-none absolute -inset-6 -z-10 blur-2xl"
         style={{ background: glow }}
@@ -352,7 +424,7 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, onLike, onDelete }) 
       <div
         className="relative h-full w-full rounded-[2.5rem] overflow-hidden flex flex-col"
         style={{
-          background: hasImage
+          background: hasMedia
             ? 'linear-gradient(160deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.05) 100%)'
             : textGradient,
           backdropFilter: 'blur(24px) saturate(160%)',
@@ -362,7 +434,6 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, onLike, onDelete }) 
             '0 25px 70px rgba(0,0,0,0.45), inset 0 1px 1px rgba(255,255,255,0.5), inset 0 0 0 1px rgba(255,255,255,0.12)',
         }}
       >
-        {/* Header strip — sits on the glass, not on the photo */}
         <div className="relative z-10 flex items-center gap-3 px-5 pt-5 pb-4 flex-shrink-0">
           <div className="cursor-pointer flex-shrink-0">
             {post.author.profilePic ? (
@@ -377,14 +448,14 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, onLike, onDelete }) 
           </div>
           <div className="flex-1 cursor-pointer min-w-0">
             <span
-            onClick={() => post.author.id && navigate(`/socialprofile/${post.author.id}`)}
+              onClick={() => post.author.id && navigate(`/socialprofile/${post.author.id}`)}
               className="text-[14px] font-semibold text-white block truncate [text-shadow:0_1px_3px_rgba(0,0,0,0.35)]"
               style={{ fontFamily: "'Syne'" }}
             >
               {post.author.username}
             </span>
             <span
-              className={`text-[11px] text-white/70 ${hasImage ? 'ml-auto' : ''}`}
+              className={`text-[11px] text-white/70 ${hasMedia ? 'ml-auto' : ''}`}
               style={{ fontFamily: "'DM Mono'" }}
             >
               {formatTimeAgo(post.createdAt)} ago
@@ -402,13 +473,47 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, onLike, onDelete }) 
           )}
         </div>
 
-        {/* Photo — inset with a glass gutter around it, not full-bleed */}
-        {hasImage ? (
+        {/* Media — image, video, or text-only */}
+        {hasMedia ? (
           <div
+            ref={mediaContainerRef}
             className="relative mx-4 flex-1 min-h-0 rounded-[1.75rem] overflow-hidden"
             style={{ boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.4), 0 8px 24px rgba(0,0,0,0.25)' }}
           >
-            <img src={imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+            {hasVideo ? (
+              <>
+                <video
+                  ref={videoRef}
+                  src={videoUrl}
+                  className="absolute inset-0 h-full w-full object-cover cursor-pointer"
+                  playsInline
+                  loop
+                  muted={isMuted}
+                  onClick={toggleVideoPlay}
+                  onPlay={() => setIsPlaying(true)}
+                  onPause={() => setIsPlaying(false)}
+                />
+
+                {!isPlaying && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="h-14 w-14 rounded-full bg-black/40 flex items-center justify-center">
+                      <FaPlay size={18} color="white" style={{ marginLeft: 3 }} />
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={toggleMute}
+                  className="absolute bottom-3 right-3 h-8 w-8 rounded-full bg-black/45 flex items-center justify-center text-white hover:bg-black/65 transition-colors"
+                  aria-label={isMuted ? 'Unmute' : 'Mute'}
+                >
+                  {isMuted ? <FaVolumeMute size={13} /> : <FaVolumeUp size={13} />}
+                </button>
+              </>
+            ) : (
+              <img src={imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+            )}
           </div>
         ) : (
           <div className="relative flex-1 min-h-0 flex items-center justify-center px-8">
@@ -421,9 +526,8 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, onLike, onDelete }) 
           </div>
         )}
 
-        {/* Footer — caption + actions, on the glass */}
         <div className="relative z-10 flex-shrink-0 px-5 pt-3 pb-5">
-          {hasImage && (
+          {hasMedia && post.content && (
             <div className="flex items-start gap-2 mb-3">
               <p
                 className="text-[13px] leading-[1.5] text-white/95 [text-shadow:0_1px_2px_rgba(0,0,0,0.2)] line-clamp-2 flex-1"
@@ -469,7 +573,7 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, onLike, onDelete }) 
               <Comments />
             )}
 
-            {!hasImage && (
+            {!hasMedia && (
               <button type="button" className="text-white/80 hover:text-white transition-colors ml-auto" aria-label="Share">
                 <FiSend size={16} />
               </button>

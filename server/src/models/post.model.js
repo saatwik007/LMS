@@ -66,6 +66,10 @@ const postSchema = new mongoose.Schema({
     type: String, 
     default: '' 
   },
+  video: {
+    type: String,
+    default: ''
+  },
   driveFileId: {
     type: String,
     default: ''
