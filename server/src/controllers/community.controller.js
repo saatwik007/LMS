@@ -9,9 +9,6 @@ const { streamFileFromDrive } = require('../utils/driveUpload');
 
 // Create a new post
 async function createPost(req, res) {
-  console.log("req.file:", req.file);
-  console.log("req.body:", req.body);
-  console.log("content-type header:", req.headers['content-type']);
   try {
     const { content } = req.body;
 
@@ -26,63 +23,63 @@ async function createPost(req, res) {
     const postData = {
       author: req.user.id,
       content: content.trim(),
-      image: ''
+      image: '',
+      video: ''
     };
 
-    // Handle image upload if present
-    // if (req.file && req.file.buffer) {
-
-
-    //   try {
-    //     const timestamp = Date.now();
-    //     const fileName = `post-${req.user.id}-${timestamp}.webp`;
-
-    //     // Process and save image
-    //     const processedImageBuffer = await sharp(req.file.buffer)
-    //       .resize({ width: 800, height: 800, fit: 'inside' })
-    //       .webp({ quality: 85 })
-    //       .toBuffer();
-
-    //     // Upload to Google Drive
-    //     const { publicUrl, fileId } = await uploadBufferToDrive(processedImageBuffer, fileName);
-    //     postData.image = `/api/community/posts/image/${fileId}`;
-    //     postData.driveFileId = fileId; // Store the Drive file ID in the post document
-
-    //     console.log('post',timestamp,fileName)
-
-    //   } catch (imageError) {
-    //     console.error('Image processing error:', imageError);
-    //     return res.status(500).json({ message: 'Failed to process image' });
-    //   }
-    // }
-
-
     if (req.file && req.file.buffer) {
-  let processedImageBuffer;
-  try {
-    processedImageBuffer = await sharp(req.file.buffer)
-      .resize({ width: 800, height: 800, fit: 'inside' })
-      .webp({ quality: 85 })
-      .toBuffer();
-  } catch (err) {
-    console.error('[POST IMAGE] Sharp error:', err);
-    return res.status(500).json({ message: 'Image transform failed' });
-  }
+      const isImage = req.file.mimetype.startsWith('image/');
+      const isVideo = req.file.mimetype.startsWith('video/');
 
-  try {
-    const timestamp = Date.now();
-    const fileName = `post-${req.user.id}-${timestamp}.webp`;
-    const { fileId } = await uploadBufferToDrive(processedImageBuffer, fileName);
-    postData.image = `/api/community/posts/image/${fileId}`;
-    postData.driveFileId = fileId;
-  } catch (err) {
-    console.error('[POST IMAGE] Drive upload error:', err?.response?.data || err.message || err);
-    return res.status(500).json({ message: 'Image upload failed (drive)' });
-  }
-}
+      if (!isImage && !isVideo) {
+        return res.status(400).json({ message: 'Unsupported file type. Only images and videos are allowed.' });
+      }
+
+      if (isImage) {
+        let processedImageBuffer;
+        try {
+          processedImageBuffer = await sharp(req.file.buffer)
+            .resize({ width: 800, height: 800, fit: 'inside' })
+            .webp({ quality: 85 })
+            .toBuffer();
+        } catch (err) {
+          console.error('[POST IMAGE] Sharp error:', err);
+          return res.status(500).json({ message: 'Image transform failed' });
+        }
+
+        try {
+          const timestamp = Date.now();
+          const fileName = `post-${req.user.id}-${timestamp}.webp`;
+          const { fileId } = await uploadBufferToDrive(processedImageBuffer, fileName, 'image/webp');
+          postData.image = `/api/community/posts/image/${fileId}`;
+          postData.imageFileId = fileId;
+        } catch (err) {
+          console.error('[POST IMAGE] Drive upload error:', err?.response?.data || err.message || err);
+          return res.status(500).json({ message: 'Image upload failed (drive)' });
+        }
+      }
+
+      if (isVideo) {
+        const MAX_VIDEO_BYTES = 50 * 1024 * 1024; // adjust to whatever you set in multer limits
+        if (req.file.size > MAX_VIDEO_BYTES) {
+          return res.status(400).json({ message: 'Video exceeds max allowed size (50MB)' });
+        }
+
+        try {
+          const timestamp = Date.now();
+          const ext = (req.file.mimetype.split('/')[1] || 'mp4').split(';')[0];
+          const fileName = `post-video-${req.user.id}-${timestamp}.${ext}`;
+          const { fileId } = await uploadBufferToDrive(req.file.buffer, fileName, req.file.mimetype);
+          postData.video = `/api/community/posts/video/${fileId}`;
+          postData.videoFileId = fileId;
+        } catch (err) {
+          console.error('[POST VIDEO] Drive upload error:', err?.response?.data || err.message || err);
+          return res.status(500).json({ message: 'Video upload failed (drive)' });
+        }
+      }
+    }
+
     const post = await Post.create(postData);
-
-    // Populate author details
     await post.populate('author', 'username profilePic league level totalXp');
 
     return res.status(201).json({
@@ -99,6 +96,7 @@ async function createPost(req, res) {
         },
         content: post.content,
         image: post.image,
+        video: post.video,
         likes: [],
         comments: [],
         likesCount: 0,
@@ -112,8 +110,7 @@ async function createPost(req, res) {
     console.error('Create post error:', error);
     return res.status(500).json({ message: error.message });
   }
-};
-
+}
 async function deletePost(req, res) {
   console.log('Deleting post with ID:', req.params.postId);
   try {
@@ -183,6 +180,7 @@ async function getFeed(req, res) {
         },
         content: post.content || "",
         image: post.image || "",
+        video: post.video || "",
         likes: (post.likes || []).map((id) => String(id)),
         comments: (post.comments || [])
           .filter((comment) => comment?.author)
@@ -220,29 +218,38 @@ async function getFeed(req, res) {
         updatedAt: post.updatedAt,
       }));
 
-    return res.status(200).json({
-      posts: formattedPosts,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages,
-        hasMore: page < totalPages,
-      },
-    });
-  } catch (error) {
-    console.error("Get feed error:", error);
-    return res.status(500).json({ message: error.message });
-  }
+  return res.status(200).json({
+    posts: formattedPosts,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasMore: page < totalPages,
+    },
+  });
+} catch (error) {
+  console.error("Get feed error:", error);
+  return res.status(500).json({ message: error.message });
+}
 }
 
 
 async function getPostImage(req, res) {
   try {
-    await streamFileFromDrive(req.params.fileId, res);
+    await streamFileFromDrive(req.params.fileId, res, req);
   } catch (err) {
     console.error('Image proxy error:', err);
     return res.status(404).json({ message: 'Image not found' });
+  }
+}
+
+async function getPostVideo(req, res) {
+  try {
+    await streamFileFromDrive(req.params.fileId, res, req);
+  } catch (err) {
+    console.error('Video proxy error:', err);
+    return res.status(404).json({ message: 'Video not found' });
   }
 }
 
@@ -280,6 +287,7 @@ async function getPost(req, res) {
       },
       content: post.content,
       image: post.image,
+      video: post.video || '',
       likes: post.likes.map(id => String(id)),
       comments: post.comments.map(comment => ({
         id: String(comment._id),
@@ -678,5 +686,6 @@ module.exports = {
   deleteComment,
   getUserPosts,
   commentReply,
-  likeComment
+  likeComment,
+  getPostVideo
 };

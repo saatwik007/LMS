@@ -10,10 +10,11 @@ const {
   getUserPosts,
   commentReply,
   likeComment,
-  getPostImage
+  getPostImage,
+  getPostVideo
 } = require('../controllers/community.controller');
 const { protect } = require('../middlewares/auth.middleware');
-const { postImageUpload } = require('../middlewares/upload.middleware');
+const { postMediaUpload } = require('../middlewares/upload.middleware');
 
 const router = express.Router();
 
@@ -23,8 +24,11 @@ router.get('/feed', protect, getFeed);
 // Proxy image from Drive
 router.get('/posts/image/:fileId', getPostImage);
 
+// Proxy video from Drive
+router.get('/posts/video/:fileId', getPostVideo);
+
 // Create a new post (with optional image)
-router.post('/posts', protect, postImageUpload, createPost);
+router.post('/posts', protect, postMediaUpload, createPost);
 
 // Get a single post
 router.get('/posts/:postId', protect, getPost);
