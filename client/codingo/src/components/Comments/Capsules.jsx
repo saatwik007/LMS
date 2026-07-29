@@ -218,8 +218,6 @@ const visible = useMemo(() => {
     .filter(({ derived }) => derived.phase !== 'expired');
 }, [items, now, storedUser?.id]);
 
-  // console.log('visible', visible)
-
   const [openIndex, setOpenIndex] = useState(null); // null = modal closed
 
   const handleOpen = useCallback((storyId) => {

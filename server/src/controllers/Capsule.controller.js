@@ -134,6 +134,122 @@ const createCapsuleComment = async (req, res) => {
   }
 };
 
+const capsuleCommentReply = async (req, res) => {
+  try {
+    const { capsuleId, commentId } = req.params;
+    const { content } = req.body;
+
+    if (!content || content.trim().length === 0) {
+      return res.status(400).json({ message: 'Type something to post' });
+    }
+
+    if (content.length > 500) {
+      return res.status(404).json({ message: 'cannot exceed 500 letters' });
+    }
+
+    const capsule = await Capsule.findById(capsuleId);
+
+    if (!capsule) {
+      return res.status(400).json({ message: 'Capsule not found' })
+    };
+
+    const capsuleComment = capsule.comments.id(commentId);
+
+    const reply = {
+      author: req.user.id,
+      content: content.trim(),
+      createdAt: new Date()
+    }
+
+    capsuleComment.replies.push(reply);
+    await capsule.save();
+
+    const savedCapsule = await Capsule.findById(capsuleId).populate(
+      'comments.replies.author',
+      'username profilePic'
+    );
+
+    const savedComment = savedCapsule.comments.id(commentId);
+    const savedReply = savedComment.replies[savedComment.replies.length - 1];
+
+    return res.status(201).json({
+      message: 'Reply saved successfully',
+      reply: {
+        id: String(savedReply._id),
+        author: {
+          id: String(savedReply.author._id),
+          username: savedReply.author.username,
+          profilePic: savedReply.author.profilePic || ''
+        },
+        content: savedReply.content,
+        createdAt: savedReply.createdAt
+      }
+    });
+
+  } catch (error) {
+    console.error('capsule comment reply error', error);
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const capsuleCommentLike = async (req, res) => {
+  try {
+    const { capsuleId, commentId } = req.params;
+    const userId = req.user.id;
+
+    const capsule = Capsule.findById(capsuleId);
+
+    if (!capsule) {
+      return res.status(404).json({ message: 'Capsule not found' })
+    };
+
+    const comment = capsule.comments.id(commentId);
+
+    if (!comment) {
+      return res.status(404).json({ message: 'Comment not found' })
+    };
+
+    if (!comment.likes) comment.likes = [];
+
+    const capsuleCommentLike = comment.likes.findIndex(id => String(id) === userIdString);
+    // Unlike post if liked
+    if (commentLike > -1) {
+      comment.likes.splice(commentLike, 1);
+      await capsule.save();
+      return res.status(200).json({
+        message: 'Comment disliked',
+        likesCount: comment.likes.length,
+        isLiked: false
+      });
+    } else {
+      // Add like
+      comment.likes.push(userId);
+      await capsule.save();
+
+      if (String(comment.author !== userIdString)) {
+        const liker = await User.findById(userId).select('username');
+        await User.findByIdAndUpdate(comment.author, {
+          $push: {
+            notifications: {
+              title: 'Comment like',
+              detail: `${liker.username} liked your comment`
+            }
+          }
+        });
+      }
+    }
+    return res.status(200).json({
+      message: 'Comment liked',
+      likesCount: comment.likes.length,
+      isLiked: true
+    });
+
+  } catch (error) {
+    console.error('capsule comment like error', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 const getFriendsCapsules = async (req, res) => {
   try {
     const userId = req.user.id || req.user._id;  // ✅ fix
@@ -148,6 +264,7 @@ const getFriendsCapsules = async (req, res) => {
     })
       .populate('user', 'username profilePic')
       .populate('comments.author', 'username profilePic')
+      .populate('comments.replies.author', 'username profilePic')
 
       .sort({ createdAt: -1 });
 
@@ -159,9 +276,6 @@ const getFriendsCapsules = async (req, res) => {
       console.warn('[CAPSULES] logging failure', logErr?.message || logErr);
     }
 
-    // Ensure every capsule has a usable mediaUrl for older records that only
-    // stored `mediaFileId`. Also normalize profilePic to an absolute URL when
-    // served from the uploads folder.
     const processed = capsules.map((c) => {
       const obj = typeof c.toObject === 'function' ? c.toObject() : { ...c };
       if (obj.mediaFileId) {
@@ -179,14 +293,24 @@ const getFriendsCapsules = async (req, res) => {
         id: String(comment._id),
         author: {
           id: String(comment.author?._id || comment.author),
-          username: comment.author?.username || '',        // ✅ populated field
-          profilePic: comment.author?.profilePic || ''     // ✅ populated field
+          username: comment.author?.username || '',
+          profilePic: comment.author?.profilePic || ''
         },
         content: comment.content,
         voiceNote: comment.voiceNote,
         createdAt: comment.createdAt,
         likesCount: comment.likes?.length || 0,
-        isLikedByCurrentUser: false
+        isLikedByCurrentUser: false,
+        replies: (comment.replies || []).map(reply => ({
+          id: String(reply._id),
+          author: {
+            id: String(reply.author?._id || reply.author),
+            username: reply.author?.username || '',
+            profilePic: reply.author?.profilePic || ''
+          },
+          content: reply.content,
+          createdAt: reply.createdAt
+        }))
       }));
       return obj;
     });
@@ -360,5 +484,7 @@ module.exports = {
   getUserCapsules,
   getFriendsCapsules,
   getCapsuleMedia,
-  createCapsuleComment
+  createCapsuleComment,
+  capsuleCommentReply,
+  capsuleCommentLike
 }
