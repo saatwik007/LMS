@@ -8,6 +8,7 @@ const capsuleSlice = createSlice ({
         capsuleInputText: '',
         isCapsulePosting: false,
         capsuleCommenting: false,
+        replyText: '',
         error: null
     },
     reducers: {
@@ -26,11 +27,14 @@ const capsuleSlice = createSlice ({
         setCapsuleCommenting: (state, action) => {
             state.capsuleCommenting = action.payload;
         },
+        setReplyText: (state, action) => {
+            state.replyText = action.payload;
+        },
         setError: (state, action) => {
             state.error = action.payload
         }
     },
 })
 
-export const {setCapsule, setCaption, setCapsuleInputText, setCapsuleCommenting, setIsCapsulePosting, setError} = capsuleSlice.actions;
+export const {setCapsule, setCaption, setCapsuleInputText, setCapsuleCommenting, setIsCapsulePosting, setError, setReplyText} = capsuleSlice.actions;
 export default capsuleSlice.reducer;

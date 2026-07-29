@@ -13,10 +13,9 @@ import gsap from 'gsap';
 import { apiUrl, getAuthHeaders, getStoredUser } from '../../utilites/communityHelper';
 import axios from 'axios';
 import { useState } from 'react';
-import { setCommentText } from '../../redux/slices/feedSlice';
 import CapsuleCommentModal from './CapsuleCommentModal';
 import { useDispatch, useSelector } from 'react-redux';
-import { setCapsuleCommenting, setCapsuleInputText } from '../../redux/slices/capsuleSlice';
+import { setCapsuleCommenting, setCapsuleInputText, setReplyText } from '../../redux/slices/capsuleSlice';
 
 export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, onDelete }) {
   const currentUser = getStoredUser();
@@ -27,11 +26,12 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
   const storedUser = getStoredUser();
   const capsuleCommenting = useSelector((state) => state.capsule.capsuleCommenting ?? false);
   const capsuleInputText = useSelector((state) => state.capsule.capsuleInputText ?? '');
+  const replyText = useSelector((state) => state.capsule.replyText ?? '');
   const dispatch = useDispatch();
 
 
   console.log('story', story)
-  console.log('story comments', story?.comments)
+  console.log('story comments', story?.comments?.id)
 
   // preserving capsule
   const preserveCapsule = async () => {
@@ -47,7 +47,6 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
     story?.likedBy?.includes(currentUserId) ?? false   // ✅ optional chaining on story too
   );
   const [likesCount, setLikesCount] = useState(story?.likedBy?.length ?? 0);
-  console.log('length', story?.likedBy?.length)
 
   // capsule like
   const toggleCapsuleLike = async () => {
@@ -73,6 +72,7 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
     setLikesCount(story.likedBy?.length ?? 0);
   }, [story?._id, currentUserId]);
 
+  //Capsule Comment
   const toggleCapsuleComment = async (voiceNoteFile) => {
     try {
       let body, headers;
@@ -93,6 +93,7 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
         { content: capsuleInputText.trim() },
         { withCredentials: true, headers: getAuthHeaders() }
       );
+      console.log('text', capsuleInputText)
       console.log('url', `${apiUrl}/api/capsule/${story._id}/capsulecomment`)
       console.log('text', capsuleInputText)
       dispatch(setCapsuleInputText(''));
@@ -101,6 +102,38 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
       console.error('capsule comment posting error', error);
     }
   };
+
+  // const commentId = story?.comments?.map(c => c.id)
+
+  // Capsule Comment Reply
+  const toggleCapsuleCommentReply = async (commentId) => {
+    try {
+      const res = await axios.post(
+        `${apiUrl}/api/capsule/${story._id}/${commentId}/capsulecommentreply`,
+        { content: replyText.trim() },
+        { withCredentials: true, headers: getAuthHeaders() }
+      );
+      dispatch(setReplyText(''));
+      return res.data.reply; // ← hand it back to the caller
+    } catch (error) {
+      console.error('Capsule reply error', error);
+    }
+  };
+
+  const toggleCapsuleCommentLike = async (commentId) => {
+    try {
+      const res = await axios.post(`${apiUrl}/api/capsule/${story._id}/${commentId}/capsulecommentlike`,
+        {},
+        { withCredentials: true, headers: getAuthHeaders() }
+      );
+      return res.data,
+      console.log('capsule comment like res', res)
+    } catch (error) {
+      console.error('Capsule comment like error', error)
+    };
+  };
+
+  // console.log('commentid', story?._id)
 
   // Capsule Comment Open
   const capsuleCommetingOpen = () => {
@@ -252,7 +285,7 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
                   onClick={toggleCapsuleLike}
                   className="flex items-center gap-1.5 text-white/80 cursor-pointer hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 rounded-full"
                   aria-label="Like"
-                  >
+                >
                   <FiHeart size={19} className={isLiked ? 'fill-red-400 text-red-400' : ''} />
                   {likesCount > 0 && <span className="text-[12px]">{likesCount}</span>}
                 </button>
@@ -277,19 +310,25 @@ export default function CapsuleModal({ isOpen, onClose, story, onPrev, onNext, o
 
             {typeof onDelete === 'function' && isOwner && (
               <button
-              onClick={() => onDelete(story)}
-              className="text-red-300 hover:text-red-200 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/70 rounded-full"
-              aria-label="Delete capsule"
-              title="Delete capsule"
+                onClick={() => onDelete(story)}
+                className="text-red-300 hover:text-red-200 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/70 rounded-full"
+                aria-label="Delete capsule"
+                title="Delete capsule"
               >
                 <FiTrash2 size={19} />
               </button>
             )}
           </div>
         </div>
-            {capsuleCommenting && (
-              <CapsuleCommentModal onClose={capsuleCommentingCLose} onComment={toggleCapsuleComment} ogcomments={story?.comments} />
-            )}
+        {capsuleCommenting && (
+          <CapsuleCommentModal
+            onClose={capsuleCommentingCLose}
+            onComment={() => { toggleCapsuleComment() }}
+            ogcomments={story?.comments}
+            onCommentReply={toggleCapsuleCommentReply}
+            onCommentLike={toggleCapsuleCommentLike}
+          />
+        )}
       </div>
     </div>
   );

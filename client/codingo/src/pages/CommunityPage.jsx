@@ -521,6 +521,7 @@ export default function CommunityPage() {
   const [activeIndex, setActiveIndex] = useState(0);
   const apiUrl = import.meta.env.VITE_API_URL || '';
   const currentUser = getStoredUser();
+  console.log('currentUser', currentUser);
   const currentUserId = currentUser?.id || currentUser?._id || '';
   const [showComposer, setShowComposer] = useState(false);
   const [composerFile, setComposerFile] = useState(null);

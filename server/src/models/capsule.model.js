@@ -1,5 +1,23 @@
 const mongoose = require('mongoose');
 
+const capsuleCommentReplySchema = new mongoose.Schema({
+  author: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  content: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: 500
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+}, {_id: true});
+
 const capsuleCommentSchema = new mongoose.Schema({
   author: {
     type: mongoose.Schema.Types.ObjectId,
@@ -24,7 +42,7 @@ const capsuleCommentSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
-  // replies: [replySchema]
+  replies: [capsuleCommentReplySchema]
 }, { _id: true });
 
 const capsuleSchema = new mongoose.Schema(
@@ -55,4 +73,5 @@ capsuleSchema.index({ user: 1, createdAt: -1 });
 
 const Capsule = mongoose.model("Capsule", capsuleSchema);
 const CapsuleComment = mongoose.model('CapsuleComment', capsuleCommentSchema);
-module.exports = { Capsule, CapsuleComment };
+const CapsuleCommentReply = mongoose.model('CapusleCommentReply', capsuleCommentReplySchema);
+module.exports = { Capsule, CapsuleComment, CapsuleCommentReply };
