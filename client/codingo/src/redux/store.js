@@ -10,6 +10,7 @@ import chatSlice from './slices/chatSlice';
 import commentsSlice from './slices/commentsSlice';
 import leaderboardSlice from './slices/leaderboardSlice';
 import capsuleSlice from './slices/capsuleSlice';
+import discoverReducer from './slices/discoverSlice';
 
 const store = configureStore({
     reducer: {
@@ -24,6 +25,7 @@ const store = configureStore({
         comments: commentsSlice,
         leaderboard: leaderboardSlice,
         capsule: capsuleSlice
+        ,discover: discoverReducer
     }
 });
 export default store;

@@ -28,6 +28,7 @@ import Messages from './pages/messages.jsx';
 import Comments from './pages/CommentsModal.jsx';
 import SocialProfileSection from './pages/SocialProfilePage.jsx';
 import GlassFeed from './pages/LandinPageExperimental.jsx';
+import DiscoverPage from './pages/discoverPage.jsx';
 
 function ProtectedRoute({ children }) {
   const [isChecking, setIsChecking] = useState(true);
@@ -217,6 +218,14 @@ function AppShell() {
               element={(
                 <ProtectedRoute>
                   <ProfilePage />
+                </ProtectedRoute>
+              )}
+            />
+            <Route
+              path="/discover"
+              element={(
+                <ProtectedRoute>
+                  <DiscoverPage />
                 </ProtectedRoute>
               )}
             />

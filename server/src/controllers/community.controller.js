@@ -146,7 +146,7 @@ async function deletePost(req, res) {
 // Get feed with pagination
 async function getFeed(req, res) {
   try {
-    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(20, Math.max(1, parseInt(req.query.limit, 10) || 10));
     const skip = (page - 1) * limit;
 
@@ -218,20 +218,19 @@ async function getFeed(req, res) {
         updatedAt: post.updatedAt,
       }));
 
-  return res.status(200).json({
-    posts: formattedPosts,
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages,
-      hasMore: page < totalPages,
-    },
-  });
-} catch (error) {
-  console.error("Get feed error:", error);
-  return res.status(500).json({ message: error.message });
-}
+    return res.status(200).json({
+      posts: formattedPosts,
+      pagination: {
+        page,
+        limit,
+        total,
+        hasMore: page < totalPages,
+      },
+    });
+  } catch (error) {
+    console.error("Get feed error:", error);
+    return res.status(500).json({ message: error.message });
+  }
 }
 
 
@@ -673,7 +672,55 @@ async function getUserPosts(req, res) {
     console.error('Get user posts error:', error);
     return res.status(500).json({ message: error.message });
   }
-}
+};
+
+const discoverNearbyPeople = async (req, res) => {
+  try {
+    const { lat, lng } = req.body;
+    const userId = req.user.id;
+
+    if (typeof lat !== 'number' || typeof lng !== 'number') {
+      return res.status(400).json({ message: 'Valid lat/lng required' });
+    }
+
+    // tagging user's exact location along with the time stamp
+    const user = await User.findById(userId);
+    user.location = { type: 'Point', coordinates: [lng, lat] };
+    user.locationUpdatedAt = new Date();
+    user.isDiscoverable = true;
+    await user.save();
+
+    // 2. Find nearby discoverable users
+    const nearbyUsers = await User.aggregate([
+      {
+        $geoNear: {
+          near: { type: 'Point', coordinates: [lng, lat] },
+          distanceField: 'distance',
+          maxDistance: 10000, // meters
+          spherical: true,
+          query: {
+            _id: { $ne: user._id },
+            isDiscoverable: true,
+            // locationUpdatedAt: { $gte: new Date(Date.now() - 10 * 60 * 1000) }, // active in last 10 min
+          },
+        },
+      },
+      {
+        $project: {
+          username: 1,
+          profilePicture: '$profilePic',
+          distance: { $round: ['$distance', 0] }, // meters, rounded
+        },
+      },
+      // { $limit: 50 },
+    ]);
+
+    res.status(200).json({ nearbyUsers });
+  } catch (error) {
+    console.error('finding nearby people error:', error);
+    return res.status(500).json({ message: error.message });
+  }
+};
 
 module.exports = {
   createPost,
@@ -687,5 +734,6 @@ module.exports = {
   getUserPosts,
   commentReply,
   likeComment,
-  getPostVideo
+  getPostVideo,
+  discoverNearbyPeople
 };

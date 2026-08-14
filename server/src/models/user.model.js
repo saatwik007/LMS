@@ -73,11 +73,28 @@ const userSchema = new mongoose.Schema(
     resetToken: { type: String, default: null, index: true },
     resetTokenExpiry: { type: Date, default: null },
     resetOtpAttempts: { type: Number, default: 0 },
+      // Geolocation for discover feature (GeoJSON Point)
+      location: {
+        type: {
+          type: String,
+          enum: ["Point"],
+          default: "Point",
+        },
+        coordinates: {
+          type: [Number], // [lng, lat]
+          default: [0, 0],
+        },
+      },
+      locationUpdatedAt: { type: Date },
+      isDiscoverable: { type: Boolean, default: false },
   },
   {
     timestamps: true,
-  },
+    }
 );
+
+  // Ensure 2dsphere index for geo queries
+  userSchema.index({ location: '2dsphere' });
 
 const userModal = mongoose.model("User", userSchema);
 module.exports = userModal;

@@ -107,21 +107,6 @@ function LinkRow({ label, url }) {
     );
 }
 
-function renderCard(item) {
-    switch (item.type) {
-        case "image":
-            return <ImageCard key={item.id} likes={item.likes} comments={item.comments} />;
-        case "quote":
-            return <QuoteCard key={item.id} quote={item.quote} author={item.author} />;
-        case "article":
-            return <ArticleCard key={item.id} title={item.title} body={item.body} author={item.author} />;
-        case "text":
-            return <TextCard key={item.id} title={item.title} body={item.body} />;
-        default:
-            return null;
-    }
-}
-
 // ---------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------
@@ -130,7 +115,7 @@ export default function SocialProfileSection() {
     const [activeTab, setActiveTab] = useState("Your Posts");
     const { userId } = useParams();
     const storedUser = getStoredUser();
-    const isOwnProfile = !userId || userId === storedUser?.id;
+    const   isOwnProfile = !userId || userId === storedUser?.id;
     const [currentUser, setCurrentUser] = useState(isOwnProfile ? storedUser : null);
     console.log('currentUser', currentUser)
     const [isEditingUsername, setIsEditingUsername] = useState(false);
@@ -561,18 +546,6 @@ export default function SocialProfileSection() {
                         </div>
                     </div>
 
-                    {/* ---------------- Edit Profile Message Buttons ---------------- */}
-                    {/* <div className="flex shrink-0 items-center gap-3 pt-2">
-                        <button className="rounded-xl border border-white/10 bg-neutral-700/70 px-6 py-3 text-sm font-semibold text-white transition hover:bg-neutral-600/70">
-                            Edit Profile
-                        </button>
-                        <button className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-neutral-800/70 transition hover:bg-neutral-700/70">
-                            <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
-                                <path d="M12 3C6.5 3 2 6.9 2 11.8c0 2.7 1.4 5.1 3.6 6.7L5 22l3.9-2.1c1 .3 2 .4 3.1.4 5.5 0 10-3.9 10-8.7S17.5 3 12 3z" />
-                            </svg>
-                        </button>
-                    </div> */}
-
                 </div>
 
                 {/* ---------------- Tabs ---------------- */}
@@ -601,8 +574,6 @@ export default function SocialProfileSection() {
 
                 {/* ---------------- Content grid ---------------- */}
                 <div ref={contentRef} className="mt-8 sm:mt-10">
-                    {/* <h2 className="text-2xl font-bold mb-6 text-center">Your Posts</h2> */}
-
                     {postsLoading ? (
                         <div className="text-center text-gray-400 text-sm sm:text-base">Loading posts...</div>
                     ) : userPosts.length === 0 ? (

@@ -19,23 +19,6 @@ const clients = new Map();
 
     app.set('trust proxy', 1);
 
-    // console.log('=== BOOT CONFIG ===');
-    // console.log('NODE_ENV:', process.env.NODE_ENV);
-    // console.log('PORT:', PORT);
-    // console.log('BACKEND_URL:', process.env.BACKEND_URL);
-    // console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
-    // console.log('GOOGLE_CLIENT_ID prefix:', process.env.GOOGLE_CLIENT_ID?.slice(0, 20));
-    // console.log('Google callback URL:', `${process.env.BACKEND_URL}/api/auth/google/callback`);
-    // console.log('===================');
-
-    // console.log('✅ Default badges ensured');
-
-
-    // console.log('[DRIVE] GOOGLE_CLIENT_ID set:', !!process.env.GOOGLE_CLIENT_ID);
-    // console.log('[DRIVE] GOOGLE_CLIENT_SECRET set:', !!process.env.GOOGLE_CLIENT_SECRET);
-    // console.log('[DRIVE] GOOGLE_REFRESH_TOKEN set:', !!process.env.GOOGLE_REFRESH_TOKEN);
-    // console.log('[DRIVE] GOOGLE_DRIVE_FOLDER_ID:', process.env.GOOGLE_DRIVE_FOLDER_ID || '(none)');
-
     await reconcileUserLeagues();
     startMonthlyRewardJob();
     startWeeklyChallengeReminder();
@@ -77,8 +60,6 @@ const clients = new Map();
               delivered: false
             });
 
-            // console.log('💾 Saved message:', saved.senderId, typeof saved.senderId);
-
             const payload = JSON.stringify({
               type: 'chat-message',
               message: { id, senderId, recipientId, text, time }
@@ -110,7 +91,7 @@ const clients = new Map();
       });
     });
 
-    server.listen(PORT, () => {
+    server.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server running with WebSockets + MongoDB on port ${PORT}`);
     });
   } catch (err) {
