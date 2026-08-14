@@ -11,7 +11,8 @@ const {
   commentReply,
   likeComment,
   getPostImage,
-  getPostVideo
+  getPostVideo,
+  discoverNearbyPeople
 } = require('../controllers/community.controller');
 const { protect } = require('../middlewares/auth.middleware');
 const { postMediaUpload } = require('../middlewares/upload.middleware');
@@ -53,5 +54,8 @@ router.post('/posts/:postId/:commentId/commentReplies', protect, commentReply);
 
 // Delete a comment
 router.delete('/posts/:postId/comments/:commentId', protect, deleteComment);
+
+// Discover people nearby
+router.post('/discover/nearby', protect, discoverNearbyPeople);
 
 module.exports = router;

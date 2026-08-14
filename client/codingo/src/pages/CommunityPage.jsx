@@ -617,6 +617,7 @@ export default function CommunityPage() {
   const hasMore = useSelector((state) => state.feed.hasMore);
   const isLoading = useSelector((state) => state.feed.isLoading);
   const error = useSelector((state) => state.feed.error);
+  console.log('localstorage:', localStorage)
 
   const observerRef = useRef(null);
   const loadingRef = useRef(null);

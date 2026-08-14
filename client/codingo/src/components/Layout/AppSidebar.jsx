@@ -10,6 +10,7 @@ import {
   FaMedal,
   FaPlus,
   FaRegStar,
+  FaSearch,
   FaSignOutAlt,
   FaTimes,
   FaTrophy,
@@ -29,6 +30,7 @@ const communityNavItems = [
   { key: 'friends', label: 'Friends', icon: FaUserFriends, to: '/friends', match: ['/friends'] },
   { key: 'messages', label: 'Messages', icon: FaFacebookMessenger, to: '/messages', match: ['/messages'] },
   { key: 'socialprofile', label: 'Social Profile', icon: FaUser, to: '/socialprofile', match: ['/socialprofile'] },
+  { key: 'discover', label: 'Discover', icon: FaSearch, to: '/discover', match: ['/discover'] },
 ];
 
 const lmsNavItems = [

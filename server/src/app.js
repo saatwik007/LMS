@@ -15,21 +15,11 @@ const capsuleRoutes = require('./routes/capsule.routes')
 
 const app = express();
 
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:3000',
-  process.env.FRONTEND_URL,
-].filter(Boolean);
-
 app.use(cookieParser());
 app.use(express.json());
 app.use(
   cors({
-    origin(origin, callback) {
-      if (!origin) return callback(null, true); // Postman/curl
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      return callback(new Error(`CORS blocked for origin: ${origin}`));
-    },
+    origin: true,
     credentials: true,
   })
 );
@@ -53,5 +43,12 @@ app.use('/api/social', socialRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/otp', otpRoutes);
 app.use('/api/capsule', capsuleRoutes)
+
+// // add this log
+// console.log('Loading community routes...');
+// const communityRoutes = require('./routes/community.routes');
+// console.log('Community routes loaded:', typeof communityRoutes);
+
+// app.use('/api/community', communityRoutes);
 
 module.exports = app;
