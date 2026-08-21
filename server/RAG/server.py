@@ -14,6 +14,9 @@ import io
 from fastapi import HTTPException
 from fastapi import UploadFile
 from rag_search import run_platform_search, collection
+from dotenv import load_dotenv
+
+load_dotenv()  # Load environment variables from .env file
 
 app = FastAPI()
 groq_client = Groq(
