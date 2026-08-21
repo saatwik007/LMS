@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
   FaBars,
+  FaBook,
+  FaBrain,
   FaChartLine,
   FaEllipsisH,
   FaFacebookMessenger,
@@ -27,10 +29,12 @@ import { setCurrentUser } from '../../redux/slices/dashboardSlice';
 
 const communityNavItems = [
   { key: 'home', label: 'Home', icon: FaHome, to: '/community', match: ['/community'] },
-  { key: 'friends', label: 'Friends', icon: FaUserFriends, to: '/friends', match: ['/friends'] },
   { key: 'messages', label: 'Messages', icon: FaFacebookMessenger, to: '/messages', match: ['/messages'] },
-  { key: 'socialprofile', label: 'Social Profile', icon: FaUser, to: '/socialprofile', match: ['/socialprofile'] },
+  { key: 'askIgris', label: 'Ask Igris', icon: FaBrain, to: '/askIgris', match: ['/askIgris'] },
+  { key: 'rememberIgris', label: 'Remember Igris', icon: FaBook, to: '/rememberIgris', match: ['/rememberIgris'] },
+  { key: 'friends', label: 'Friends', icon: FaUserFriends, to: '/friends', match: ['/friends'] },
   { key: 'discover', label: 'Discover', icon: FaSearch, to: '/discover', match: ['/discover'] },
+  { key: 'socialprofile', label: 'Social Profile', icon: FaUser, to: '/socialprofile', match: ['/socialprofile'] },
 ];
 
 const lmsNavItems = [

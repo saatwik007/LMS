@@ -29,6 +29,8 @@ import Comments from './pages/CommentsModal.jsx';
 import SocialProfileSection from './pages/SocialProfilePage.jsx';
 import GlassFeed from './pages/LandinPageExperimental.jsx';
 import DiscoverPage from './pages/discoverPage.jsx';
+import AskIgris from './pages/askIgris.jsx';
+import RememberIgris from './pages/rememberIgris.jsx';
 
 function ProtectedRoute({ children }) {
   const [isChecking, setIsChecking] = useState(true);
@@ -226,6 +228,22 @@ function AppShell() {
               element={(
                 <ProtectedRoute>
                   <DiscoverPage />
+                </ProtectedRoute>
+              )}
+            />
+            <Route
+              path="/askIgris"
+              element={(
+                <ProtectedRoute>
+                  <AskIgris />
+                </ProtectedRoute>
+              )}
+            />
+            <Route
+              path="/rememberIgris"
+              element={(
+                <ProtectedRoute>
+                  <RememberIgris />
                 </ProtectedRoute>
               )}
             />
