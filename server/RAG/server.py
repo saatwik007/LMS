@@ -17,7 +17,7 @@ from rag_search import run_platform_search, collection
 
 app = FastAPI()
 groq_client = Groq(
-    api_key='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'
+    api_key=os.getenv("GROQ_API_KEY")
 )
 
 app.add_middleware(
