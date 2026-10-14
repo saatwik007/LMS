@@ -220,6 +220,7 @@ async function getFeed(req, res) {
 
     return res.status(200).json({
       posts: formattedPosts,
+      hasSavedProfileGridLayout: savedLayout.size > 0,
       pagination: {
         page,
         limit,
@@ -618,15 +619,24 @@ async function getUserPosts(req, res) {
     const total = await Post.countDocuments(filter);
     const totalPages = Math.ceil(total / limit);
 
-    const posts = await Post.find(filter)
+    const [posts, profileOwner] = await Promise.all([
+      Post.find(filter)
       .populate('author', 'username profilePic league level totalXp')
       .populate('comments.author', 'username profilePic')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .lean();
+      .lean(),
+      User.findById(userId).select('profileGridLayout').lean()
+    ]);
 
     const currentUserId = String(req.user.id);
+    const savedLayout = new Map(
+      (profileOwner?.profileGridLayout || []).map((item, index) => [
+        String(item.post),
+        { index, gridSize: item.gridSize }
+      ])
+    );
 
     const formattedPosts = posts.map(post => ({
       id: String(post._id),
@@ -654,9 +664,14 @@ async function getUserPosts(req, res) {
       likesCount: post.likes.length,
       commentsCount: post.comments.length,
       isLikedByCurrentUser: post.likes.some(id => String(id) === currentUserId),
+      gridSize: savedLayout.get(String(post._id))?.gridSize || '1x1',
       createdAt: post.createdAt,
       updatedAt: post.updatedAt
-    }));
+    })).sort((left, right) => {
+      const leftIndex = savedLayout.get(left.id)?.index ?? Number.MAX_SAFE_INTEGER;
+      const rightIndex = savedLayout.get(right.id)?.index ?? Number.MAX_SAFE_INTEGER;
+      return leftIndex - rightIndex;
+    });
 
     return res.status(200).json({
       posts: formattedPosts,
@@ -673,6 +688,49 @@ async function getUserPosts(req, res) {
     return res.status(500).json({ message: error.message });
   }
 };
+
+async function updateProfileGridLayout(req, res) {
+  try {
+    const userId = String(req.params.userId);
+    if (userId !== String(req.user.id)) {
+      return res.status(403).json({ message: 'You can only update your own profile grid' });
+    }
+
+    const { layout } = req.body;
+    const validGridSizes = new Set(['1x1', '2x1', '3x1', '1x2', '2x2', '3x2', '1x3', '2x3', '3x3']);
+    if (!Array.isArray(layout) || layout.length > 100 || layout.some(item => (
+      !item || typeof item.postId !== 'string' || !validGridSizes.has(item.gridSize)
+    ))) {
+      return res.status(400).json({ message: 'Invalid profile grid layout' });
+    }
+
+    const postIds = layout.map(item => item.postId);
+    if (new Set(postIds).size !== postIds.length) {
+      return res.status(400).json({ message: 'Profile grid layout contains duplicate posts' });
+    }
+
+    const ownedPosts = await Post.find({
+      _id: { $in: postIds },
+      author: userId,
+      isActive: true
+    }).select('_id').lean();
+    const ownedPostIds = new Set(ownedPosts.map(post => String(post._id)));
+    if (ownedPostIds.size !== postIds.length) {
+      return res.status(400).json({ message: 'Profile grid contains an invalid post' });
+    }
+
+    const profileGridLayout = layout.map(item => ({
+      post: item.postId,
+      gridSize: item.gridSize
+    }));
+    await User.findByIdAndUpdate(userId, { $set: { profileGridLayout } }, { runValidators: true });
+
+    return res.status(200).json({ layout });
+  } catch (error) {
+    console.error('Update profile grid layout error:', error);
+    return res.status(500).json({ message: error.message });
+  }
+}
 
 const discoverNearbyPeople = async (req, res) => {
   try {
@@ -732,6 +790,7 @@ module.exports = {
   deletePost,
   deleteComment,
   getUserPosts,
+  updateProfileGridLayout,
   commentReply,
   likeComment,
   getPostVideo,

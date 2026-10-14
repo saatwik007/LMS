@@ -8,6 +8,7 @@ const {
   deletePost,
   deleteComment,
   getUserPosts,
+  updateProfileGridLayout,
   commentReply,
   likeComment,
   getPostImage,
@@ -39,6 +40,9 @@ router.delete('/posts/:postId', protect, deletePost);
 
 // Get user's posts
 router.get('/users/:userId/posts', protect, getUserPosts);
+
+// Save the authenticated user's profile grid order and tile sizes
+router.put('/users/:userId/profile-grid', protect, updateProfileGridLayout);
 
 // Like/Unlike a post
 router.post('/posts/:postId/like', protect, toggleLike);

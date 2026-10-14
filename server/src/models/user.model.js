@@ -33,6 +33,18 @@ const rewardSchema = new mongoose.Schema(
   { _id: true },
 );
 
+const profileGridItemSchema = new mongoose.Schema(
+  {
+    post: { type: mongoose.Schema.Types.ObjectId, ref: "Post", required: true },
+    gridSize: {
+      type: String,
+      enum: ["1x1", "2x1", "3x1", "1x2", "2x2", "3x2", "1x3", "2x3", "3x3"],
+      default: "1x1",
+    },
+  },
+  { _id: false },
+);
+
 const userSchema = new mongoose.Schema(
   {
     username: { type: String, required: true, unique: true, minlength: 3 },
@@ -69,6 +81,7 @@ const userSchema = new mongoose.Schema(
       type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Post" }],
       default: [],
     },
+    profileGridLayout: { type: [profileGridItemSchema], default: [] },
     rewards: { type: [rewardSchema], default: [] },
     resetToken: { type: String, default: null, index: true },
     resetTokenExpiry: { type: Date, default: null },

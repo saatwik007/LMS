@@ -207,7 +207,15 @@ export default function SocialProfileSection() {
                     }
                 );
                 console.log('res', res);
-                setUserPosts(getOrderedPosts(res.data.posts || [], id));
+                const hasSavedLayout = res.data.hasSavedProfileGridLayout === true;
+                const posts = getOrderedPosts(res.data.posts || [], id, !hasSavedLayout);
+                setUserPosts(posts);
+
+                const hasLocalLayout = localStorage.getItem(`profile-grid-order:${id}`)
+                    || localStorage.getItem(`profile-grid-sizes:${id}`);
+                if (isOwnProfile && !hasSavedLayout && hasLocalLayout) {
+                    persistProfileGrid(id, posts);
+                }
             } catch (err) {
                 console.error('Failed to fetch user posts:', err);
                 setError('Failed to load user posts.');
@@ -452,6 +460,7 @@ export default function SocialProfileSection() {
                     `profile-grid-order:${profileId}`,
                     JSON.stringify(reorderedPosts.map((post) => post.id))
                 );
+                persistProfileGrid(profileId, reorderedPosts);
             }
             return reorderedPosts;
         });
@@ -472,9 +481,27 @@ export default function SocialProfileSection() {
                         resizedPosts.map((post) => [post.id, post.gridSize || "1x1"])
                     ))
                 );
+                persistProfileGrid(profileId, resizedPosts);
             }
             return resizedPosts;
         });
+    };
+
+    const persistProfileGrid = async (profileId, posts) => {
+        try {
+            await axios.put(
+                `${apiUrl}/api/community/users/${profileId}/profile-grid`,
+                {
+                    layout: posts.map((post) => ({
+                        postId: post.id,
+                        gridSize: post.gridSize || "1x1",
+                    })),
+                },
+                { withCredentials: true, headers: getAuthHeaders() }
+            );
+        } catch (err) {
+            console.error("Failed to save profile grid:", err);
+        }
     };
 
     const items = DATA_BY_TAB[activeTab];
@@ -871,15 +898,22 @@ function SortablePostTile({ post, imageUrl, canReorder, onResize, onOpen }) {
     );
 }
 
-function getOrderedPosts(posts, profileId) {
-    if (!profileId) return posts;
+function getOrderedPosts(posts, profileId, useLocalLayout) {
+    const normalizedPosts = posts.map((post) => ({
+        ...post,
+        gridSize: POST_SIZE_CLASSES[post.gridSize] ? post.gridSize : "1x1",
+    }));
+    if (!profileId || !useLocalLayout) return normalizedPosts;
 
     try {
         const savedOrder = JSON.parse(localStorage.getItem(`profile-grid-order:${profileId}`) || "[]");
         const savedSizes = JSON.parse(localStorage.getItem(`profile-grid-sizes:${profileId}`) || "{}");
-        const postsById = new Map(posts.map((post) => [
+        const postsById = new Map(normalizedPosts.map((post) => [
             post.id,
-            { ...post, gridSize: POST_SIZE_CLASSES[savedSizes[post.id]] ? savedSizes[post.id] : "1x1" },
+            {
+                ...post,
+                gridSize: POST_SIZE_CLASSES[savedSizes[post.id]] ? savedSizes[post.id] : post.gridSize,
+            },
         ]));
         const orderedPosts = savedOrder.map((id) => postsById.get(id)).filter(Boolean);
         const savedIds = new Set(savedOrder);
@@ -889,6 +923,6 @@ function getOrderedPosts(posts, profileId) {
             ...Array.from(postsById.values()).filter((post) => !savedIds.has(post.id)),
         ];
     } catch {
-        return posts.map((post) => ({ ...post, gridSize: "1x1" }));
+        return normalizedPosts;
     }
 }
