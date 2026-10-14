@@ -6,10 +6,39 @@ import { apiUrl } from "../utilites/DashboardHelper";
 import { getAuthHeaders } from "../utilites/communityHelper";
 import { useParams } from "react-router-dom";
 import axios from "axios";
-import { FaCamera, FaEdit, FaHeart, FaSave, FaTimes } from "react-icons/fa";
+import { FaCamera, FaComment, FaExpandAlt, FaGripVertical, FaHeart, FaSave, FaTimes } from "react-icons/fa";
+import {
+    closestCenter,
+    DndContext,
+    KeyboardSensor,
+    MouseSensor,
+    TouchSensor,
+    useSensor,
+    useSensors,
+} from "@dnd-kit/core";
+import {
+    arrayMove,
+    rectSortingStrategy,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import PostPreview from "../components/SocialProfile/postPreview";
 
 const TABS = ["Your Posts"];
+
+const POST_SIZE_CLASSES = {
+    "1x1": "col-span-1 row-span-1",
+    "2x1": "col-span-2 row-span-1",
+    "3x1": "col-span-3 row-span-1",
+    "1x2": "col-span-1 row-span-2",
+    "2x2": "col-span-2 row-span-2",
+    "3x2": "col-span-3 row-span-2",
+    "1x3": "col-span-1 row-span-3",
+    "2x3": "col-span-2 row-span-3",
+    "3x3": "col-span-3 row-span-3",
+};
 
 // ---------------------------------------------------------------
 // Sample data — swap these out for real API data later.
@@ -138,7 +167,29 @@ export default function SocialProfileSection() {
     const infoRef = useRef(null);
     const tabsRef = useRef(null);
     const contentRef = useRef(null);
+    const gridRef = useRef(null);
     const firstRender = useRef(true);
+    const [gridCellSize, setGridCellSize] = useState(0);
+    const sensors = useSensors(
+        useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+        useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } }),
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    );
+
+    useEffect(() => {
+        const grid = gridRef.current;
+        if (!grid) return;
+
+        const updateCellSize = () => {
+            const columnGap = parseFloat(getComputedStyle(grid).columnGap) || 0;
+            setGridCellSize((grid.clientWidth - (columnGap * 2)) / 3);
+        };
+        const resizeObserver = new ResizeObserver(updateCellSize);
+
+        updateCellSize();
+        resizeObserver.observe(grid);
+        return () => resizeObserver.disconnect();
+    }, [postsLoading]);
 
     useEffect(() => {
         const fetchUserPosts = async () => {
@@ -156,7 +207,7 @@ export default function SocialProfileSection() {
                     }
                 );
                 console.log('res', res);
-                setUserPosts(res.data.posts || []);
+                setUserPosts(getOrderedPosts(res.data.posts || [], id));
             } catch (err) {
                 console.error('Failed to fetch user posts:', err);
                 setError('Failed to load user posts.');
@@ -386,6 +437,46 @@ export default function SocialProfileSection() {
         });
     };
 
+    const handleDragEnd = ({ active, over }) => {
+        if (!isOwnProfile || !over || active.id === over.id) return;
+
+        setUserPosts((posts) => {
+            const oldIndex = posts.findIndex((post) => post.id === active.id);
+            const newIndex = posts.findIndex((post) => post.id === over.id);
+            if (oldIndex === -1 || newIndex === -1) return posts;
+
+            const reorderedPosts = arrayMove(posts, oldIndex, newIndex);
+            const profileId = userId || storedUser?.id;
+            if (profileId) {
+                localStorage.setItem(
+                    `profile-grid-order:${profileId}`,
+                    JSON.stringify(reorderedPosts.map((post) => post.id))
+                );
+            }
+            return reorderedPosts;
+        });
+    };
+
+    const handlePostResize = (postId, gridSize) => {
+        if (!isOwnProfile || !POST_SIZE_CLASSES[gridSize]) return;
+
+        setUserPosts((posts) => {
+            const resizedPosts = posts.map((post) => (
+                post.id === postId ? { ...post, gridSize } : post
+            ));
+            const profileId = userId || storedUser?.id;
+            if (profileId) {
+                localStorage.setItem(
+                    `profile-grid-sizes:${profileId}`,
+                    JSON.stringify(Object.fromEntries(
+                        resizedPosts.map((post) => [post.id, post.gridSize || "1x1"])
+                    ))
+                );
+            }
+            return resizedPosts;
+        });
+    };
+
     const items = DATA_BY_TAB[activeTab];
     const isLinks = activeTab === "Links";
 
@@ -587,53 +678,217 @@ export default function SocialProfileSection() {
                     ) : userPosts.length === 0 ? (
                         <div className="text-center text-gray-400 text-sm sm:text-base">No posts yet.</div>
                     ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6 max-w-6xl mx-auto">
-                            {userPosts.map((post, postIndex) => {
-                                const imageUrl = getDisplayImageUrl(post.image);
-                                const videoUrl = post.video?.startsWith('/') ? `${apiUrl}${post.video}` : post.video;
-
-                                return (
-                                    <div
-                                        key={post.id}
-                                        onClick={() => showPostModal(postIndex)}
-                                        role="button"
-                                        tabIndex={0}
-                                        onKeyDown={(event) => {
-                                            if (event.key === 'Enter' || event.key === ' ') showPostModal(postIndex);
-                                        }}
-                                        className="rounded-lg sm:rounded-2xl border border-white/10 bg-[#2B2B2B] p-3 sm:p-4 transition-transform duration-300 hover:scale-105 hover:shadow-lg"
-                                    >
-                                        <div className="mb-3 text-xs sm:text-sm text-gray-400">
-                                            {new Date(post.createdAt).toLocaleDateString()}
-                                        </div>
-                                        <div className="text-white text-sm sm:text-base mb-3 line-clamp-3">{post.content}</div>
-                                        {post.image && (
-                                            <div className="overflow-hidden rounded-lg sm:rounded-xl aspect-square mb-3">
-                                                <img src={imageUrl} alt="" className="w-full h-full object-cover" />
-                                            </div>
-                                        )}
-                                        {post.video && (
-                                            <div className="overflow-hidden rounded-lg sm:rounded-xl aspect-square mb-3">
-                                                <video src={videoUrl} muted playsInline preload="metadata" className="w-full h-full object-cover" />
-                                            </div>
-                                        )}
-                                        <div className="flex items-center justify-between text-xs sm:text-sm text-gray-400 flex-wrap gap-2">
-                                            <div className="flex items-center gap-1">
-                                                <span className="flex items-center justify-center"><FaHeart size={12} className="sm:w-4 sm:h-4" /></span>
-                                                <span>{post.likesCount} likes</span>
-                                            </div>
-                                            <span>{post.commentsCount} comments</span>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                        )}
-                        {showPostPreview && (
-                            <PostPreview posts={userPosts} initialIndex={selectedPostIndex} isOpen={showPostPreview} onClose={() => setShowPostPreview(false)} />
-                        )}
+                        <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={handleDragEnd}
+                        >
+                            <SortableContext
+                                items={userPosts.map((post) => post.id)}
+                                strategy={rectSortingStrategy}
+                            >
+                                <div
+                                    ref={gridRef}
+                                    className="mx-auto grid max-w-6xl grid-cols-3 grid-flow-dense gap-1"
+                                    style={{
+                                        gridAutoRows: gridCellSize ? `${gridCellSize}px` : "auto",
+                                    }}
+                                >
+                                    {userPosts.map((post, postIndex) => (
+                                        <SortablePostTile
+                                            key={post.id}
+                                            post={post}
+                                            imageUrl={getDisplayImageUrl(post.image)}
+                                            canReorder={isOwnProfile}
+                                            onResize={handlePostResize}
+                                            onOpen={() => showPostModal(postIndex)}
+                                        />
+                                    ))}
+                                </div>
+                            </SortableContext>
+                        </DndContext>
+                    )}
                 </div>
             </div>
+
+            <PostPreview
+                posts={userPosts}
+                initialIndex={selectedPostIndex}
+                isOpen={showPostPreview}
+                onClose={() => setShowPostPreview(false)}
+            />
         </div>
     );
+}
+
+function SortablePostTile({ post, imageUrl, canReorder, onResize, onOpen }) {
+    const [previewSize, setPreviewSize] = useState(null);
+    const resizeStateRef = useRef(null);
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id: post.id, disabled: !canReorder });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 20 : undefined,
+    };
+    const activeGridSize = previewSize || post.gridSize || "1x1";
+
+    const handleResizeStart = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const grid = event.currentTarget.closest("article")?.parentElement;
+        if (!grid) return;
+
+        const [columns, rows] = activeGridSize.split("x").map(Number);
+        const gridStyles = getComputedStyle(grid);
+        const columnGap = parseFloat(gridStyles.columnGap) || 0;
+        const rowGap = parseFloat(gridStyles.rowGap) || 0;
+        const cellSize = (grid.clientWidth - (columnGap * 2)) / 3;
+
+        resizeStateRef.current = {
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startY: event.clientY,
+            startWidth: (columns * cellSize) + ((columns - 1) * columnGap),
+            startHeight: (rows * cellSize) + ((rows - 1) * rowGap),
+            columnStep: cellSize + columnGap,
+            rowStep: cellSize + rowGap,
+            currentSize: activeGridSize,
+        };
+        event.currentTarget.setPointerCapture(event.pointerId);
+    };
+
+    const handleResizeMove = (event) => {
+        const resizeState = resizeStateRef.current;
+        if (!resizeState || resizeState.pointerId !== event.pointerId) return;
+
+        const columns = Math.max(1, Math.min(3, Math.round(
+            (resizeState.startWidth + event.clientX - resizeState.startX) / resizeState.columnStep
+        )));
+        const rows = Math.max(1, Math.min(3, Math.round(
+            (resizeState.startHeight + event.clientY - resizeState.startY) / resizeState.rowStep
+        )));
+        const nextSize = `${columns}x${rows}`;
+
+        if (nextSize !== resizeState.currentSize) {
+            resizeState.currentSize = nextSize;
+            setPreviewSize(nextSize);
+        }
+    };
+
+    const handleResizeEnd = (event) => {
+        const resizeState = resizeStateRef.current;
+        if (!resizeState || resizeState.pointerId !== event.pointerId) return;
+
+        event.stopPropagation();
+        onResize(post.id, resizeState.currentSize);
+        resizeStateRef.current = null;
+        setPreviewSize(null);
+    };
+
+    const handleResizeCancel = () => {
+        resizeStateRef.current = null;
+        setPreviewSize(null);
+    };
+
+    return (
+        <article
+            ref={setNodeRef}
+            style={style}
+            className={`group relative min-h-0 min-w-0 overflow-hidden bg-[#202020] outline-none ring-white/80 focus-visible:ring-2 ${POST_SIZE_CLASSES[activeGridSize]} ${isDragging ? "scale-[1.03] opacity-80 shadow-2xl" : ""}`}
+            onClick={onOpen}
+        >
+            {post.image ? (
+                <img
+                    src={imageUrl}
+                    alt={post.content || "Profile post"}
+                    className="h-full w-full select-none object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                    draggable="false"
+                />
+            ) : (
+                <div className="flex h-full w-full items-center justify-center p-4 text-center text-xs font-medium text-neutral-200 sm:p-6 sm:text-sm">
+                    <span className="line-clamp-6">{post.content}</span>
+                </div>
+            )}
+
+            <div className="absolute inset-0 bg-black/0 transition-colors duration-200 group-hover:bg-black/55 group-focus-visible:bg-black/55" />
+
+            {canReorder && (
+                <>
+                    <button
+                        type="button"
+                        onPointerDown={handleResizeStart}
+                        onPointerMove={handleResizeMove}
+                        onPointerUp={handleResizeEnd}
+                        onPointerCancel={handleResizeCancel}
+                        onMouseDown={(event) => event.stopPropagation()}
+                        onTouchStart={(event) => event.stopPropagation()}
+                        onKeyDown={(event) => event.stopPropagation()}
+                        onClick={(event) => event.stopPropagation()}
+                        aria-label="Resize post"
+                        title="Drag to resize"
+                        className="absolute bottom-0 right-0 z-20 flex h-10 w-10 touch-none cursor-nwse-resize items-end justify-end bg-linear-to-tl from-black/80 to-transparent p-2 text-white opacity-100 outline-none transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+                    >
+                        <FaExpandAlt className="rotate-90" />
+                    </button>
+                    <button
+                        type="button"
+                        className="absolute right-2 top-2 z-20 flex h-7 w-7 touch-none cursor-grab items-center justify-center bg-black/65 text-white opacity-0 transition-opacity active:cursor-grabbing group-hover:opacity-100 focus-visible:opacity-100"
+                        title="Drag to reorder"
+                        aria-label="Drag to reorder post"
+                        onClick={(event) => event.stopPropagation()}
+                        {...attributes}
+                        {...listeners}
+                    >
+                        <FaGripVertical />
+                    </button>
+                </>
+            )}
+
+            {previewSize && (
+                <span className="pointer-events-none absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 bg-black/75 px-2 py-1 text-xs font-semibold text-white">
+                    {previewSize.replace("x", " x ")}
+                </span>
+            )}
+
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 flex translate-y-2 items-center justify-center gap-4 bg-gradient-to-t from-black/90 via-black/45 to-transparent px-2 pb-3 pt-10 text-xs font-semibold text-white opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100 sm:text-sm">
+                <span className="flex items-center gap-1.5">
+                    <FaHeart /> {post.likesCount || 0}
+                </span>
+                <span className="flex items-center gap-1.5">
+                    <FaComment /> {post.commentsCount || 0}
+                </span>
+            </div>
+        </article>
+    );
+}
+
+function getOrderedPosts(posts, profileId) {
+    if (!profileId) return posts;
+
+    try {
+        const savedOrder = JSON.parse(localStorage.getItem(`profile-grid-order:${profileId}`) || "[]");
+        const savedSizes = JSON.parse(localStorage.getItem(`profile-grid-sizes:${profileId}`) || "{}");
+        const postsById = new Map(posts.map((post) => [
+            post.id,
+            { ...post, gridSize: POST_SIZE_CLASSES[savedSizes[post.id]] ? savedSizes[post.id] : "1x1" },
+        ]));
+        const orderedPosts = savedOrder.map((id) => postsById.get(id)).filter(Boolean);
+        const savedIds = new Set(savedOrder);
+
+        return [
+            ...orderedPosts,
+            ...Array.from(postsById.values()).filter((post) => !savedIds.has(post.id)),
+        ];
+    } catch {
+        return posts.map((post) => ({ ...post, gridSize: "1x1" }));
+    }
 }
