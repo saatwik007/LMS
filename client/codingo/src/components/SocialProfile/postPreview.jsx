@@ -46,6 +46,11 @@ const getDisplayName = (value) => {
     return "?";
 };
 
+const getMediaUrl = (value, apiUrl) => {
+    if (!value || typeof value !== "string") return "";
+    return value.startsWith("/") ? `${apiUrl}${value}` : value;
+};
+
 const AvatarInitial = ({ name = "?", size = 36 }) => {
     const displayName = getDisplayName(name);
 
@@ -150,8 +155,9 @@ export default function PostPreview({ posts, initialIndex = 0, isOpen, onClose }
     const videoRef = useRef(null);
 
     const post = previewPosts[index];
-    const imageUrl = post?.image?.startsWith('/') ? `${apiUrl}${post.image}` : post?.image;
-    const videoUrl = post?.video?.startsWith('/') ? `${apiUrl}${post.video}` : post?.video;
+    const imageUrl = getMediaUrl(post?.image || post?.mediaUrl, apiUrl);
+    const videoUrl = getMediaUrl(post?.video, apiUrl);
+    const authorAvatarUrl = getMediaUrl(post?.author?.profilePic, apiUrl);
     const hasImage = !!imageUrl;
     const hasVideo = !!videoUrl;
     const hasMedia = hasImage || hasVideo;
@@ -329,9 +335,9 @@ export default function PostPreview({ posts, initialIndex = 0, isOpen, onClose }
                     <div ref={slideRef} className="flex min-h-full flex-col">
                         {/* header */}
                         <div className="flex shrink-0 items-center gap-3 px-5 pb-3 pt-14 sm:pt-5">
-                            {post.author.profilePic ? (
+                            {authorAvatarUrl ? (
                                 <img
-                                    src={post.author.profilePic}
+                                    src={authorAvatarUrl}
                                     alt=""
                                     className="h-9 w-9 rounded-full object-cover ring-2 ring-white/50"
                                 />
@@ -432,38 +438,81 @@ export default function PostPreview({ posts, initialIndex = 0, isOpen, onClose }
                 {/* ---------------- separator (desktop only) ---------------- */}
                 <div className="my-6 hidden w-px bg-white/15 lg:block" />
 
-                {/* ---------------- comments column (desktop only) ---------------- */}
-                <div className="flex px-5 items-center gap-5">
-                    <button
-                        type="button"
-                        aria-label="Like"
-                        className="flex items-center gap-1.5 rounded-full text-white/90 transition-colors hover:text-white"
-                    >
-                        <FaHeart size={20} />
-                        <span className="text-[12.5px]" style={{ fontFamily: "'DM Mono', monospace" }}>
-                            {(post.likesCount ?? post.likes?.length ?? 0).toLocaleString()}
-                        </span>
-                    </button>
+                {/* ---------------- comments column ---------------- */}
+                <aside className="flex min-h-0 w-full flex-1 flex-col border-t border-white/15 lg:h-full lg:w-[38%] lg:border-l lg:border-t-0">
+                    <div className="shrink-0 border-b border-white/15 px-5 py-4">
+                        <h3 className="text-sm font-semibold text-white">Comments</h3>
+                        <p className="mt-0.5 text-xs text-white/60">
+                            {post.commentsCount ?? post.comments?.length ?? 0} total
+                        </p>
+                    </div>
 
-                    <button
-                        type="button"
-                        aria-label="Comments"
-                        className="flex items-center gap-1.5 rounded-full text-white/90 transition-colors hover:text-white lg:hidden"
-                    >
-                        <FiMessageCircle size={20} />
-                        <span className="text-[12.5px]" style={{ fontFamily: "'DM Mono', monospace" }}>
-                            {post.commentsCount ?? post.comments?.length ?? 0}
-                        </span>
-                    </button>
+                    <div className="preview-comments min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
+                        {post.comments?.length ? (
+                            post.comments.map((comment) => {
+                                const commentAvatarUrl = getMediaUrl(comment.author?.profilePic, apiUrl);
+                                const commentAuthor = getDisplayName(comment.author);
 
-                    <button
-                        type="button"
-                        aria-label="Share"
-                        className="ml-auto text-white/80 transition-colors hover:text-white"
-                    >
-                        <FiSend size={20} />
-                    </button>
-                </div>
+                                return (
+                                    <div key={comment.id || comment._id} className="flex items-start gap-3">
+                                        {commentAvatarUrl ? (
+                                            <img
+                                                src={commentAvatarUrl}
+                                                alt=""
+                                                className="h-8 w-8 shrink-0 rounded-full object-cover"
+                                            />
+                                        ) : (
+                                            <AvatarInitial name={commentAuthor} size={32} />
+                                        )}
+                                        <div className="min-w-0">
+                                            <p className="text-xs font-semibold text-white">{commentAuthor}</p>
+                                            <p className="mt-1 break-words text-sm leading-5 text-white/80">
+                                                {comment.content || comment.text}
+                                            </p>
+                                            {comment.createdAt && (
+                                                <p className="mt-1 text-[10px] text-white/45">
+                                                    {formatTimeAgo(comment.createdAt)} ago
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        ) : (
+                            <div className="flex h-full items-center justify-center text-center text-sm text-white/55">
+                                No comments yet.
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex shrink-0 items-center gap-5 border-t border-white/15 px-5 py-4">
+                        <button
+                            type="button"
+                            aria-label="Like"
+                            className="flex items-center gap-1.5 rounded-full text-white/90 transition-colors hover:text-white"
+                        >
+                            <FaHeart size={20} />
+                            <span className="text-[12.5px]" style={{ fontFamily: "'DM Mono', monospace" }}>
+                                {(post.likesCount ?? post.likes?.length ?? 0).toLocaleString()}
+                            </span>
+                        </button>
+
+                        <div className="flex items-center gap-1.5 text-white/90">
+                            <FiMessageCircle size={20} />
+                            <span className="text-[12.5px]" style={{ fontFamily: "'DM Mono', monospace" }}>
+                                {post.commentsCount ?? post.comments?.length ?? 0}
+                            </span>
+                        </div>
+
+                        <button
+                            type="button"
+                            aria-label="Share"
+                            className="ml-auto text-white/80 transition-colors hover:text-white"
+                        >
+                            <FiSend size={20} />
+                        </button>
+                    </div>
+                </aside>
             </div>
 
             {/* scoped scrollbar styling for the comments panel */}
