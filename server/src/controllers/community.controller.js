@@ -292,6 +292,28 @@ async function getPost(req, res) {
     if (!post || !post.isActive) {
       return res.status(404).json({ message: 'Post not found' });
     }
+
+    const authorId = String(post.author._id);
+    const [viewer, profileOwner] = await Promise.all([
+      User.findById(req.user.id).select('friends following blockedUsers').lean(),
+      User.findById(authorId).select('isPrivate blockedUsers').lean()
+    ]);
+    if (!viewer || !profileOwner) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isOwner = String(req.user.id) === authorId;
+    const viewerBlockedOwner = (viewer.blockedUsers || []).some(id => String(id) === authorId);
+    const ownerBlockedViewer = (profileOwner.blockedUsers || []).some(id => String(id) === String(req.user.id));
+    const canViewPrivatePost = (viewer.following || []).some(id => String(id) === authorId)
+      || (viewer.friends || []).some(id => String(id) === authorId);
+    if (!isOwner && (viewerBlockedOwner || ownerBlockedViewer)) {
+      return res.status(403).json({ message: 'This post is unavailable' });
+    }
+    if (!isOwner && profileOwner.isPrivate !== false && !canViewPrivatePost) {
+      return res.status(403).json({ message: 'Follow this private account to view the post' });
+    }
+
     const replies = post.comments.reduce((acc, comment) => {
       acc[String(comment._id)] = comment.replies || [];
       return acc;

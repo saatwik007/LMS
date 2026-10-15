@@ -261,13 +261,14 @@
 
 
 
-import React, { useEffect, useMemo } from "react";
-import { User, Mic, FileText, Check, CheckCheck } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { User, Mic, FileText, Check, CheckCheck, X } from "lucide-react";
 import { dateDividerLabel, dateKey, timeLabel } from "../../utilites/ChatHelper";
 import { addMessage } from "../../redux/slices/chatSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { getAuthHeaders } from "../../utilites/communityHelper";
 import axios from "axios";
+import PostPreview from "../SocialProfile/postPreview";
 
 const mediaBaseUrl = import.meta.env.VITE_API_URL || "";
 
@@ -328,24 +329,31 @@ function VoiceBubble({ msg, mine }) {
   );
 }
 
-function SharedPostBubble({ post }) {
+function SharedPostBubble({ post, onOpen, isOpening }) {
   if (!post) {
     return <span className="text-sm opacity-75">This post is no longer available.</span>;
   }
 
   const imageUrl = getMediaUrl(post.image);
   return (
-    <div className="w-56 overflow-hidden rounded-lg border border-white/15 bg-black/20 sm:w-64">
+    <button
+      type="button"
+      onClick={() => onOpen(post.id)}
+      disabled={isOpening}
+      className="w-56 overflow-hidden rounded-lg border border-white/15 bg-black/20 text-left transition hover:border-white/35 hover:bg-black/30 focus-visible:outline-2 focus-visible:outline-white disabled:cursor-wait disabled:opacity-70 sm:w-64"
+      aria-label={`Open shared post by ${post.author?.username || "Codingo user"}`}
+    >
       {imageUrl && <img src={imageUrl} alt="Shared post" className="h-32 w-full object-cover" loading="lazy" />}
       <div className="p-3">
         <p className="text-xs font-semibold opacity-70">{post.author?.username || "Codingo post"}</p>
         <p className="mt-1 line-clamp-3 text-sm leading-5">{post.content || (post.video ? "Shared a video" : "Shared a post")}</p>
+        <span className="mt-2 block text-xs font-semibold text-cyan-300">{isOpening ? "Opening..." : "View post"}</span>
       </div>
-    </div>
+    </button>
   );
 }
 
-function MessageBubble({ msg, mine, gsapReady }) {
+function MessageBubble({ msg, mine, gsapReady, onOpenPost, openingPostId }) {
   return (
     <div
       data-bubble-id={msg.id}
@@ -370,7 +378,7 @@ function MessageBubble({ msg, mine, gsapReady }) {
             </div>
           ))}
         {msg.type === "post_share" ? (
-          <SharedPostBubble post={msg.post} />
+          <SharedPostBubble post={msg.post} onOpen={onOpenPost} isOpening={openingPostId === msg.post?.id} />
         ) : msg.type === "voice" ? (
           <VoiceBubble msg={msg} mine={mine} />
         ) : (
@@ -408,9 +416,52 @@ export function ChatArea({
 
   const currentUser = useSelector((s) => s.dashboard.currentUser);
   const { activeContactId, messages } = useSelector((s) => s.chat ?? null);
+  const [previewPost, setPreviewPost] = useState(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [openingPostId, setOpeningPostId] = useState(null);
+  const [previewError, setPreviewError] = useState("");
   console.log("activeContactId", activeContactId, "messages", messages);
 
   const msgs = useMemo(() => (messages && messages[activeContactId]) || [], [messages, activeContactId]);
+
+  const openSharedPost = async (postId) => {
+    if (!postId || openingPostId) return;
+    setOpeningPostId(postId);
+    setPreviewError("");
+    try {
+      const response = await axios.get(`${apiUrl}/api/community/posts/${postId}`, {
+        withCredentials: true,
+        headers: getAuthHeaders(),
+      });
+      setPreviewPost(response.data.post);
+      setPreviewOpen(true);
+    } catch (error) {
+      console.error("Failed to open shared post:", error);
+      setPreviewError(error.response?.data?.message || "This post is no longer available.");
+    } finally {
+      setOpeningPostId(null);
+    }
+  };
+
+  const recordPostView = async (postId) => {
+    const response = await axios.post(`${apiUrl}/api/community/posts/${postId}/view`, {}, {
+      withCredentials: true,
+      headers: getAuthHeaders(),
+    });
+    setPreviewPost((post) => post?.id === postId ? { ...post, viewsCount: response.data.viewsCount } : post);
+  };
+
+  const togglePostLike = async (postId) => {
+    const response = await axios.post(`${apiUrl}/api/community/posts/${postId}/like`, {}, {
+      withCredentials: true,
+      headers: getAuthHeaders(),
+    });
+    setPreviewPost((post) => post?.id === postId ? {
+      ...post,
+      likesCount: response.data.likesCount,
+      isLikedByCurrentUser: response.data.isLiked,
+    } : post);
+  };
   
   useEffect(() => {
     if (!activeContactId || !currentUser?.id) return;
@@ -480,13 +531,35 @@ export function ChatArea({
               return (
                 <React.Fragment key={m.id}>
                   {showDivider && <DateDivider label={dateDividerLabel(m.time)} />}
-                  <MessageBubble msg={m} mine={m.from === "me"} gsapReady={gsapReady} />
+                  <MessageBubble
+                    msg={m}
+                    mine={m.from === "me"}
+                    gsapReady={gsapReady}
+                    onOpenPost={openSharedPost}
+                    openingPostId={openingPostId}
+                  />
                   {isLast && m.from === "me" && !searchingWithNoText && <StatusFooter msg={m} />}
                 </React.Fragment>
               );
             })}
             {typingContactId === activeContactId && !searchingWithNoText && <TypingIndicator innerRef={typingRef} />}
           </>
+        )}
+        <PostPreview
+          posts={previewPost ? [previewPost] : []}
+          initialIndex={0}
+          isOpen={previewOpen}
+          onClose={() => setPreviewOpen(false)}
+          onView={recordPostView}
+          onLike={togglePostLike}
+        />
+        {previewError && (
+          <div className="fixed bottom-6 left-1/2 z-200 flex -translate-x-1/2 items-center gap-3 rounded-lg border border-rose-400/25 bg-neutral-950 px-4 py-3 text-sm text-rose-300 shadow-2xl">
+            <span>{previewError}</span>
+            <button type="button" onClick={() => setPreviewError("")} className="text-neutral-500 hover:text-white" aria-label="Dismiss">
+              <X size={15} />
+            </button>
+          </div>
         )}
       </div>
     );
