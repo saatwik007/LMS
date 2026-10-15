@@ -3,6 +3,7 @@ const {
   createPost, 
   getFeed, 
   getPost,
+  recordPostView,
   toggleLike, 
   addComment,
   deletePost,
@@ -34,6 +35,9 @@ router.post('/posts', protect, postMediaUpload, createPost);
 
 // Get a single post
 router.get('/posts/:postId', protect, getPost);
+
+// Record one unique view per authenticated user
+router.post('/posts/:postId/view', protect, recordPostView);
 
 // Delete a post
 router.delete('/posts/:postId', protect, deletePost);

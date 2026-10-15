@@ -101,6 +101,7 @@ async function createPost(req, res) {
         comments: [],
         likesCount: 0,
         commentsCount: 0,
+        viewsCount: 0,
         isLikedByCurrentUser: false,
         createdAt: post.createdAt,
         updatedAt: post.updatedAt
@@ -212,6 +213,7 @@ async function getFeed(req, res) {
           })),
         likesCount: post.likes?.length || 0,
         commentsCount: post.comments?.length || 0,
+        viewsCount: post.viewedBy?.length || 0,
         isLikedByCurrentUser:
           post.likes?.some((id) => String(id) === currentUserId) ?? false,
         createdAt: post.createdAt,
@@ -309,6 +311,7 @@ async function getPost(req, res) {
       })),
       likesCount: post.likes.length,
       commentsCount: post.comments.length,
+      viewsCount: post.viewedBy?.length || 0,
       isLikedByCurrentUser: post.likes.some(id => String(id) === currentUserId),
       createdAt: post.createdAt,
       updatedAt: post.updatedAt
@@ -317,6 +320,25 @@ async function getPost(req, res) {
     return res.status(200).json({ post: formattedPost });
   } catch (error) {
     console.error('Get post error:', error);
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+async function recordPostView(req, res) {
+  try {
+    const post = await Post.findOneAndUpdate(
+      { _id: req.params.postId, isActive: true },
+      { $addToSet: { viewedBy: req.user.id } },
+      { new: true }
+    ).select('viewedBy');
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    return res.status(200).json({ viewsCount: post.viewedBy.length });
+  } catch (error) {
+    console.error('Record post view error:', error);
     return res.status(500).json({ message: error.message });
   }
 }
@@ -662,6 +684,7 @@ async function getUserPosts(req, res) {
       })),
       likesCount: post.likes.length,
       commentsCount: post.comments.length,
+      viewsCount: post.viewedBy?.length || 0,
       isLikedByCurrentUser: post.likes.some(id => String(id) === currentUserId),
       gridSize: savedLayout.get(String(post._id))?.gridSize || '1x1',
       createdAt: post.createdAt,
@@ -785,6 +808,7 @@ module.exports = {
   getFeed,
   getPostImage,
   getPost,
+  recordPostView,
   toggleLike,
   addComment,
   deletePost,

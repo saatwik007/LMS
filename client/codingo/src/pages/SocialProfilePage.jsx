@@ -6,7 +6,7 @@ import { apiUrl } from "../utilites/DashboardHelper";
 import { getAuthHeaders } from "../utilites/communityHelper";
 import { useParams } from "react-router-dom";
 import axios from "axios";
-import { FaCamera, FaComment, FaExpandAlt, FaGripVertical, FaHeart, FaSave, FaTimes } from "react-icons/fa";
+import { FaCamera, FaComment, FaExpandAlt, FaEye, FaGripVertical, FaHeart, FaSave, FaTimes } from "react-icons/fa";
 import {
     closestCenter,
     DndContext,
@@ -26,7 +26,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import PostPreview from "../components/SocialProfile/postPreview";
 
-const TABS = ["Your Posts"];
+const TABS = ["Your Posts", "Insights"];
 
 const POST_SIZE_CLASSES = {
     "1x1": "col-span-1 row-span-1",
@@ -160,6 +160,10 @@ export default function SocialProfileSection() {
     const [postsLoading, setPostsLoading] = useState(true);
     const [showPostPreview, setShowPostPreview] = useState(false);
     const [selectedPostIndex, setSelectedPostIndex] = useState(0);
+
+    useEffect(() => {
+        if (!isOwnProfile) setActiveTab("Your Posts");
+    }, [isOwnProfile]);
 
     const rootRef = useRef(null);
     const headerRef = useRef(null);
@@ -507,6 +511,41 @@ export default function SocialProfileSection() {
     const items = DATA_BY_TAB[activeTab];
     const isLinks = activeTab === "Links";
 
+    const recordPostView = async (postId) => {
+        if (!postId) return;
+
+        try {
+            const response = await axios.post(
+                `${apiUrl}/api/community/posts/${postId}/view`,
+                {},
+                { withCredentials: true, headers: getAuthHeaders() }
+            );
+            setUserPosts((posts) => posts.map((post) => (
+                post.id === postId ? { ...post, viewsCount: response.data.viewsCount } : post
+            )));
+        } catch (err) {
+            console.error("Failed to record post view:", err);
+        }
+    };
+
+    const togglePostLike = async (postId) => {
+        const response = await axios.post(
+            `${apiUrl}/api/community/posts/${postId}/like`,
+            {},
+            { withCredentials: true, headers: getAuthHeaders() }
+        );
+
+        setUserPosts((posts) => posts.map((post) => (
+            post.id === postId
+                ? {
+                    ...post,
+                    likesCount: response.data.likesCount,
+                    isLikedByCurrentUser: response.data.isLiked,
+                }
+                : post
+        )));
+    };
+
     const showPostModal = (postIndex) => {
         setSelectedPostIndex(postIndex);
         setShowPostPreview(true);
@@ -662,11 +701,9 @@ export default function SocialProfileSection() {
                                 </span>
                                 <span className="text-neutral-600">|</span>
                                 <span>
-                                    <span className="font-bold text-white">{PROFILE.followers}</span> Followers
-                                </span>
-                                <span className="text-neutral-600 hidden sm:inline">|</span>
-                                <span>
-                                    <span className="font-bold text-white">{PROFILE.following}</span> Following
+                                    <span className="font-bold text-white">
+                                        {currentUser?.friendsCount ?? currentUser?.friends?.length ?? 0}
+                                    </span> Friends
                                 </span>
                             </div>
                         </div>
@@ -679,7 +716,7 @@ export default function SocialProfileSection() {
                     ref={tabsRef}
                     className="mt-8 sm:mt-10 flex items-center justify-center gap-6 sm:gap-10 border-b border-white/10 pb-3 sm:pb-4 overflow-x-auto"
                 >
-                    {TABS.map((tab) => {
+                    {(isOwnProfile ? TABS : TABS.slice(0, 1)).map((tab) => {
                         const active = tab === activeTab;
                         return (
                             <button
@@ -704,6 +741,8 @@ export default function SocialProfileSection() {
                         <div className="text-center text-gray-400 text-sm sm:text-base">Loading posts...</div>
                     ) : userPosts.length === 0 ? (
                         <div className="text-center text-gray-400 text-sm sm:text-base">No posts yet.</div>
+                    ) : activeTab === "Insights" ? (
+                        <ProfileInsights posts={userPosts} onOpenPost={showPostModal} />
                     ) : (
                         <DndContext
                             sensors={sensors}
@@ -743,6 +782,8 @@ export default function SocialProfileSection() {
                 initialIndex={selectedPostIndex}
                 isOpen={showPostPreview}
                 onClose={() => setShowPostPreview(false)}
+                onView={recordPostView}
+                onLike={togglePostLike}
             />
         </div>
     );
@@ -893,6 +934,9 @@ function SortablePostTile({ post, imageUrl, canReorder, onResize, onOpen }) {
                 <span className="flex items-center gap-1.5">
                     <FaComment /> {post.commentsCount || 0}
                 </span>
+                <span className="flex items-center gap-1.5">
+                    <FaEye /> {post.viewsCount || 0}
+                </span>
             </div>
         </article>
     );
@@ -925,4 +969,90 @@ function getOrderedPosts(posts, profileId, useLocalLayout) {
     } catch {
         return normalizedPosts;
     }
+}
+
+function ProfileInsights({ posts, onOpenPost }) {
+    const rankedPosts = posts
+        .map((post, index) => ({
+            ...post,
+            originalIndex: index,
+            engagement: (post.likesCount || 0) + (post.commentsCount || 0),
+            performance: (post.viewsCount || 0) + (post.likesCount || 0) + (post.commentsCount || 0),
+        }))
+        .sort((left, right) => right.performance - left.performance);
+    const totalViews = posts.reduce((total, post) => total + (post.viewsCount || 0), 0);
+    const totalLikes = posts.reduce((total, post) => total + (post.likesCount || 0), 0);
+    const totalComments = posts.reduce((total, post) => total + (post.commentsCount || 0), 0);
+    const totalEngagement = totalLikes + totalComments;
+    const chartMaximum = Math.max(
+        1,
+        ...posts.flatMap((post) => [post.viewsCount || 0, post.likesCount || 0, post.commentsCount || 0])
+    );
+    const metrics = [
+        ["Views", totalViews, "Unique viewers"],
+        ["Engagement", totalEngagement, "Likes and comments"],
+        ["Likes", totalLikes, "Across all posts"],
+        ["Comments", totalComments, "Across all posts"],
+        ["Average", posts.length ? Math.round(totalEngagement / posts.length) : 0, "Per post"],
+    ];
+
+    return (
+        <div className="mx-auto max-w-6xl space-y-8">
+            <div className="grid grid-cols-2 gap-px overflow-hidden border border-white/10 bg-white/10 md:grid-cols-5">
+                {metrics.map(([label, value, detail]) => (
+                    <div key={label} className="bg-[#080808] p-5 sm:p-6">
+                        <p className="text-xs font-medium uppercase text-neutral-500">{label}</p>
+                        <p className="mt-3 text-2xl font-bold text-white sm:text-3xl">{value.toLocaleString()}</p>
+                        <p className="mt-1 text-xs text-neutral-500">{detail}</p>
+                    </div>
+                ))}
+            </div>
+
+            <section className="border-t border-white/10 pt-6">
+                <div className="mb-5 flex items-end justify-between gap-4">
+                    <div>
+                        <p className="text-xs font-semibold uppercase text-neutral-500">Performance</p>
+                        <h2 className="mt-1 text-xl font-bold text-white">Post performance</h2>
+                    </div>
+                    <div className="flex flex-wrap justify-end gap-3 text-xs text-neutral-400">
+                        <span className="flex items-center gap-1.5"><span className="h-2 w-2 bg-cyan-400" />Views</span>
+                        <span className="flex items-center gap-1.5"><span className="h-2 w-2 bg-rose-400" />Likes</span>
+                        <span className="flex items-center gap-1.5"><span className="h-2 w-2 bg-amber-300" />Comments</span>
+                    </div>
+                </div>
+
+                {rankedPosts.map((post, rank) => (
+                    <button
+                        key={post.id}
+                        type="button"
+                        onClick={() => onOpenPost(post.originalIndex)}
+                        className="group grid w-full grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 border-b border-white/10 py-3 text-left"
+                    >
+                        <span className="text-sm font-semibold text-neutral-600">{String(rank + 1).padStart(2, "0")}</span>
+                        <span className="min-w-0">
+                            <span className="block truncate text-sm font-medium text-white group-hover:text-neutral-300">
+                                {post.content || "Media post"}
+                            </span>
+                            <span className="mt-2 grid gap-1">
+                                <span className="block h-1 overflow-hidden bg-white/10">
+                                    <span className="block h-full bg-cyan-400" style={{ width: `${((post.viewsCount || 0) / chartMaximum) * 100}%` }} />
+                                </span>
+                                <span className="block h-1 overflow-hidden bg-white/10">
+                                    <span className="block h-full bg-rose-400" style={{ width: `${((post.likesCount || 0) / chartMaximum) * 100}%` }} />
+                                </span>
+                                <span className="block h-1 overflow-hidden bg-white/10">
+                                    <span className="block h-full bg-amber-300" style={{ width: `${((post.commentsCount || 0) / chartMaximum) * 100}%` }} />
+                                </span>
+                            </span>
+                        </span>
+                        <span className="flex items-center gap-3 text-xs text-neutral-400">
+                            <span className="flex items-center gap-1"><FaEye /> {post.viewsCount || 0}</span>
+                            <span className="flex items-center gap-1"><FaHeart /> {post.likesCount || 0}</span>
+                            <span className="flex items-center gap-1"><FaComment /> {post.commentsCount || 0}</span>
+                        </span>
+                    </button>
+                ))}
+            </section>
+        </div>
+    );
 }

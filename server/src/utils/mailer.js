@@ -6,9 +6,10 @@ let cachedTransporter = null;
  * Returns true when an email provider is configured via environment variables.
  * Provider priority:
  * 1) Brevo HTTP API
- * 2) Mailtrap sending API
- * 3) SMTP OAuth2 (Gmail/Google Workspace)
- * 4) SMTP user/pass
+ * 2) Resend HTTP API
+ * 3) Mailtrap sending API
+ * 4) SMTP OAuth2 (Gmail/Google Workspace)
+ * 5) SMTP user/pass
  */
 function isMailConfigured() {
   const smtpOauthConfigured = Boolean(
@@ -27,6 +28,7 @@ function isMailConfigured() {
 
   const configured = Boolean(
     process.env.BREVO_API_KEY ||
+      process.env.RESEND_API_KEY ||
       process.env.MAILTRAP_TOKEN ||
       smtpOauthConfigured ||
       smtpPasswordConfigured
@@ -35,6 +37,7 @@ function isMailConfigured() {
   if (configured) {
     let providerInfo = '';
     if (process.env.BREVO_API_KEY) providerInfo = 'Brevo API';
+    else if (process.env.RESEND_API_KEY) providerInfo = 'Resend API';
     else if (process.env.MAILTRAP_TOKEN) providerInfo = 'Mailtrap API';
     else if (smtpOauthConfigured) providerInfo = `SMTP OAuth2 (${process.env.SMTP_USER})`;
     else if (smtpPasswordConfigured) providerInfo = `SMTP Password (${process.env.SMTP_USER})`;
@@ -119,6 +122,32 @@ async function sendViaBrevo(to, message) {
   }
 }
 
+async function sendViaResend(to, message) {
+  const senderName = process.env.MAIL_FROM_NAME || 'Codify';
+  const senderAddress = process.env.MAIL_FROM_ADDRESS || 'onboarding@resend.dev';
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      from: `${senderName} <${senderAddress}>`,
+      to: [to],
+      subject: message.subject,
+      text: message.text,
+      html: message.html
+    })
+  });
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => '');
+    throw new Error(`Resend API ${response.status}: ${detail}`);
+  }
+
+  return { sent: true, provider: 'resend' };
+}
+
 /**
  * Creates/caches nodemailer transporter.
  */
@@ -193,7 +222,12 @@ async function sendOtpEmail(to, otp) {
     return sendViaBrevo(to, message);
   }
 
-  // 2/3/4) Mailtrap or SMTP OAuth2 or SMTP pass
+  if (process.env.RESEND_API_KEY) {
+    console.log('[MAIL] Email provider: Resend HTTP API');
+    return sendViaResend(to, message);
+  }
+
+  // 3/4/5) Mailtrap or SMTP OAuth2 or SMTP pass
   const transporter = getTransporter();
   if (!transporter) {
     console.warn('[MAIL] Email provider: NONE (email sending disabled)');

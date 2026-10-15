@@ -7,7 +7,9 @@ export default function ResetPasswordPage() {
   const location = useLocation();
   const apiUrl = import.meta.env.VITE_API_URL || '';
 
-  const [email, setEmail] = useState(location.state?.email || '');
+  const [emailOrUsername, setEmailOrUsername] = useState(
+    location.state?.emailOrUsername || location.state?.email || ''
+  );
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -32,7 +34,11 @@ export default function ResetPasswordPage() {
     }
     setLoading(true);
     try {
-      await axios.post(`${apiUrl}/api/otp/verify`, { email, otp, newPassword });
+      await axios.post(`${apiUrl}/api/auth/user/reset-password`, {
+        emailOrUsername,
+        otp,
+        newPassword,
+      });
       setDone(true);
     } catch (err) {
       setError(err.response?.data?.message || 'Invalid or expired OTP.');
@@ -57,7 +63,7 @@ export default function ResetPasswordPage() {
               Reset Password
             </h1>
             <p className="text-center text-sm text-gray-400 mb-6">
-              Enter the OTP sent to your email and choose a new password
+              Enter the OTP sent to your account email and choose a new password
             </p>
 
             {error && (
@@ -69,10 +75,10 @@ export default function ResetPasswordPage() {
             <form onSubmit={handleSubmit} className="flex flex-col gap-3">
               <input
                 className="w-full bg-[#141b24] border border-[#1f2a38] text-white text-base p-3.5 rounded-lg font-semibold placeholder-gray-500 outline-none focus:border-cyan-500 transition"
-                type="email"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="text"
+                placeholder="Email or username"
+                value={emailOrUsername}
+                onChange={(e) => setEmailOrUsername(e.target.value)}
                 required
               />
               <input
