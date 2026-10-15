@@ -16,7 +16,8 @@ import {
   FaVideo,
   FaPlay,
   FaVolumeMute,
-  FaVolumeUp
+  FaVolumeUp,
+  FaMusic
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -50,6 +51,8 @@ import { FiBookmark, FiMessageCircle, FiSend } from 'react-icons/fi';
 import Comments from './CommentsModal';
 import SharePostModal from '../components/shared/SharePostModal';
 import SavePostModal from '../components/shared/SavePostModal';
+import MusicPickerModal from '../components/shared/MusicPickerModal';
+import PostMusicPlayer from '../components/shared/PostMusicPlayer';
 /* ─── Constants ───────────────────────────────────────────────── */
 
 // Cycled per card — colored ambient glow
@@ -120,6 +123,8 @@ function ComposerCard({
   const currentUser = getStoredUser();
   const dispatch = useDispatch();
   const cardRef = useRef(null);
+  const [musicPickerOpen, setMusicPickerOpen] = useState(false);
+  const [selectedMusic, setSelectedMusic] = useState(null);
 
   const content = useSelector((state) => state.post.content);
   const isPosting = useSelector((state) => state.post.isPosting);
@@ -190,6 +195,14 @@ function ComposerCard({
       if (fileToSend) {
         formData.append('media', fileToSend, fileToSend.name || 'upload');
       }
+      if (selectedMusic) {
+        formData.append('music', JSON.stringify({
+          provider: selectedMusic.provider,
+          trackId: selectedMusic.trackId,
+          startTime: selectedMusic.startTime || 0,
+          volume: selectedMusic.volume ?? 0.7
+        }));
+      }
 
       const res = await axios.post(`${apiUrl}/api/community/posts`, formData, {
         withCredentials: true,
@@ -200,6 +213,7 @@ function ComposerCard({
       if (composerPreview) URL.revokeObjectURL(composerPreview);
       setComposerFile(null);
       setComposerPreview(null);
+      setSelectedMusic(null);
       dispatch(setImagePreview(null));
       if (imageInputRef.current) imageInputRef.current.value = '';
       if (videoInputRef.current) videoInputRef.current.value = '';
@@ -309,6 +323,15 @@ function ComposerCard({
             )}
             <button
               type="button"
+              onClick={() => setMusicPickerOpen(true)}
+              className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${selectedMusic ? 'bg-[#00e5ff] text-black' : 'bg-white/15 text-white hover:bg-white/25'}`}
+              title={selectedMusic ? 'Change music' : 'Add music'}
+              aria-label={selectedMusic ? 'Change music' : 'Add music'}
+            >
+              <FaMusic className="text-xs" />
+            </button>
+            <button
+              type="button"
               onClick={onClose}
               className="w-8 h-8 rounded-full bg-white/15 text-white hover:bg-[#f87171] transition-colors flex items-center justify-center"
               title="Close"
@@ -358,6 +381,23 @@ function ComposerCard({
           </div>
         </div>
 
+        {selectedMusic && (
+          <div className="relative z-10 mx-5 mb-3 flex items-center gap-3 rounded-md border border-[#00e5ff]/30 bg-black/25 p-2.5">
+            {selectedMusic.artworkUrl ? (
+              <img src={selectedMusic.artworkUrl} alt="" className="h-9 w-9 rounded object-cover" />
+            ) : (
+              <div className="flex h-9 w-9 items-center justify-center rounded bg-white/10"><FaMusic className="text-[#00e5ff]" /></div>
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs font-semibold text-white">{selectedMusic.title}</p>
+              <p className="truncate text-[10px] text-white/55">{selectedMusic.artist} · {selectedMusic.provider}</p>
+            </div>
+            <button type="button" onClick={() => setSelectedMusic(null)} className="text-white/50 hover:text-white" aria-label="Remove music">
+              <FaTimes />
+            </button>
+          </div>
+        )}
+
         {/* Error message */}
         {error && (
           <div className="relative z-10 px-5 pb-3">
@@ -400,6 +440,12 @@ function ComposerCard({
         onChange={handleMediaSelect}
         className="hidden"
         id={videoInputId.current}
+      />
+      <MusicPickerModal
+        open={musicPickerOpen}
+        selectedTrack={selectedMusic}
+        onClose={() => setMusicPickerOpen(false)}
+        onSelect={setSelectedMusic}
       />
     </div>
   );
@@ -870,6 +916,8 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, isActive, onLike, on
               </button>
             </div>
           )}
+
+          {post.music && <div className="mb-3"><PostMusicPlayer music={post.music} compact /></div>}
 
           <div className="flex items-center gap-5">
             <button

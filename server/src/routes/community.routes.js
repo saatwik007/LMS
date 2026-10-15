@@ -2,6 +2,10 @@ const express = require('express');
 const { 
   createPost, 
   getFeed, 
+  getIndianMusic,
+  getTrendingMusic,
+  searchMusic,
+  streamMusic,
   getPost,
   recordPostView,
   toggleLike, 
@@ -31,6 +35,11 @@ const router = express.Router();
 
 // Get feed (paginated)
 router.get('/feed', protect, getFeed);
+
+router.get('/music/search', protect, searchMusic);
+router.get('/music/discover/indian', protect, getIndianMusic);
+router.get('/music/trending', protect, getTrendingMusic);
+router.get('/music/:provider/:trackId/stream', streamMusic);
 
 // Proxy image from Drive
 router.get('/posts/image/:fileId', getPostImage);

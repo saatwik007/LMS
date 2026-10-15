@@ -27,6 +27,7 @@ import { FaEye, FaHeart, FaPlay, FaVolumeMute, FaVolumeUp, FaChevronLeft, FaChev
 import { FiArchive, FiBookmark, FiSend, FiMessageCircle } from "react-icons/fi";
 import SharePostModal from "../shared/SharePostModal";
 import SavePostModal from "../shared/SavePostModal";
+import PostMusicPlayer from "../shared/PostMusicPlayer";
 
 /* ------------------------------------------------------------------ */
 /* Small helpers                                                       */
@@ -482,6 +483,7 @@ export default function PostPreview({ posts, initialIndex = 0, isOpen, onClose, 
                                     {post.content}
                                 </p>
                             )}
+                            {post.music && <PostMusicPlayer music={post.music} />}
                         </div>
                     </div>
 

@@ -11,6 +11,10 @@ function formatSharedPost(post) {
         content: post.content || '',
         image: post.image || '',
         video: post.video || '',
+        music: post.music?.provider ? {
+            ...post.music.toObject?.() || post.music,
+            streamUrl: `/api/community/music/${post.music.provider}/${encodeURIComponent(post.music.trackId)}/stream`
+        } : null,
         author: post.author ? {
             id: String(post.author._id),
             username: post.author.username,

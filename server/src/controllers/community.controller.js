@@ -3,31 +3,136 @@ const User = require('../models/user.model');
 const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs').promises;
+const { Readable } = require('stream');
+const { pipeline } = require('stream/promises');
 const { uploadBufferToDrive } = require('../utils/driveUpload');
 const { deleteFileFromDrive } = require('../utils/driveUpload');
 const { streamFileFromDrive } = require('../utils/driveUpload');
+const {
+  getIndianAudiusTracks,
+  getMusicStreamUrl,
+  getTrendingAudiusTracks,
+  resolveMusicSelection,
+  searchMusicProviders
+} = require('../services/music.service');
 
 const isArchivedForViewer = (post, userId) => post?.isArchived && String(post.author?._id || post.author) !== String(userId);
+
+const formatPostMusic = (music) => {
+  if (!music?.provider || !music?.trackId) return null;
+  return {
+    provider: music.provider,
+    trackId: music.trackId,
+    title: music.title,
+    artist: music.artist,
+    artworkUrl: music.artworkUrl || '',
+    sourceUrl: music.sourceUrl,
+    license: music.license,
+    licenseUrl: music.licenseUrl || '',
+    duration: music.duration || 0,
+    startTime: music.startTime || 0,
+    volume: music.volume ?? 0.7,
+    streamUrl: `/api/community/music/${music.provider}/${encodeURIComponent(music.trackId)}/stream`
+  };
+};
+
+async function searchMusic(req, res) {
+  try {
+    const query = String(req.query.q || '').trim().slice(0, 100);
+    const provider = String(req.query.provider || 'all').toLowerCase();
+    if (query.length < 2) return res.status(400).json({ message: 'Enter at least 2 characters' });
+    const tracks = await searchMusicProviders(query, provider);
+    return res.status(200).json({
+      tracks,
+      providers: { audius: true, jamendo: Boolean(process.env.JAMENDO_CLIENT_ID), pixabay: false }
+    });
+  } catch (error) {
+    const status = error.message === 'Invalid music provider' ? 400 : 502;
+    return res.status(status).json({ message: error.message });
+  }
+}
+
+async function getTrendingMusic(req, res) {
+  try {
+    const tracks = await getTrendingAudiusTracks();
+    return res.status(200).json({ tracks, provider: 'audius', period: 'week' });
+  } catch (error) {
+    return res.status(502).json({ message: error.message || 'Could not load trending music' });
+  }
+}
+
+async function getIndianMusic(req, res) {
+  try {
+    const tracks = await getIndianAudiusTracks();
+    return res.status(200).json({
+      tracks,
+      provider: 'audius',
+      queries: ['Bollywood', 'Hindi', 'Punjabi', 'Indian Indie']
+    });
+  } catch (error) {
+    return res.status(502).json({ message: error.message || 'Could not load Indian music' });
+  }
+}
+
+async function streamMusic(req, res) {
+  const abortController = new AbortController();
+  req.on('close', () => abortController.abort());
+
+  try {
+    const streamUrl = await getMusicStreamUrl(req.params.provider, req.params.trackId);
+    const headers = {};
+    if (req.headers.range) headers.Range = req.headers.range;
+
+    const upstream = await fetch(streamUrl, {
+      headers,
+      redirect: 'follow',
+      signal: abortController.signal
+    });
+    if (!upstream.ok || !upstream.body) {
+      return res.status(upstream.status || 502).json({ message: 'Music stream is unavailable' });
+    }
+
+    res.status(upstream.status);
+    ['accept-ranges', 'content-length', 'content-range', 'content-type'].forEach((header) => {
+      const value = upstream.headers.get(header);
+      if (value) res.setHeader(header, value);
+    });
+    res.setHeader('Cache-Control', 'private, max-age=300');
+    await pipeline(Readable.fromWeb(upstream.body), res);
+    return undefined;
+  } catch (error) {
+    if (error.name === 'AbortError' || res.headersSent) return undefined;
+    return res.status(404).json({ message: error.message });
+  }
+}
 
 // Create a new post
 async function createPost(req, res) {
   try {
     const { content } = req.body;
 
-    if (!content || content.trim().length === 0) {
-      return res.status(400).json({ message: 'Post content is required' });
+    if ((!content || content.trim().length === 0) && !req.file) {
+      return res.status(400).json({ message: 'Write something or attach an image/video' });
     }
 
-    if (content.length > 2000) {
+    if (content && content.length > 2000) {
       return res.status(400).json({ message: 'Post content exceeds 2000 characters' });
     }
 
     const postData = {
       author: req.user.id,
-      content: content.trim(),
+      content: content?.trim() || '',
       image: '',
       video: ''
     };
+
+    if (req.body.music) {
+      try {
+        postData.music = await resolveMusicSelection(JSON.parse(req.body.music));
+      } catch (error) {
+        return res.status(400).json({ message: error.message || 'Invalid music selection' });
+      }
+    }
 
     if (req.file && req.file.buffer) {
       const isImage = req.file.mimetype.startsWith('image/');
@@ -99,6 +204,7 @@ async function createPost(req, res) {
         content: post.content,
         image: post.image,
         video: post.video,
+        music: formatPostMusic(post.music),
         likes: [],
         comments: [],
         likesCount: 0,
@@ -208,6 +314,7 @@ async function getFeed(req, res) {
         content: post.content || "",
         image: post.image || "",
         video: post.video || "",
+        music: formatPostMusic(post.music),
         likes: (post.likes || []).map((id) => String(id)),
         comments: (post.comments || [])
           .filter((comment) => comment?.author)
@@ -342,6 +449,7 @@ async function getPost(req, res) {
       content: post.content,
       image: post.image,
       video: post.video || '',
+      music: formatPostMusic(post.music),
       likes: post.likes.map(id => String(id)),
       comments: post.comments.map(comment => ({
         id: String(comment._id),
@@ -491,6 +599,7 @@ async function getSavedLibrary(req, res) {
       content: post.content,
       image: post.image || '',
       video: post.video || '',
+      music: formatPostMusic(post.music),
       likesCount: post.likes?.length || 0,
       commentsCount: post.comments?.length || 0,
       viewsCount: post.viewedBy?.length || 0,
@@ -673,6 +782,7 @@ async function getArchivedPosts(req, res) {
         content: post.content,
         image: post.image || '',
         video: post.video || '',
+        music: formatPostMusic(post.music),
         likesCount: post.likes?.length || 0,
         commentsCount: post.comments?.length || 0,
         viewsCount: post.viewedBy?.length || 0,
@@ -975,6 +1085,8 @@ async function getUserPosts(req, res) {
       },
       content: post.content,
       image: post.image,
+      video: post.video || '',
+      music: formatPostMusic(post.music),
       likes: post.likes.map(id => String(id)),
       comments: post.comments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map(comment => ({
         id: String(comment._id),
@@ -1112,6 +1224,10 @@ const discoverNearbyPeople = async (req, res) => {
 module.exports = {
   createPost,
   getFeed,
+  getIndianMusic,
+  getTrendingMusic,
+  searchMusic,
+  streamMusic,
   getPostImage,
   getPost,
   recordPostView,
