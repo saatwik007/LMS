@@ -151,7 +151,30 @@ async function getFeed(req, res) {
     const limit = Math.min(20, Math.max(1, parseInt(req.query.limit, 10) || 10));
     const skip = (page - 1) * limit;
 
-    const filter = { isActive: true };
+    const viewer = await User.findById(req.user.id)
+      .select('friends following blockedUsers')
+      .lean();
+    if (!viewer) return res.status(404).json({ message: 'User not found' });
+
+    const blockedByUserIds = await User.find({ blockedUsers: req.user.id }).distinct('_id');
+    const excludedAuthorIds = [
+      ...(viewer.blockedUsers || []),
+      ...blockedByUserIds
+    ];
+    const relationshipAuthorIds = [
+      req.user.id,
+      ...(viewer.following || []),
+      ...(viewer.friends || [])
+    ];
+    const visibleAuthorIds = await User.find({
+      _id: { $nin: excludedAuthorIds },
+      $or: [
+        { isPrivate: false },
+        { _id: { $in: relationshipAuthorIds } }
+      ]
+    }).distinct('_id');
+
+    const filter = { isActive: true, author: { $in: visibleAuthorIds } };
 
     const total = await Post.countDocuments(filter);
     const totalPages = Math.ceil(total / limit);
@@ -635,21 +658,37 @@ async function getUserPosts(req, res) {
     const limit = Math.min(20, Math.max(1, parseInt(req.query.limit, 10) || 10));
     const skip = (page - 1) * limit;
 
+    const [viewer, profileOwner] = await Promise.all([
+      User.findById(req.user.id).select('following blockedUsers').lean(),
+      User.findById(userId).select('profileGridLayout isPrivate blockedUsers').lean()
+    ]);
+    if (!viewer || !profileOwner) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isOwner = String(req.user.id) === String(userId);
+    const viewerBlockedOwner = (viewer.blockedUsers || []).some(id => String(id) === String(userId));
+    const ownerBlockedViewer = (profileOwner.blockedUsers || []).some(id => String(id) === String(req.user.id));
+    const isFollowing = (viewer.following || []).some(id => String(id) === String(userId));
+    if (!isOwner && (viewerBlockedOwner || ownerBlockedViewer)) {
+      return res.status(403).json({ message: 'This profile is unavailable', blocked: true });
+    }
+    if (!isOwner && profileOwner.isPrivate !== false && !isFollowing) {
+      return res.status(403).json({ message: 'Follow this private account to see their posts', isPrivate: true });
+    }
+
     const filter = { author: userId, isActive: true };
 
     const total = await Post.countDocuments(filter);
     const totalPages = Math.ceil(total / limit);
 
-    const [posts, profileOwner] = await Promise.all([
-      Post.find(filter)
+    const posts = await Post.find(filter)
       .populate('author', 'username profilePic league level totalXp')
       .populate('comments.author', 'username profilePic')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .lean(),
-      User.findById(userId).select('profileGridLayout').lean()
-    ]);
+      .lean();
 
     const currentUserId = String(req.user.id);
     const savedLayout = new Map(

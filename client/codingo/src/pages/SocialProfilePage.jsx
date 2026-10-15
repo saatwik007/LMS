@@ -6,7 +6,7 @@ import { apiUrl } from "../utilites/DashboardHelper";
 import { getAuthHeaders } from "../utilites/communityHelper";
 import { useParams } from "react-router-dom";
 import axios from "axios";
-import { FaCamera, FaComment, FaExpandAlt, FaEye, FaGripVertical, FaHeart, FaSave, FaTimes } from "react-icons/fa";
+import { FaCamera, FaComment, FaExpandAlt, FaEye, FaGlobe, FaGripVertical, FaHeart, FaLock, FaSave, FaTimes, FaUserCheck, FaUserPlus } from "react-icons/fa";
 import {
     closestCenter,
     DndContext,
@@ -160,6 +160,9 @@ export default function SocialProfileSection() {
     const [postsLoading, setPostsLoading] = useState(true);
     const [showPostPreview, setShowPostPreview] = useState(false);
     const [selectedPostIndex, setSelectedPostIndex] = useState(0);
+    const [followStatus, setFollowStatus] = useState("none");
+    const [followPending, setFollowPending] = useState(false);
+    const [profileAccess, setProfileAccess] = useState(true);
 
     useEffect(() => {
         if (!isOwnProfile) setActiveTab("Your Posts");
@@ -222,7 +225,12 @@ export default function SocialProfileSection() {
                 }
             } catch (err) {
                 console.error('Failed to fetch user posts:', err);
-                setError('Failed to load user posts.');
+                if (err.response?.status === 403 && err.response?.data?.isPrivate) {
+                    setProfileAccess(false);
+                    setUserPosts([]);
+                } else {
+                    setError('Failed to load user posts.');
+                }
             } finally {
                 setPostsLoading(false);
             }
@@ -285,6 +293,77 @@ export default function SocialProfileSection() {
     useEffect(() => {
         fetchUserProfile();
     }, [userId]);
+
+    useEffect(() => {
+        if (isOwnProfile || !userId) return;
+
+        const fetchFollowStatus = async () => {
+            try {
+                const response = await axios.get(`${apiUrl}/api/social/follow-status/${userId}`, {
+                    withCredentials: true,
+                    headers: getAuthHeaders()
+                });
+                setFollowStatus(response.data.status);
+                setProfileAccess(response.data.canView);
+                setCurrentUser((user) => user ? {
+                    ...user,
+                    followersCount: response.data.followersCount,
+                    followingCount: response.data.followingCount,
+                    isPrivate: response.data.isPrivate
+                } : user);
+            } catch (err) {
+                console.error('Failed to fetch follow status:', err);
+            }
+        };
+
+        fetchFollowStatus();
+    }, [isOwnProfile, userId]);
+
+    const handleFollow = async () => {
+        if (!userId || followPending) return;
+        setFollowPending(true);
+        try {
+            const method = followStatus === 'following' || followStatus === 'requested' ? 'delete' : 'post';
+            const response = await axios({
+                method,
+                url: `${apiUrl}/api/social/follow/${userId}`,
+                withCredentials: true,
+                headers: getAuthHeaders()
+            });
+            setFollowStatus(response.data.status);
+            setCurrentUser((user) => user ? { ...user, followersCount: response.data.followersCount } : user);
+            setProfileAccess(response.data.status === 'following' || currentUser?.isPrivate === false);
+            if (response.data.status === 'following') {
+                const postsResponse = await axios.get(`${apiUrl}/api/community/users/${userId}/posts?page=1&limit=20`, {
+                    withCredentials: true,
+                    headers: getAuthHeaders()
+                });
+                setUserPosts(getOrderedPosts(postsResponse.data.posts || [], userId, false));
+            } else if (currentUser?.isPrivate !== false) {
+                setUserPosts([]);
+            }
+        } catch (err) {
+            console.error('Failed to update follow status:', err);
+            setError(err.response?.data?.message || 'Failed to update follow status.');
+        } finally {
+            setFollowPending(false);
+        }
+    };
+
+    const handlePrivacyToggle = async () => {
+        try {
+            const response = await axios.patch(`${apiUrl}/api/social/privacy`, {
+                isPrivate: currentUser?.isPrivate === false
+            }, {
+                withCredentials: true,
+                headers: getAuthHeaders()
+            });
+            setCurrentUser((user) => ({ ...user, isPrivate: response.data.isPrivate }));
+        } catch (err) {
+            console.error('Failed to update profile privacy:', err);
+            setError('Failed to update profile privacy.');
+        }
+    };
 
     const handleAvatarUpload = async (e) => {
         const file = e.target.files?.[0];
@@ -702,12 +781,39 @@ export default function SocialProfileSection() {
                                 <span className="text-neutral-600">|</span>
                                 <span>
                                     <span className="font-bold text-white">
-                                        {currentUser?.friendsCount ?? currentUser?.friends?.length ?? 0}
-                                    </span> Friends
+                                        {currentUser?.followersCount ?? 0}
+                                    </span> Followers
+                                </span>
+                                <span className="text-neutral-600">|</span>
+                                <span>
+                                    <span className="font-bold text-white">
+                                        {currentUser?.followingCount ?? 0}
+                                    </span> Following
                                 </span>
                             </div>
                         </div>
                     </div>
+
+                    {isOwnProfile ? (
+                        <button
+                            type="button"
+                            onClick={handlePrivacyToggle}
+                            className="flex items-center gap-2 border border-white/15 px-3 py-2 text-sm text-neutral-200 transition hover:border-white/30 hover:text-white"
+                        >
+                            {currentUser?.isPrivate === false ? <FaGlobe /> : <FaLock />}
+                            {currentUser?.isPrivate === false ? 'Public' : 'Private'}
+                        </button>
+                    ) : followStatus !== 'blocked' && (
+                        <button
+                            type="button"
+                            onClick={handleFollow}
+                            disabled={followPending}
+                            className="flex min-w-28 items-center justify-center gap-2 bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-neutral-200 disabled:cursor-wait disabled:opacity-60"
+                        >
+                            {followStatus === 'following' ? <FaUserCheck /> : <FaUserPlus />}
+                            {followStatus === 'following' ? 'Following' : followStatus === 'requested' ? 'Requested' : 'Follow'}
+                        </button>
+                    )}
 
                 </div>
 
@@ -739,6 +845,12 @@ export default function SocialProfileSection() {
                 <div ref={contentRef} className="mt-8 sm:mt-10">
                     {postsLoading ? (
                         <div className="text-center text-gray-400 text-sm sm:text-base">Loading posts...</div>
+                    ) : !profileAccess ? (
+                        <div className="mx-auto flex max-w-md flex-col items-center border-y border-white/10 py-14 text-center">
+                            <FaLock className="mb-4 text-2xl text-neutral-400" />
+                            <h2 className="text-lg font-semibold text-white">This account is private</h2>
+                            <p className="mt-2 text-sm text-neutral-400">Follow this account to see their posts.</p>
+                        </div>
                     ) : userPosts.length === 0 ? (
                         <div className="text-center text-gray-400 text-sm sm:text-base">No posts yet.</div>
                     ) : activeTab === "Insights" ? (
@@ -972,80 +1084,211 @@ function getOrderedPosts(posts, profileId, useLocalLayout) {
 }
 
 function ProfileInsights({ posts, onOpenPost }) {
-    const rankedPosts = posts
-        .map((post, index) => ({
+    const [range, setRange] = useState("all");
+    const [activePoint, setActivePoint] = useState(null);
+    const [insightsNow] = useState(() => Date.now());
+    const rangeDays = range === "7d" ? 7 : range === "30d" ? 30 : null;
+    const cutoff = rangeDays ? insightsNow - rangeDays * 24 * 60 * 60 * 1000 : null;
+    const filteredPosts = posts.filter((post) => {
+        if (!cutoff) return true;
+        const createdAt = new Date(post.createdAt).getTime();
+        return Number.isFinite(createdAt) && createdAt >= cutoff;
+    });
+    const chronologicalPosts = [...filteredPosts].sort(
+        (left, right) => new Date(left.createdAt || 0) - new Date(right.createdAt || 0)
+    );
+    const rankedPosts = filteredPosts
+        .map((post) => ({
             ...post,
-            originalIndex: index,
+            originalIndex: posts.findIndex((item) => item.id === post.id),
             engagement: (post.likesCount || 0) + (post.commentsCount || 0),
             performance: (post.viewsCount || 0) + (post.likesCount || 0) + (post.commentsCount || 0),
         }))
         .sort((left, right) => right.performance - left.performance);
-    const totalViews = posts.reduce((total, post) => total + (post.viewsCount || 0), 0);
-    const totalLikes = posts.reduce((total, post) => total + (post.likesCount || 0), 0);
-    const totalComments = posts.reduce((total, post) => total + (post.commentsCount || 0), 0);
+    const totalViews = filteredPosts.reduce((total, post) => total + (post.viewsCount || 0), 0);
+    const totalLikes = filteredPosts.reduce((total, post) => total + (post.likesCount || 0), 0);
+    const totalComments = filteredPosts.reduce((total, post) => total + (post.commentsCount || 0), 0);
     const totalEngagement = totalLikes + totalComments;
-    const chartMaximum = Math.max(
-        1,
-        ...posts.flatMap((post) => [post.viewsCount || 0, post.likesCount || 0, post.commentsCount || 0])
-    );
+    const engagementRate = totalViews ? (totalEngagement / totalViews) * 100 : 0;
+    const averageViews = filteredPosts.length ? Math.round(totalViews / filteredPosts.length) : 0;
     const metrics = [
-        ["Views", totalViews, "Unique viewers"],
-        ["Engagement", totalEngagement, "Likes and comments"],
-        ["Likes", totalLikes, "Across all posts"],
-        ["Comments", totalComments, "Across all posts"],
-        ["Average", posts.length ? Math.round(totalEngagement / posts.length) : 0, "Per post"],
+        { label: "Total views", value: totalViews.toLocaleString(), detail: "Unique post views", icon: FaEye },
+        { label: "Engagements", value: totalEngagement.toLocaleString(), detail: `${totalLikes} likes · ${totalComments} comments`, icon: FaHeart },
+        { label: "Engagement rate", value: `${engagementRate.toFixed(1)}%`, detail: "Engagements per view", icon: FaComment },
+        { label: "Average views", value: averageViews.toLocaleString(), detail: "Per published post", icon: FaExpandAlt },
     ];
+    const chartWidth = 920;
+    const chartHeight = 320;
+    const chartPadding = { top: 28, right: 28, bottom: 48, left: 54 };
+    const plotWidth = chartWidth - chartPadding.left - chartPadding.right;
+    const plotHeight = chartHeight - chartPadding.top - chartPadding.bottom;
+    const graphMaximum = Math.max(
+        1,
+        ...chronologicalPosts.flatMap((post) => [post.viewsCount || 0, post.likesCount || 0, post.commentsCount || 0])
+    );
+    const roundedMaximum = Math.max(4, Math.ceil(graphMaximum / 4) * 4);
+    const getX = (index) => chronologicalPosts.length === 1
+        ? chartPadding.left + plotWidth / 2
+        : chartPadding.left + (index / Math.max(1, chronologicalPosts.length - 1)) * plotWidth;
+    const getY = (value) => chartPadding.top + plotHeight - (value / roundedMaximum) * plotHeight;
+    const series = [
+        { key: "viewsCount", label: "Views", color: "#22d3ee" },
+        { key: "likesCount", label: "Likes", color: "#fb7185" },
+        { key: "commentsCount", label: "Comments", color: "#fcd34d" },
+    ];
+    const makePath = (key) => chronologicalPosts
+        .map((post, index) => `${index === 0 ? "M" : "L"} ${getX(index)} ${getY(post[key] || 0)}`)
+        .join(" ");
+    const selectedPoint = chronologicalPosts[activePoint ?? chronologicalPosts.length - 1];
+    const formatPostDate = (date) => {
+        const value = new Date(date);
+        return Number.isFinite(value.getTime())
+            ? value.toLocaleDateString(undefined, { month: "short", day: "numeric" })
+            : "Post";
+    };
 
     return (
-        <div className="mx-auto max-w-6xl space-y-8">
-            <div className="grid grid-cols-2 gap-px overflow-hidden border border-white/10 bg-white/10 md:grid-cols-5">
-                {metrics.map(([label, value, detail]) => (
-                    <div key={label} className="bg-[#080808] p-5 sm:p-6">
-                        <p className="text-xs font-medium uppercase text-neutral-500">{label}</p>
-                        <p className="mt-3 text-2xl font-bold text-white sm:text-3xl">{value.toLocaleString()}</p>
-                        <p className="mt-1 text-xs text-neutral-500">{detail}</p>
+        <div className="mx-auto max-w-6xl space-y-6">
+            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+                <div>
+                    <p className="text-xs font-semibold uppercase text-cyan-400">Creator analytics</p>
+                    <h2 className="mt-1 text-2xl font-bold text-white">Content performance</h2>
+                    <p className="mt-1 text-sm text-neutral-500">See how each post is reaching and engaging your audience.</p>
+                </div>
+                <div className="inline-flex w-fit border border-white/10 bg-neutral-950 p-1" aria-label="Insights date range">
+                    {[["7d", "7 days"], ["30d", "30 days"], ["all", "All time"]].map(([value, label]) => (
+                        <button
+                            key={value}
+                            type="button"
+                            onClick={() => { setRange(value); setActivePoint(null); }}
+                            className={`px-3 py-1.5 text-xs font-semibold transition ${range === value ? "bg-white text-black" : "text-neutral-500 hover:text-white"}`}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                {metrics.map(({ label, value, detail, icon: Icon }) => (
+                    <div key={label} className="border border-white/10 bg-neutral-950/70 p-4 sm:p-5">
+                        <div className="flex items-center justify-between gap-3">
+                            <p className="text-xs font-medium text-neutral-500">{label}</p>
+                            {React.createElement(Icon, { className: "text-sm text-neutral-600" })}
+                        </div>
+                        <p className="mt-4 text-2xl font-bold text-white sm:text-3xl">{value}</p>
+                        <p className="mt-1 truncate text-xs text-neutral-600">{detail}</p>
                     </div>
                 ))}
             </div>
 
-            <section className="border-t border-white/10 pt-6">
-                <div className="mb-5 flex items-end justify-between gap-4">
+            <section className="border border-white/10 bg-neutral-950/60 p-4 sm:p-6">
+                <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                     <div>
-                        <p className="text-xs font-semibold uppercase text-neutral-500">Performance</p>
-                        <h2 className="mt-1 text-xl font-bold text-white">Post performance</h2>
+                        <h3 className="text-base font-semibold text-white">Performance trend</h3>
+                        <p className="mt-1 text-xs text-neutral-500">Metrics by publishing order</p>
                     </div>
-                    <div className="flex flex-wrap justify-end gap-3 text-xs text-neutral-400">
-                        <span className="flex items-center gap-1.5"><span className="h-2 w-2 bg-cyan-400" />Views</span>
-                        <span className="flex items-center gap-1.5"><span className="h-2 w-2 bg-rose-400" />Likes</span>
-                        <span className="flex items-center gap-1.5"><span className="h-2 w-2 bg-amber-300" />Comments</span>
+                    <div className="flex flex-wrap gap-4 text-xs text-neutral-400">
+                        {series.map((item) => (
+                            <span key={item.key} className="flex items-center gap-2">
+                                <span className="h-0.5 w-4" style={{ backgroundColor: item.color }} />{item.label}
+                            </span>
+                        ))}
                     </div>
                 </div>
 
+                {chronologicalPosts.length ? (
+                    <div className="relative">
+                        {selectedPoint && (
+                            <div className="mb-3 flex flex-wrap items-center gap-x-5 gap-y-1 border-l-2 border-cyan-400 pl-3 text-xs text-neutral-400">
+                                <span className="font-semibold text-white">{formatPostDate(selectedPoint.createdAt)}</span>
+                                <span>{selectedPoint.viewsCount || 0} views</span>
+                                <span>{selectedPoint.likesCount || 0} likes</span>
+                                <span>{selectedPoint.commentsCount || 0} comments</span>
+                            </div>
+                        )}
+                        <svg
+                            viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+                            className="block min-h-56 w-full overflow-visible"
+                            role="img"
+                            aria-label="Line chart comparing post views, likes, and comments"
+                        >
+                            {[0, 1, 2, 3, 4].map((tick) => {
+                                const value = Math.round((roundedMaximum / 4) * (4 - tick));
+                                const y = chartPadding.top + (plotHeight / 4) * tick;
+                                return (
+                                    <g key={tick}>
+                                        <line x1={chartPadding.left} x2={chartWidth - chartPadding.right} y1={y} y2={y} stroke="rgba(255,255,255,0.08)" />
+                                        <text x={chartPadding.left - 12} y={y + 4} textAnchor="end" fill="#737373" fontSize="11">{value}</text>
+                                    </g>
+                                );
+                            })}
+                            {activePoint !== null && (
+                                <line
+                                    x1={getX(activePoint)}
+                                    x2={getX(activePoint)}
+                                    y1={chartPadding.top}
+                                    y2={chartPadding.top + plotHeight}
+                                    stroke="rgba(255,255,255,0.18)"
+                                    strokeDasharray="4 5"
+                                />
+                            )}
+                            {series.map((item) => (
+                                <g key={item.key}>
+                                    <path d={makePath(item.key)} fill="none" stroke={item.color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                                    {chronologicalPosts.map((post, index) => (
+                                        <circle
+                                            key={`${item.key}-${post.id}`}
+                                            cx={getX(index)}
+                                            cy={getY(post[item.key] || 0)}
+                                            r={activePoint === index ? 6 : 4}
+                                            fill="#0a0a0a"
+                                            stroke={item.color}
+                                            strokeWidth="3"
+                                            className="cursor-pointer outline-none"
+                                            tabIndex="0"
+                                            onMouseEnter={() => setActivePoint(index)}
+                                            onFocus={() => setActivePoint(index)}
+                                            onClick={() => setActivePoint(index)}
+                                        />
+                                    ))}
+                                </g>
+                            ))}
+                            {chronologicalPosts.map((post, index) => {
+                                const showLabel = chronologicalPosts.length <= 6 || index === 0 || index === chronologicalPosts.length - 1 || index % Math.ceil(chronologicalPosts.length / 5) === 0;
+                                return showLabel ? (
+                                    <text key={post.id} x={getX(index)} y={chartHeight - 16} textAnchor="middle" fill="#737373" fontSize="11">
+                                        {formatPostDate(post.createdAt)}
+                                    </text>
+                                ) : null;
+                            })}
+                        </svg>
+                    </div>
+                ) : (
+                    <div className="flex h-64 items-center justify-center text-sm text-neutral-500">No posts published in this period.</div>
+                )}
+            </section>
+
+            <section className="border-t border-white/10 pt-6">
+                <div className="mb-4">
+                    <h3 className="text-base font-semibold text-white">Top content</h3>
+                    <p className="mt-1 text-xs text-neutral-500">Ranked by views and interactions</p>
+                </div>
                 {rankedPosts.map((post, rank) => (
                     <button
                         key={post.id}
                         type="button"
                         onClick={() => onOpenPost(post.originalIndex)}
-                        className="group grid w-full grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 border-b border-white/10 py-3 text-left"
+                        className="group grid w-full grid-cols-[2rem_minmax(0,1fr)] items-center gap-3 border-b border-white/10 py-4 text-left sm:grid-cols-[2rem_minmax(0,1fr)_auto]"
                     >
                         <span className="text-sm font-semibold text-neutral-600">{String(rank + 1).padStart(2, "0")}</span>
                         <span className="min-w-0">
                             <span className="block truncate text-sm font-medium text-white group-hover:text-neutral-300">
                                 {post.content || "Media post"}
                             </span>
-                            <span className="mt-2 grid gap-1">
-                                <span className="block h-1 overflow-hidden bg-white/10">
-                                    <span className="block h-full bg-cyan-400" style={{ width: `${((post.viewsCount || 0) / chartMaximum) * 100}%` }} />
-                                </span>
-                                <span className="block h-1 overflow-hidden bg-white/10">
-                                    <span className="block h-full bg-rose-400" style={{ width: `${((post.likesCount || 0) / chartMaximum) * 100}%` }} />
-                                </span>
-                                <span className="block h-1 overflow-hidden bg-white/10">
-                                    <span className="block h-full bg-amber-300" style={{ width: `${((post.commentsCount || 0) / chartMaximum) * 100}%` }} />
-                                </span>
-                            </span>
+                            <span className="mt-1 block text-xs text-neutral-600">{formatPostDate(post.createdAt)}</span>
                         </span>
-                        <span className="flex items-center gap-3 text-xs text-neutral-400">
+                        <span className="col-start-2 flex items-center gap-4 text-xs text-neutral-400 sm:col-start-auto">
                             <span className="flex items-center gap-1"><FaEye /> {post.viewsCount || 0}</span>
                             <span className="flex items-center gap-1"><FaHeart /> {post.likesCount || 0}</span>
                             <span className="flex items-center gap-1"><FaComment /> {post.commentsCount || 0}</span>

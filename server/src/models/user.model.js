@@ -4,6 +4,9 @@ const notificationSchema = new mongoose.Schema(
   {
     title: { type: String, required: true, trim: true },
     detail: { type: String, default: "", trim: true },
+    type: { type: String, default: "general", trim: true },
+    actor: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    entityId: { type: mongoose.Schema.Types.ObjectId, default: null },
     createdAt: { type: Date, default: Date.now },
     isRead: { type: Boolean, default: false },
   },
@@ -45,6 +48,14 @@ const profileGridItemSchema = new mongoose.Schema(
   { _id: false },
 );
 
+const followRequestSchema = new mongoose.Schema(
+  {
+    from: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    createdAt: { type: Date, default: Date.now },
+  },
+  { _id: true },
+);
+
 const userSchema = new mongoose.Schema(
   {
     username: { type: String, required: true, unique: true, minlength: 3 },
@@ -76,6 +87,20 @@ const userSchema = new mongoose.Schema(
       ],
       default: [],
     },
+    followers: {
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+      default: [],
+    },
+    following: {
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+      default: [],
+    },
+    followRequests: { type: [followRequestSchema], default: [] },
+    blockedUsers: {
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+      default: [],
+    },
+    isPrivate: { type: Boolean, default: true },
     bio: { type: String, default: "", maxlength: 200 },
     posts: {
       type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Post" }],

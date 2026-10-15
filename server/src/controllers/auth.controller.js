@@ -60,6 +60,10 @@ function buildUserPayload(user) {
     friends: user.friends || [],
     friendsCount: user.friends?.length || 0,
     friendRequests: user.friendRequests || [],
+    followersCount: user.followers?.length || 0,
+    followingCount: user.following?.length || 0,
+    followRequests: user.followRequests || [],
+    isPrivate: user.isPrivate !== false,
     rewards: user.rewards || [],
   };
 }
@@ -347,7 +351,7 @@ async function getPublicProfile(req, res) {
     }
 
     const user = await userModel.findById(req.params.userId)
-      .select('username profilePic bio totalXp level league streakCount badges friends')
+      .select('username profilePic bio totalXp level league streakCount badges friends followers following isPrivate')
       .populate('badges.badge');
     if (!user) {
       return res.status(404).json({ message: 'User not found.' });
@@ -364,7 +368,10 @@ async function getPublicProfile(req, res) {
         league: user.league || 'Bronze 1',
         streakCount: user.streakCount || 0,
         badges: user.badges || [],
-        friendsCount: user.friends?.length || 0
+        friendsCount: user.friends?.length || 0,
+        followersCount: user.followers?.length || 0,
+        followingCount: user.following?.length || 0,
+        isPrivate: user.isPrivate !== false
       }
     });
   } catch (error) {
