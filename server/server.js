@@ -27,6 +27,15 @@ const clients = new Map();
     const server = http.createServer(app);
     const wss = new WebSocket.Server({ server });
 
+    app.set('sendToUser', (userId, payload) => {
+      const recipientSocket = clients.get(String(userId));
+      if (recipientSocket?.readyState === WebSocket.OPEN) {
+        recipientSocket.send(JSON.stringify(payload));
+        return true;
+      }
+      return false;
+    });
+
     wss.on('connection', async (socket) => {
       console.log('New WS connection');
       let registeredUserId = null;

@@ -132,6 +132,7 @@ export function InputBar({
   fileInputRef,
   insertEmoji,
   sendMessage,
+  isSending,
   stopRecordingSend,
   hasComposerContent,
   handleFileChange,
@@ -245,9 +246,10 @@ export function InputBar({
               <button
                 className="w-10 h-10 rounded-full bg-blue-500 hover:bg-blue-600 active:scale-95 text-white flex items-center justify-center shrink-0 transition-all"
                 onClick={sendMessage}
+                disabled={isSending}
                 aria-label="Send message"
               >
-                <Send className="w-[18px] h-[18px]" />
+                <Send className={`w-[18px] h-[18px] ${isSending ? "opacity-50" : ""}`} />
               </button>
             ) : (
               <button

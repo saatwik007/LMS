@@ -269,6 +269,13 @@ import { useDispatch, useSelector } from "react-redux";
 import { getAuthHeaders } from "../../utilites/communityHelper";
 import axios from "axios";
 
+const mediaBaseUrl = import.meta.env.VITE_API_URL || "";
+
+function getMediaUrl(value) {
+  if (!value) return "";
+  return value.startsWith("/") ? `${mediaBaseUrl}${value}` : value;
+}
+
 function DateDivider({ label }) {
   return (
     <div className="flex items-center justify-center my-4">
@@ -321,6 +328,23 @@ function VoiceBubble({ msg, mine }) {
   );
 }
 
+function SharedPostBubble({ post }) {
+  if (!post) {
+    return <span className="text-sm opacity-75">This post is no longer available.</span>;
+  }
+
+  const imageUrl = getMediaUrl(post.image);
+  return (
+    <div className="w-56 overflow-hidden rounded-lg border border-white/15 bg-black/20 sm:w-64">
+      {imageUrl && <img src={imageUrl} alt="Shared post" className="h-32 w-full object-cover" loading="lazy" />}
+      <div className="p-3">
+        <p className="text-xs font-semibold opacity-70">{post.author?.username || "Codingo post"}</p>
+        <p className="mt-1 line-clamp-3 text-sm leading-5">{post.content || (post.video ? "Shared a video" : "Shared a post")}</p>
+      </div>
+    </div>
+  );
+}
+
 function MessageBubble({ msg, mine, gsapReady }) {
   return (
     <div
@@ -345,7 +369,9 @@ function MessageBubble({ msg, mine, gsapReady }) {
               <span className="truncate">{f.name}</span>
             </div>
           ))}
-        {msg.type === "voice" ? (
+        {msg.type === "post_share" ? (
+          <SharedPostBubble post={msg.post} />
+        ) : msg.type === "voice" ? (
           <VoiceBubble msg={msg} mine={mine} />
         ) : (
           msg.text && <span className="whitespace-pre-wrap wrap-break-word">{msg.text}</span>
@@ -409,6 +435,18 @@ export function ChatArea({
                     senderId,
                     recipientId,
                     text: msg.content,
+                    type: msg.type || "chat_message",
+                    post: msg.postId ? {
+                      id: String(msg.postId._id),
+                      content: msg.postId.content || "",
+                      image: msg.postId.image || "",
+                      video: msg.postId.video || "",
+                      author: msg.postId.author ? {
+                        id: String(msg.postId.author._id),
+                        username: msg.postId.author.username,
+                        profilePic: msg.postId.author.profilePic || "",
+                      } : null,
+                    } : null,
                     time: new Date(msg.timestamp),
                     from: isMine ? "me" : "them",
                   },

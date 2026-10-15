@@ -6,6 +6,8 @@ import { InputBar } from "../components/Messages/ChatInput";
 import { Sidebar } from "../components/Messages/ContactList";
 import { useDispatch, useSelector } from "react-redux";
 import { addMessage, fetchContacts, setActiveContact } from "../redux/slices/chatSlice";
+import axios from "axios";
+import { apiUrl, getAuthHeaders } from "../utilites/communityHelper";
 
 export default function MessagesApp() {
   const isMobile = useIsMobile();
@@ -33,6 +35,7 @@ export default function MessagesApp() {
   const [pendingAttachments, setPendingAttachments] = useState([]);
   const [drafts, setDrafts] = useState({});
   const [toasts, setToasts] = useState([]);
+  const [isSending, setIsSending] = useState(false);
 
   const messagesRef = useRef(null);
   const textareaRef = useRef(null);
@@ -47,28 +50,29 @@ export default function MessagesApp() {
 
   const activeContact = contacts.find((c) => c.id === activeContactId) || null;
   const currentUser = useSelector((s) => s.dashboard.currentUser);
+  const currentUserId = currentUser?.id || currentUser?._id;
   const wsRef = useRef(null);
 
   useEffect(() => {
-    if (!currentUser?.id) return;
+    if (!currentUserId) return;
 
     const socketUrl = import.meta.env.VITE_SOCKET_URL || "ws://localhost:5000";
     const socket = new WebSocket(socketUrl);
     wsRef.current = socket;
 
     socket.onopen = () => {
-      socket.send(JSON.stringify({ type: "register", userId: currentUser.id }));
+      socket.send(JSON.stringify({ type: "register", userId: currentUserId }));
     };
     socket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
         if (data.type !== "chat-message") return;
 
-        const { senderId, text, time, timestamp, id } = data.message || {};
+        const { senderId, text, time, timestamp, id, messageType, post } = data.message || {};
         if (!senderId || !text) return;
         dispatch(addMessage({
           contactId: senderId,
-          message: { id, senderId, text, time: new Date(timestamp || time), from: "them" },
+          message: { id, senderId, text, type: messageType || "chat_message", post, time: new Date(timestamp || time), from: "them" },
         }));
       } catch (error) {
         console.error("Chat WebSocket message error", error);
@@ -83,26 +87,43 @@ export default function MessagesApp() {
       socket.close();
       if (wsRef.current === socket) wsRef.current = null;
     };
-  }, [currentUser?.id, dispatch]);
+  }, [currentUserId, dispatch]);
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     const inputText = (drafts[activeContactId] || "").trim();
-    if (!inputText || !activeContactId || !currentUser?.id) return;
+    if (!inputText || !activeContactId || isSending) return;
+    const recipientId = activeContactId;
 
-    const message = {
-      id: Date.now(),
-      senderId: currentUser.id,
-      recipientId: activeContactId,
-      text: inputText.trim(),
-      time: new Date(),
-    };
-    console.log('inputText:', inputText);
-
-    if (wsRef.current?.readyState !== WebSocket.OPEN) return;
-    wsRef.current.send(JSON.stringify({ type: "chat-message", message }));
-
-    dispatch(addMessage({ contactId: activeContactId, message: { ...message, from: "me" } }));
-    setDrafts((currentDrafts) => ({ ...currentDrafts, [activeContactId]: "" }));
+    setIsSending(true);
+    try {
+      const response = await axios.post(`${apiUrl}/api/chat/messages`, {
+        recipientId,
+        content: inputText,
+      }, {
+        withCredentials: true,
+        headers: getAuthHeaders(),
+      });
+      const savedMessage = response.data.message;
+      dispatch(addMessage({
+        contactId: recipientId,
+        message: {
+          id: savedMessage.id,
+          senderId: savedMessage.senderId,
+          recipientId: savedMessage.recipientId,
+          text: savedMessage.text,
+          type: savedMessage.messageType || "chat_message",
+          time: new Date(savedMessage.timestamp),
+          from: "me",
+        },
+      }));
+      setDrafts((currentDrafts) => ({ ...currentDrafts, [recipientId]: "" }));
+      requestScrollBottom.current = true;
+    } catch (error) {
+      console.error("Failed to send message:", error);
+      showToast(error.response?.data?.error || "Message could not be sent");
+    } finally {
+      setIsSending(false);
+    }
   };
 
   /* ---------- toasts ---------- */
@@ -375,6 +396,7 @@ export default function MessagesApp() {
           fileInputRef={fileInputRef}
           insertEmoji={insertEmoji}
           sendMessage={sendMessage}
+          isSending={isSending}
           stopRecordingSend={stopRecordingSend}
           hasComposerContent={hasComposerContent}
           handleFileChange={handleFileChange}

@@ -47,6 +47,7 @@ import Capsules from '../components/Comments/Capsules';
 import CapsulePostModal from '../components/Comments/CapsulePostModal';
 import { FiMessageCircle, FiSend } from 'react-icons/fi';
 import Comments from './CommentsModal';
+import SharePostModal from '../components/shared/SharePostModal';
 /* ─── Constants ───────────────────────────────────────────────── */
 
 // Cycled per card — colored ambient glow
@@ -629,6 +630,7 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, isActive, onLike, on
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true); // must start muted for autoplay to be allowed by browsers
   const [viewCount, setViewCount] = useState(post.viewsCount ?? 0);
+  const [shareOpen, setShareOpen] = useState(false);
   const hasRecordedViewRef = useRef(false);
 
   useEffect(() => {
@@ -854,7 +856,12 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, isActive, onLike, on
               >
                 {post.content}
               </p>
-              <button type="button" className="text-white/80 hover:text-white transition-colors flex-shrink-0 mt-0.5" aria-label="Share">
+              <button
+                type="button"
+                onClick={() => setShareOpen(true)}
+                className="flex-shrink-0 text-white/80 transition-colors hover:text-white"
+                aria-label="Share post with friends"
+              >
                 <FiSend size={14} />
               </button>
             </div>
@@ -901,13 +908,19 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, isActive, onLike, on
             )}
 
             {!hasMedia && (
-              <button type="button" className="text-white/80 hover:text-white transition-colors ml-auto" aria-label="Share">
+              <button
+                type="button"
+                onClick={() => setShareOpen(true)}
+                className="ml-auto text-white/80 transition-colors hover:text-white"
+                aria-label="Share post with friends"
+              >
                 <FiSend size={16} />
               </button>
             )}
           </div>
         </div>
       </div>
+      {shareOpen && <SharePostModal post={{ ...post, image: imageUrl }} onClose={() => setShareOpen(false)} />}
     </div>
   );
 }
