@@ -24,8 +24,9 @@
 import React, { useState, useRef, useLayoutEffect, useCallback, useEffect } from "react";
 import { gsap } from "gsap";
 import { FaEye, FaHeart, FaPlay, FaVolumeMute, FaVolumeUp, FaChevronLeft, FaChevronRight, FaTimes } from "react-icons/fa";
-import { FiSend, FiMessageCircle } from "react-icons/fi";
+import { FiArchive, FiBookmark, FiSend, FiMessageCircle } from "react-icons/fi";
 import SharePostModal from "../shared/SharePostModal";
+import SavePostModal from "../shared/SavePostModal";
 
 /* ------------------------------------------------------------------ */
 /* Small helpers                                                       */
@@ -140,7 +141,7 @@ const SAMPLE_POSTS = [
 /* Main component                                                      */
 /* ------------------------------------------------------------------ */
 
-export default function PostPreview({ posts, initialIndex = 0, isOpen, onClose, onView, onLike }) {
+export default function PostPreview({ posts, initialIndex = 0, isOpen, onClose, onView, onLike, onArchive, onSavedChange }) {
     const apiUrl = import.meta.env.VITE_API_URL || '';
     const previewPosts = Array.isArray(posts) ? posts : [];
     const [index, setIndex] = useState(initialIndex);
@@ -150,6 +151,9 @@ export default function PostPreview({ posts, initialIndex = 0, isOpen, onClose, 
     const [mediaLoaded, setMediaLoaded] = useState(false);
     const [likingPostId, setLikingPostId] = useState(null);
     const [shareOpen, setShareOpen] = useState(false);
+    const [saveOpen, setSaveOpen] = useState(false);
+    const [isSaved, setIsSaved] = useState(false);
+    const [isArchiving, setIsArchiving] = useState(false);
 
     const backdropRef = useRef(null);
     const cardRef = useRef(null);
@@ -175,7 +179,12 @@ export default function PostPreview({ posts, initialIndex = 0, isOpen, onClose, 
     useEffect(() => {
         setMediaLoaded(false);
         setShareOpen(false);
+        setSaveOpen(false);
     }, [index]);
+
+    useEffect(() => {
+        setIsSaved(Boolean(post?.isSavedByCurrentUser));
+    }, [post?.id, post?.isSavedByCurrentUser]);
 
     useEffect(() => {
         onViewRef.current = onView;
@@ -281,6 +290,19 @@ export default function PostPreview({ posts, initialIndex = 0, isOpen, onClose, 
             console.error("Failed to toggle post like:", error);
         } finally {
             setLikingPostId(null);
+        }
+    };
+
+    const handleArchive = async () => {
+        if (!post?.id || !onArchive || isArchiving) return;
+        setIsArchiving(true);
+        try {
+            await onArchive(post.id);
+            onClose?.();
+        } catch (error) {
+            console.error("Failed to archive post:", error);
+        } finally {
+            setIsArchiving(false);
         }
     };
 
@@ -550,9 +572,31 @@ export default function PostPreview({ posts, initialIndex = 0, isOpen, onClose, 
 
                         <button
                             type="button"
+                            aria-label={isSaved ? "Post saved" : "Save post"}
+                            aria-pressed={isSaved}
+                            onClick={() => setSaveOpen(true)}
+                            className={`ml-auto transition-colors ${isSaved ? "text-cyan-300 hover:text-cyan-200" : "text-white/80 hover:text-white"}`}
+                        >
+                            <FiBookmark size={20} fill={isSaved ? "currentColor" : "none"} />
+                        </button>
+
+                        {onArchive && (
+                            <button
+                                type="button"
+                                aria-label="Archive post"
+                                onClick={handleArchive}
+                                disabled={isArchiving}
+                                className="text-white/80 transition-colors hover:text-cyan-300 disabled:cursor-wait disabled:opacity-50"
+                            >
+                                <FiArchive size={20} />
+                            </button>
+                        )}
+
+                        <button
+                            type="button"
                             aria-label="Share post with friends"
                             onClick={() => setShareOpen(true)}
-                            className="ml-auto text-white/80 transition-colors hover:text-white"
+                            className="text-white/80 transition-colors hover:text-white"
                         >
                             <FiSend size={20} />
                         </button>
@@ -561,6 +605,16 @@ export default function PostPreview({ posts, initialIndex = 0, isOpen, onClose, 
             </div>
 
             {shareOpen && <SharePostModal post={{ ...post, image: imageUrl }} onClose={() => setShareOpen(false)} />}
+            {saveOpen && (
+                <SavePostModal
+                    post={post}
+                    onClose={() => setSaveOpen(false)}
+                    onSavedChange={(change) => {
+                        setIsSaved(change.saved);
+                        onSavedChange?.(change);
+                    }}
+                />
+            )}
 
             {/* scoped scrollbar styling for the comments panel */}
             <style>{`

@@ -56,6 +56,25 @@ const followRequestSchema = new mongoose.Schema(
   { _id: true },
 );
 
+const savedPostSchema = new mongoose.Schema(
+  {
+    post: { type: mongoose.Schema.Types.ObjectId, ref: "Post", required: true },
+    savedAt: { type: Date, default: Date.now },
+  },
+  { _id: false },
+);
+
+const savedCollectionSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true, trim: true, maxlength: 50 },
+    posts: {
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Post" }],
+      default: [],
+    },
+  },
+  { timestamps: true },
+);
+
 const userSchema = new mongoose.Schema(
   {
     username: { type: String, required: true, unique: true, minlength: 3 },
@@ -107,6 +126,8 @@ const userSchema = new mongoose.Schema(
       default: [],
     },
     profileGridLayout: { type: [profileGridItemSchema], default: [] },
+    savedPosts: { type: [savedPostSchema], default: [] },
+    savedCollections: { type: [savedCollectionSchema], default: [] },
     rewards: { type: [rewardSchema], default: [] },
     resetToken: { type: String, default: null, index: true },
     resetTokenExpiry: { type: Date, default: null },

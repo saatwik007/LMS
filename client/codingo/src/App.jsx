@@ -31,6 +31,7 @@ import GlassFeed from './pages/LandinPageExperimental.jsx';
 import DiscoverPage from './pages/discoverPage.jsx';
 import AskIgris from './pages/askIgris.jsx';
 import RememberIgris from './pages/rememberIgris.jsx';
+import SavedPostsPage from './pages/SavedPostsPage.jsx';
 import { onMessage } from './firebase';
 import { registerPushNotifications } from './notifications/registerPushNotifications';
 
@@ -224,6 +225,14 @@ function AppShell() {
               element={(
                 <ProtectedRoute>
                   <Messages />
+                </ProtectedRoute>
+              )}
+            />
+            <Route
+              path="/saved"
+              element={(
+                <ProtectedRoute>
+                  <SavedPostsPage />
                 </ProtectedRoute>
               )}
             />

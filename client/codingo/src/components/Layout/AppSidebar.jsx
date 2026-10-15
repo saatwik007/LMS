@@ -3,6 +3,7 @@ import {
   FaBars,
   FaBell,
   FaBook,
+  FaBookmark,
   FaBrain,
   FaChartLine,
   FaEllipsisH,
@@ -32,6 +33,7 @@ import { registerPushNotifications } from '../../notifications/registerPushNotif
 const communityNavItems = [
   { key: 'home', label: 'Home', icon: FaHome, to: '/community', match: ['/community'] },
   { key: 'messages', label: 'Messages', icon: FaFacebookMessenger, to: '/messages', match: ['/messages'] },
+  { key: 'saved', label: 'Saved', icon: FaBookmark, to: '/saved', match: ['/saved'] },
   { key: 'askIgris', label: 'Ask Igris', icon: FaBrain, to: '/askIgris', match: ['/askIgris'] },
   { key: 'rememberIgris', label: 'Remember Igris', icon: FaBook, to: '/rememberIgris', match: ['/rememberIgris'] },
   { key: 'friends', label: 'Friends', icon: FaUserFriends, to: '/friends', match: ['/friends'] },

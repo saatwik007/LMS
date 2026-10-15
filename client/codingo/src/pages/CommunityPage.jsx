@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import {
   FaHeart,
+  FaArchive,
   FaRegHeart,
   FaEye,
   FaComment,
@@ -45,9 +46,10 @@ import {
 import gsap from 'gsap';
 import Capsules from '../components/Comments/Capsules';
 import CapsulePostModal from '../components/Comments/CapsulePostModal';
-import { FiMessageCircle, FiSend } from 'react-icons/fi';
+import { FiBookmark, FiMessageCircle, FiSend } from 'react-icons/fi';
 import Comments from './CommentsModal';
 import SharePostModal from '../components/shared/SharePostModal';
+import SavePostModal from '../components/shared/SavePostModal';
 /* ─── Constants ───────────────────────────────────────────────── */
 
 // Cycled per card — colored ambient glow
@@ -619,7 +621,7 @@ export function PostComposer({
   );
 }
 
-function FilmPostCard({ post, cardRef, textGradient, isOwn, isActive, onLike, onDelete }) {
+function FilmPostCard({ post, cardRef, textGradient, isOwn, isActive, onLike, onDelete, onArchive }) {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const apiUrl = import.meta.env.VITE_API_URL || '';
@@ -631,6 +633,8 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, isActive, onLike, on
   const [isMuted, setIsMuted] = useState(true); // must start muted for autoplay to be allowed by browsers
   const [viewCount, setViewCount] = useState(post.viewsCount ?? 0);
   const [shareOpen, setShareOpen] = useState(false);
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [isSaved, setIsSaved] = useState(Boolean(post.isSavedByCurrentUser));
   const hasRecordedViewRef = useRef(false);
 
   useEffect(() => {
@@ -647,6 +651,10 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, isActive, onLike, on
       console.error('Failed to record feed post view:', error);
     });
   }, [apiUrl, isActive, post.id]);
+
+  useEffect(() => {
+    setIsSaved(Boolean(post.isSavedByCurrentUser));
+  }, [post.id, post.isSavedByCurrentUser]);
 
   const liked = useSelector((state) => state.feed.liked[post.id] ?? post.isLikedByCurrentUser ?? false);
   const likeCount = useSelector((state) => state.feed.likeCounts[post.id] ?? post.likesCount ?? 0);
@@ -783,14 +791,10 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, isActive, onLike, on
             </span>
           </div>
           {isOwn && (
-            <button
-              type="button"
-              onClick={() => onDelete && onDelete(post.id)}
-              className="text-white/70 hover:text-[#f87171] transition-colors flex-shrink-0 rounded-full p-1.5"
-              aria-label="Delete"
-            >
-              <FaTrash size={15} />
-            </button>
+            <div className="flex shrink-0 items-center gap-1">
+              <button type="button" onClick={() => onArchive?.(post.id)} className="rounded-full p-1.5 text-white/70 transition-colors hover:text-cyan-300" aria-label="Archive post"><FaArchive size={15} /></button>
+              <button type="button" onClick={() => onDelete?.(post.id)} className="rounded-full p-1.5 text-white/70 transition-colors hover:text-[#f87171]" aria-label="Delete"><FaTrash size={15} /></button>
+            </div>
           )}
         </div>
 
@@ -903,6 +907,16 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, isActive, onLike, on
               <span className="text-[12.5px]" style={{ fontFamily: "'DM Mono'" }}>{viewCount.toLocaleString()}</span>
             </div>
 
+            <button
+              type="button"
+              onClick={() => setSaveOpen(true)}
+              className={`ml-auto transition-colors ${isSaved ? 'text-cyan-300 hover:text-cyan-200' : 'text-white/80 hover:text-white'}`}
+              aria-label={isSaved ? 'Post saved' : 'Save post'}
+              aria-pressed={isSaved}
+            >
+              <FiBookmark size={17} fill={isSaved ? 'currentColor' : 'none'} />
+            </button>
+
             {showModal && (
               <Comments post={post} />
             )}
@@ -911,7 +925,7 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, isActive, onLike, on
               <button
                 type="button"
                 onClick={() => setShareOpen(true)}
-                className="ml-auto text-white/80 transition-colors hover:text-white"
+                className="text-white/80 transition-colors hover:text-white"
                 aria-label="Share post with friends"
               >
                 <FiSend size={16} />
@@ -921,6 +935,7 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, isActive, onLike, on
         </div>
       </div>
       {shareOpen && <SharePostModal post={{ ...post, image: imageUrl }} onClose={() => setShareOpen(false)} />}
+      {saveOpen && <SavePostModal post={post} onClose={() => setSaveOpen(false)} onSavedChange={({ saved }) => setIsSaved(saved)} />}
     </div>
   );
 }
@@ -1095,6 +1110,19 @@ export default function CommunityPage() {
     } catch (err) { console.error('Delete error:', err); }
   };
 
+  const handleArchive = async (postId) => {
+    try {
+      const response = await axios.post(`${apiUrl}/api/community/posts/${postId}/archive`, {}, {
+        withCredentials: true,
+        headers: getAuthHeaders(),
+      });
+      if (response.data.archived) dispatch(setPosts((current) => current.filter((post) => post.id !== postId)));
+    } catch (err) {
+      console.error('Archive error:', err);
+      dispatch(setError(err.response?.data?.message || 'Could not archive this post'));
+    }
+  };
+
   const handleCapsulePost = async (file, caption = '') => {
     if (!file) { dispatch(setError('Please select an image to post')); return; }
     dispatch(setError(''));
@@ -1192,6 +1220,7 @@ export default function CommunityPage() {
                     isActive={i === activeIndex}
                     onLike={handleLike}
                     onDelete={handleDelete}
+                    onArchive={handleArchive}
                   />
                 </div>
               ))

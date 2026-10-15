@@ -147,7 +147,7 @@ exports.sharePost = async (req, res) => {
 
         const [sender, post] = await Promise.all([
             User.findById(senderId).select('username friends followers following'),
-            Post.findOne({ _id: postId, isActive: true })
+            Post.findOne({ _id: postId, isActive: true, isArchived: { $ne: true } })
                 .select('content image video author')
                 .populate('author', 'username profilePic')
         ]);

@@ -552,6 +552,9 @@ export function ChatArea({
           onClose={() => setPreviewOpen(false)}
           onView={recordPostView}
           onLike={togglePostLike}
+          onSavedChange={({ postId, saved }) => setPreviewPost((post) => (
+            post?.id === postId ? { ...post, isSavedByCurrentUser: saved } : post
+          ))}
         />
         {previewError && (
           <div className="fixed bottom-6 left-1/2 z-200 flex -translate-x-1/2 items-center gap-3 rounded-lg border border-rose-400/25 bg-neutral-950 px-4 py-3 text-sm text-rose-300 shadow-2xl">
