@@ -49,6 +49,20 @@ const commentSchema = new mongoose.Schema({
   replies: [replySchema]
 }, { _id: true });
 
+const postMusicSchema = new mongoose.Schema({
+  provider: { type: String, enum: ['audius', 'jamendo'], required: true },
+  trackId: { type: String, required: true, maxlength: 100 },
+  title: { type: String, required: true, maxlength: 300 },
+  artist: { type: String, required: true, maxlength: 200 },
+  artworkUrl: { type: String, default: '' },
+  sourceUrl: { type: String, required: true },
+  license: { type: String, required: true, maxlength: 300 },
+  licenseUrl: { type: String, default: '' },
+  duration: { type: Number, default: 0, min: 0 },
+  startTime: { type: Number, default: 0, min: 0 },
+  volume: { type: Number, default: 0.7, min: 0, max: 1 }
+}, { _id: false });
+
 const postSchema = new mongoose.Schema({
   author: { 
     type: mongoose.Schema.Types.ObjectId, 
@@ -69,6 +83,10 @@ const postSchema = new mongoose.Schema({
   video: {
     type: String,
     default: ''
+  },
+  music: {
+    type: postMusicSchema,
+    default: null
   },
   driveFileId: {
     type: String,
