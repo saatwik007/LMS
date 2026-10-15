@@ -523,19 +523,27 @@ exports.getFriends = async (req, res) => {
     const currentUserId = req.user.id;
 
     const currentUser = await User.findById(currentUserId)
-      .populate('friends', 'username profilePic totalXp level league streakCount')
+      .select('friends followers following')
       .lean();
 
     if (!currentUser) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Handle case where friends array doesn't exist or is empty
-    if (!currentUser.friends || !Array.isArray(currentUser.friends)) {
+    const followerIds = new Set((currentUser.followers || []).map(String));
+    const contactIds = new Set((currentUser.friends || []).map(String));
+    (currentUser.following || []).forEach(id => {
+      if (followerIds.has(String(id))) contactIds.add(String(id));
+    });
+
+    if (!contactIds.size) {
       return res.json({ friends: [] });
     }
 
-    const friends = currentUser.friends.map(friend => ({
+    const contacts = await User.find({ _id: { $in: [...contactIds] } })
+      .select('username profilePic totalXp level league streakCount')
+      .lean();
+    const friends = contacts.map(friend => ({
       _id: friend._id,
       username: friend.username,
       profilePic: friend.profilePic || '',

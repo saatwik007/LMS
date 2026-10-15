@@ -25,6 +25,7 @@ import React, { useState, useRef, useLayoutEffect, useCallback, useEffect } from
 import { gsap } from "gsap";
 import { FaEye, FaHeart, FaPlay, FaVolumeMute, FaVolumeUp, FaChevronLeft, FaChevronRight, FaTimes } from "react-icons/fa";
 import { FiSend, FiMessageCircle } from "react-icons/fi";
+import SharePostModal from "../shared/SharePostModal";
 
 /* ------------------------------------------------------------------ */
 /* Small helpers                                                       */
@@ -148,6 +149,7 @@ export default function PostPreview({ posts, initialIndex = 0, isOpen, onClose, 
     const [isPlaying, setIsPlaying] = useState(false);
     const [mediaLoaded, setMediaLoaded] = useState(false);
     const [likingPostId, setLikingPostId] = useState(null);
+    const [shareOpen, setShareOpen] = useState(false);
 
     const backdropRef = useRef(null);
     const cardRef = useRef(null);
@@ -170,7 +172,10 @@ export default function PostPreview({ posts, initialIndex = 0, isOpen, onClose, 
         if (isOpen) setIndex(initialIndex);
     }, [isOpen, initialIndex]);
 
-    useEffect(() => setMediaLoaded(false), [index]);
+    useEffect(() => {
+        setMediaLoaded(false);
+        setShareOpen(false);
+    }, [index]);
 
     useEffect(() => {
         onViewRef.current = onView;
@@ -545,7 +550,8 @@ export default function PostPreview({ posts, initialIndex = 0, isOpen, onClose, 
 
                         <button
                             type="button"
-                            aria-label="Share"
+                            aria-label="Share post with friends"
+                            onClick={() => setShareOpen(true)}
                             className="ml-auto text-white/80 transition-colors hover:text-white"
                         >
                             <FiSend size={20} />
@@ -553,6 +559,8 @@ export default function PostPreview({ posts, initialIndex = 0, isOpen, onClose, 
                     </div>
                 </aside>
             </div>
+
+            {shareOpen && <SharePostModal post={{ ...post, image: imageUrl }} onClose={() => setShareOpen(false)} />}
 
             {/* scoped scrollbar styling for the comments panel */}
             <style>{`
