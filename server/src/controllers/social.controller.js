@@ -1,4 +1,290 @@
 const User = require('../models/user.model');
+const mongoose = require('mongoose');
+
+const SOCIAL_USER_FIELDS = 'username profilePic totalXp level league streakCount';
+
+function hasId(values, id) {
+  return (values || []).some(value => String(value?._id || value) === String(id));
+}
+
+async function migrateLegacyFriends(user) {
+  if (!user?.friends?.length) return user;
+
+  const followerIds = new Set((user.followers || []).map(String));
+  const followingIds = new Set((user.following || []).map(String));
+  let changed = false;
+
+  for (const friendId of user.friends) {
+    const id = String(friendId);
+    if (!followerIds.has(id)) {
+      user.followers.push(friendId);
+      followerIds.add(id);
+      changed = true;
+    }
+    if (!followingIds.has(id)) {
+      user.following.push(friendId);
+      followingIds.add(id);
+      changed = true;
+    }
+  }
+
+  if (changed) await user.save();
+  return user;
+}
+
+function validateTargetId(req, res) {
+  const targetId = req.params.userId;
+  if (!mongoose.Types.ObjectId.isValid(targetId)) {
+    res.status(400).json({ message: 'Invalid user ID' });
+    return null;
+  }
+  if (String(targetId) === String(req.user.id)) {
+    res.status(400).json({ message: 'This action is not available for your own account' });
+    return null;
+  }
+  return targetId;
+}
+
+exports.getFollowStatus = async (req, res) => {
+  try {
+    const targetId = req.params.userId;
+    if (!mongoose.Types.ObjectId.isValid(targetId)) {
+      return res.status(400).json({ message: 'Invalid user ID' });
+    }
+
+    const [viewer, target] = await Promise.all([
+      User.findById(req.user.id).select('friends followers following blockedUsers'),
+      User.findById(targetId).select('friends followers following followRequests blockedUsers isPrivate')
+    ]);
+    if (!viewer || !target) return res.status(404).json({ message: 'User not found' });
+
+    await Promise.all([migrateLegacyFriends(viewer), migrateLegacyFriends(target)]);
+    const isSelf = String(viewer._id) === String(target._id);
+    const isBlockedByYou = hasId(viewer.blockedUsers, target._id);
+    const hasBlockedYou = hasId(target.blockedUsers, viewer._id);
+    const isFollowing = hasId(viewer.following, target._id);
+    const isRequested = (target.followRequests || []).some(request => String(request.from) === String(viewer._id));
+
+    return res.json({
+      status: isSelf ? 'self' : isBlockedByYou ? 'blocked' : isFollowing ? 'following' : isRequested ? 'requested' : 'none',
+      followersCount: target.followers.length,
+      followingCount: target.following.length,
+      isPrivate: target.isPrivate !== false,
+      canView: isSelf || (!isBlockedByYou && !hasBlockedYou && (target.isPrivate === false || isFollowing)),
+      hasBlockedYou
+    });
+  } catch (error) {
+    console.error('Get follow status error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+exports.followUser = async (req, res) => {
+  try {
+    const targetId = validateTargetId(req, res);
+    if (!targetId) return;
+
+    const [viewer, target] = await Promise.all([
+      User.findById(req.user.id).select('username friends followers following blockedUsers'),
+      User.findById(targetId).select('username friends followers following followRequests blockedUsers isPrivate notifications')
+    ]);
+    if (!viewer || !target) return res.status(404).json({ message: 'User not found' });
+    await Promise.all([migrateLegacyFriends(viewer), migrateLegacyFriends(target)]);
+
+    if (hasId(viewer.blockedUsers, targetId) || hasId(target.blockedUsers, viewer._id)) {
+      return res.status(403).json({ message: 'Follow is unavailable for this account' });
+    }
+    if (hasId(viewer.following, targetId)) {
+      return res.json({ status: 'following', followersCount: target.followers.length });
+    }
+
+    if (target.isPrivate !== false) {
+      if (!target.followRequests.some(request => String(request.from) === String(viewer._id))) {
+        target.followRequests.push({ from: viewer._id });
+        target.notifications.push({
+          type: 'follow_request',
+          actor: viewer._id,
+          title: 'New follow request',
+          detail: `${viewer.username} requested to follow you`
+        });
+        await target.save();
+      }
+      return res.json({ status: 'requested', followersCount: target.followers.length });
+    }
+
+    viewer.following.addToSet(target._id);
+    target.followers.addToSet(viewer._id);
+    target.notifications.push({
+      type: 'follow',
+      actor: viewer._id,
+      title: 'New follower',
+      detail: `${viewer.username} followed you`
+    });
+    await Promise.all([viewer.save(), target.save()]);
+    return res.json({ status: 'following', followersCount: target.followers.length });
+  } catch (error) {
+    console.error('Follow user error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+exports.unfollowUser = async (req, res) => {
+  try {
+    const targetId = validateTargetId(req, res);
+    if (!targetId) return;
+
+    await Promise.all([
+      User.findByIdAndUpdate(req.user.id, { $pull: { following: targetId } }),
+      User.findByIdAndUpdate(targetId, {
+        $pull: { followers: req.user.id, followRequests: { from: req.user.id } }
+      })
+    ]);
+    const target = await User.findById(targetId).select('followers').lean();
+    return res.json({ status: 'none', followersCount: target?.followers?.length || 0 });
+  } catch (error) {
+    console.error('Unfollow user error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+exports.getFollowRequests = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id)
+      .populate('followRequests.from', SOCIAL_USER_FIELDS)
+      .select('followRequests')
+      .lean();
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    return res.json({ requests: user.followRequests || [] });
+  } catch (error) {
+    console.error('Get follow requests error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+exports.approveFollowRequest = async (req, res) => {
+  try {
+    const requesterId = validateTargetId(req, res);
+    if (!requesterId) return;
+    const [user, requester] = await Promise.all([
+      User.findById(req.user.id).select('username followers followRequests blockedUsers'),
+      User.findById(requesterId).select('following blockedUsers notifications')
+    ]);
+    if (!user || !requester) return res.status(404).json({ message: 'User not found' });
+    if (!user.followRequests.some(request => String(request.from) === String(requesterId))) {
+      return res.status(404).json({ message: 'Follow request not found' });
+    }
+    if (hasId(user.blockedUsers, requesterId) || hasId(requester.blockedUsers, user._id)) {
+      return res.status(403).json({ message: 'Follow is unavailable for this account' });
+    }
+
+    user.followRequests = user.followRequests.filter(request => String(request.from) !== String(requesterId));
+    user.followers.addToSet(requester._id);
+    requester.following.addToSet(user._id);
+    requester.notifications.push({
+      type: 'follow_approved',
+      actor: user._id,
+      title: 'Follow request approved',
+      detail: `${user.username} approved your follow request`
+    });
+    await Promise.all([user.save(), requester.save()]);
+    return res.json({ status: 'following', followersCount: user.followers.length });
+  } catch (error) {
+    console.error('Approve follow request error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+exports.rejectFollowRequest = async (req, res) => {
+  try {
+    const requesterId = validateTargetId(req, res);
+    if (!requesterId) return;
+    await User.findByIdAndUpdate(req.user.id, { $pull: { followRequests: { from: requesterId } } });
+    return res.json({ status: 'none' });
+  } catch (error) {
+    console.error('Reject follow request error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+exports.getFollowers = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId)
+      .populate('followers', SOCIAL_USER_FIELDS)
+      .select('followers')
+      .lean();
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    return res.json({ users: user.followers || [] });
+  } catch (error) {
+    console.error('Get followers error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+exports.getFollowing = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId)
+      .populate('following', SOCIAL_USER_FIELDS)
+      .select('following')
+      .lean();
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    return res.json({ users: user.following || [] });
+  } catch (error) {
+    console.error('Get following error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+exports.blockUser = async (req, res) => {
+  try {
+    const targetId = validateTargetId(req, res);
+    if (!targetId) return;
+    const target = await User.exists({ _id: targetId });
+    if (!target) return res.status(404).json({ message: 'User not found' });
+
+    await Promise.all([
+      User.findByIdAndUpdate(req.user.id, {
+        $addToSet: { blockedUsers: targetId },
+        $pull: { followers: targetId, following: targetId, followRequests: { from: targetId } }
+      }),
+      User.findByIdAndUpdate(targetId, {
+        $pull: { followers: req.user.id, following: req.user.id, followRequests: { from: req.user.id } }
+      })
+    ]);
+    return res.json({ status: 'blocked' });
+  } catch (error) {
+    console.error('Block user error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+exports.unblockUser = async (req, res) => {
+  try {
+    const targetId = validateTargetId(req, res);
+    if (!targetId) return;
+    await User.findByIdAndUpdate(req.user.id, { $pull: { blockedUsers: targetId } });
+    return res.json({ status: 'none' });
+  } catch (error) {
+    console.error('Unblock user error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+exports.updatePrivacy = async (req, res) => {
+  try {
+    if (typeof req.body.isPrivate !== 'boolean') {
+      return res.status(400).json({ message: 'isPrivate must be a boolean' });
+    }
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { $set: { isPrivate: req.body.isPrivate } },
+      { new: true }
+    ).select('isPrivate');
+    return res.json({ isPrivate: user.isPrivate });
+  } catch (error) {
+    console.error('Update privacy error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
 
 /**
  * Search users by username (excluding self and already-friends)

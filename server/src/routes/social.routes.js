@@ -9,6 +9,19 @@ router.use(protect);
 // Search users
 router.get('/search', socialController.searchUsers);
 
+// Directional follows and private-profile requests
+router.get('/follow-status/:userId', socialController.getFollowStatus);
+router.post('/follow/:userId', socialController.followUser);
+router.delete('/follow/:userId', socialController.unfollowUser);
+router.get('/follow-requests', socialController.getFollowRequests);
+router.post('/follow-requests/:userId/approve', socialController.approveFollowRequest);
+router.delete('/follow-requests/:userId', socialController.rejectFollowRequest);
+router.get('/followers/:userId', socialController.getFollowers);
+router.get('/following/:userId', socialController.getFollowing);
+router.post('/block/:userId', socialController.blockUser);
+router.delete('/block/:userId', socialController.unblockUser);
+router.patch('/privacy', socialController.updatePrivacy);
+
 // Friend requests
 router.get('/friend-requests', socialController.getFriendRequests);
 router.post('/friend-request/:userId', socialController.sendFriendRequest);
