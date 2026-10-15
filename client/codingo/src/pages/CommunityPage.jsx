@@ -3,6 +3,7 @@ import axios from 'axios';
 import {
   FaHeart,
   FaRegHeart,
+  FaEye,
   FaComment,
   FaPaperPlane,
   FaImage,
@@ -627,6 +628,23 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, isActive, onLike, on
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true); // must start muted for autoplay to be allowed by browsers
+  const [viewCount, setViewCount] = useState(post.viewsCount ?? 0);
+  const hasRecordedViewRef = useRef(false);
+
+  useEffect(() => {
+    if (!isActive || hasRecordedViewRef.current) return;
+    hasRecordedViewRef.current = true;
+
+    axios.post(`${apiUrl}/api/community/posts/${post.id}/view`, {}, {
+      withCredentials: true,
+      headers: getAuthHeaders(),
+    }).then((response) => {
+      setViewCount(response.data.viewsCount ?? 0);
+    }).catch((error) => {
+      hasRecordedViewRef.current = false;
+      console.error('Failed to record feed post view:', error);
+    });
+  }, [apiUrl, isActive, post.id]);
 
   const liked = useSelector((state) => state.feed.liked[post.id] ?? post.isLikedByCurrentUser ?? false);
   const likeCount = useSelector((state) => state.feed.likeCounts[post.id] ?? post.likesCount ?? 0);
@@ -869,6 +887,14 @@ function FilmPostCard({ post, cardRef, textGradient, isOwn, isActive, onLike, on
               <FiMessageCircle size={17} />
               <span className="text-[12.5px]" style={{ fontFamily: "'DM Mono'" }}>{post.commentsCount}</span>
             </button>
+
+            <div
+              className="flex items-center gap-1.5 text-white/90"
+              aria-label={`${viewCount} views`}
+            >
+              <FaEye size={17} />
+              <span className="text-[12.5px]" style={{ fontFamily: "'DM Mono'" }}>{viewCount.toLocaleString()}</span>
+            </div>
 
             {showModal && (
               <Comments post={post} />

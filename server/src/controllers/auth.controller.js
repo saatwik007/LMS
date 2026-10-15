@@ -58,6 +58,7 @@ function buildUserPayload(user) {
     badges: user.badges || [],
     notifications: (user.notifications || []).slice(-10).reverse(),
     friends: user.friends || [],
+    friendsCount: user.friends?.length || 0,
     friendRequests: user.friendRequests || [],
     rewards: user.rewards || [],
   };
@@ -346,7 +347,7 @@ async function getPublicProfile(req, res) {
     }
 
     const user = await userModel.findById(req.params.userId)
-      .select('username profilePic bio totalXp level league streakCount badges')
+      .select('username profilePic bio totalXp level league streakCount badges friends')
       .populate('badges.badge');
     if (!user) {
       return res.status(404).json({ message: 'User not found.' });
@@ -362,7 +363,8 @@ async function getPublicProfile(req, res) {
         level: user.level || 1,
         league: user.league || 'Bronze 1',
         streakCount: user.streakCount || 0,
-        badges: user.badges || []
+        badges: user.badges || [],
+        friendsCount: user.friends?.length || 0
       }
     });
   } catch (error) {
@@ -405,13 +407,17 @@ async function claimReward(req, res) {
 
 async function forgotPassword(req, res) {
   try {
-    const { email } = req.body;
-    if (!email) return res.status(400).json({ message: 'Email is required.' });
+    const identifier = String(req.body.emailOrUsername || req.body.email || '').trim();
+    if (!identifier) return res.status(400).json({ message: 'Email or username is required.' });
 
-    const user = await userModel.findOne({ email: email.toLowerCase().trim() });
+    const user = await userModel.findOne({
+      $or: [
+        { email: identifier.toLowerCase() },
+        { username: identifier }
+      ]
+    });
     // Always return success to prevent email enumeration
     if (!user) {
-      console.log(`[AUTH] Forgot password attempt for non-existent email: ${email}`);
       return res.status(200).json({ message: 'If that email exists, an OTP has been sent.' });
     }
 
@@ -422,20 +428,18 @@ async function forgotPassword(req, res) {
     user.resetOtpAttempts = 0;
     await user.save();
 
-    console.log(`[AUTH] Password reset requested for ${email}. OTP: ${otp}`);
-
     // Send the OTP via email when SMTP is configured; never fail the request on email errors.
     let emailSent = false;
     try {
       const result = await sendOtpEmail(user.email, otp);
       emailSent = result.sent;
       if (emailSent) {
-        console.log(`[AUTH] OTP email sent successfully to ${email}`);
+        console.log('[AUTH] Password reset OTP email sent successfully');
       } else {
         console.warn(`[AUTH] Email provider not configured. Showing OTP in response for development.`);
       }
     } catch (mailError) {
-      console.error(`[AUTH] Error sending reset OTP to ${email}:`, mailError.message);
+      console.error('[AUTH] Error sending reset OTP:', mailError.message);
     }
 
     return res.status(200).json({
@@ -452,16 +456,20 @@ async function forgotPassword(req, res) {
 
 async function resetPassword(req, res) {
   try {
-    const { email, otp, newPassword } = req.body;
-    if (!email || !otp || !newPassword) {
-      return res.status(400).json({ message: 'Email, OTP and new password are required.' });
+    const identifier = String(req.body.emailOrUsername || req.body.email || '').trim();
+    const { otp, newPassword } = req.body;
+    if (!identifier || !otp || !newPassword) {
+      return res.status(400).json({ message: 'Email or username, OTP and new password are required.' });
     }
     if (newPassword.length < 6) {
       return res.status(400).json({ message: 'Password must be at least 6 characters.' });
     }
 
     const user = await userModel.findOne({
-      email: email.toLowerCase().trim(),
+      $or: [
+        { email: identifier.toLowerCase() },
+        { username: identifier }
+      ],
       resetTokenExpiry: { $gt: new Date() }
     });
     if (!user || !user.resetToken) {

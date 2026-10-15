@@ -23,7 +23,7 @@
 
 import React, { useState, useRef, useLayoutEffect, useCallback, useEffect } from "react";
 import { gsap } from "gsap";
-import { FaHeart, FaPlay, FaVolumeMute, FaVolumeUp, FaChevronLeft, FaChevronRight, FaTimes } from "react-icons/fa";
+import { FaEye, FaHeart, FaPlay, FaVolumeMute, FaVolumeUp, FaChevronLeft, FaChevronRight, FaTimes } from "react-icons/fa";
 import { FiSend, FiMessageCircle } from "react-icons/fi";
 
 /* ------------------------------------------------------------------ */
@@ -139,7 +139,7 @@ const SAMPLE_POSTS = [
 /* Main component                                                      */
 /* ------------------------------------------------------------------ */
 
-export default function PostPreview({ posts, initialIndex = 0, isOpen, onClose }) {
+export default function PostPreview({ posts, initialIndex = 0, isOpen, onClose, onView, onLike }) {
     const apiUrl = import.meta.env.VITE_API_URL || '';
     const previewPosts = Array.isArray(posts) ? posts : [];
     const [index, setIndex] = useState(initialIndex);
@@ -147,12 +147,15 @@ export default function PostPreview({ posts, initialIndex = 0, isOpen, onClose }
     const [isMuted, setIsMuted] = useState(true);
     const [isPlaying, setIsPlaying] = useState(false);
     const [mediaLoaded, setMediaLoaded] = useState(false);
+    const [likingPostId, setLikingPostId] = useState(null);
 
     const backdropRef = useRef(null);
     const cardRef = useRef(null);
     const glowRef = useRef(null);
     const slideRef = useRef(null); // animated on prev/next
     const videoRef = useRef(null);
+    const onViewRef = useRef(onView);
+    const viewedPostIdsRef = useRef(new Set());
 
     const post = previewPosts[index];
     const imageUrl = getMediaUrl(post?.image || post?.mediaUrl, apiUrl);
@@ -168,6 +171,16 @@ export default function PostPreview({ posts, initialIndex = 0, isOpen, onClose }
     }, [isOpen, initialIndex]);
 
     useEffect(() => setMediaLoaded(false), [index]);
+
+    useEffect(() => {
+        onViewRef.current = onView;
+    }, [onView]);
+
+    useEffect(() => {
+        if (!isOpen || !post?.id || viewedPostIdsRef.current.has(post.id)) return;
+        viewedPostIdsRef.current.add(post.id);
+        onViewRef.current?.(post.id);
+    }, [isOpen, post?.id]);
 
     /* ---------------- open animation ---------------- */
     useLayoutEffect(() => {
@@ -252,6 +265,18 @@ export default function PostPreview({ posts, initialIndex = 0, isOpen, onClose }
         const v = videoRef.current;
         if (!v) return;
         v.paused ? v.play() : v.pause();
+    };
+
+    const handleLike = async () => {
+        if (!post?.id || !onLike || likingPostId === post.id) return;
+        setLikingPostId(post.id);
+        try {
+            await onLike(post.id);
+        } catch (error) {
+            console.error("Failed to toggle post like:", error);
+        } finally {
+            setLikingPostId(null);
+        }
     };
 
     if (!isOpen || !post) return null;
@@ -488,8 +513,15 @@ export default function PostPreview({ posts, initialIndex = 0, isOpen, onClose }
                     <div className="flex shrink-0 items-center gap-5 border-t border-white/15 px-5 py-4">
                         <button
                             type="button"
-                            aria-label="Like"
-                            className="flex items-center gap-1.5 rounded-full text-white/90 transition-colors hover:text-white"
+                            aria-label={post.isLikedByCurrentUser ? "Unlike post" : "Like post"}
+                            aria-pressed={post.isLikedByCurrentUser}
+                            onClick={handleLike}
+                            disabled={likingPostId === post.id}
+                            className={`flex items-center gap-1.5 rounded-full transition-colors disabled:cursor-wait disabled:opacity-60 ${
+                                post.isLikedByCurrentUser
+                                    ? "text-rose-400 hover:text-rose-300"
+                                    : "text-white/90 hover:text-white"
+                            }`}
                         >
                             <FaHeart size={20} />
                             <span className="text-[12.5px]" style={{ fontFamily: "'DM Mono', monospace" }}>
@@ -501,6 +533,13 @@ export default function PostPreview({ posts, initialIndex = 0, isOpen, onClose }
                             <FiMessageCircle size={20} />
                             <span className="text-[12.5px]" style={{ fontFamily: "'DM Mono', monospace" }}>
                                 {post.commentsCount ?? post.comments?.length ?? 0}
+                            </span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 text-white/90">
+                            <FaEye size={20} />
+                            <span className="text-[12.5px]" style={{ fontFamily: "'DM Mono', monospace" }}>
+                                {post.viewsCount ?? 0}
                             </span>
                         </div>
 

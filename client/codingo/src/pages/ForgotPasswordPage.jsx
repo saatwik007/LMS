@@ -20,7 +20,9 @@ export default function ForgotPasswordPage() {
     dispatch(setError(''));
     dispatch(setLoading(true));
     try {
-      const res = await axios.post(`${apiUrl}/api/otp/send`, { email });
+      const res = await axios.post(`${apiUrl}/api/auth/user/forgot-password`, {
+        emailOrUsername: email,
+      });
       dispatch(setSent(true));
       if (res.data?.otp) dispatch(setDevToken(res.data.otp));
     } catch (err) {
@@ -44,7 +46,7 @@ export default function ForgotPasswordPage() {
           Forgot Password
         </h1>
         <p className="text-center text-sm text-gray-400 mb-6">
-          Enter your email and we'll send you a one-time code (OTP)
+          Enter your email or username and we'll send an OTP to your account email
         </p>
 
         {error && (
@@ -57,8 +59,8 @@ export default function ForgotPasswordPage() {
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             <input
               className="w-full bg-[#141b24] border border-[#1f2a38] text-white text-base p-3.5 rounded-lg font-semibold placeholder-gray-500 outline-none focus:border-cyan-500 transition"
-              type="email"
-              placeholder="Email address"
+              type="text"
+              placeholder="Email or username"
               value={email}
               onChange={(e) => dispatch(setEmail(e.target.value))}
               required
@@ -75,7 +77,7 @@ export default function ForgotPasswordPage() {
           <div className="text-center space-y-4">
             <div className="text-emerald-400 text-5xl mb-2">✉️</div>
             <p className="text-sm text-gray-300">
-              If an account exists for <span className="text-cyan-400">{email}</span>, a one-time code (OTP) has been sent.
+              If an account matches <span className="text-cyan-400">{email}</span>, an OTP has been sent to its email address.
             </p>
 
             {devToken && (
@@ -86,7 +88,7 @@ export default function ForgotPasswordPage() {
             )}
 
             <button
-              onClick={() => navigate('/reset-password', { state: { email } })}
+              onClick={() => navigate('/reset-password', { state: { emailOrUsername: email } })}
               className="w-full py-3 rounded-lg text-base font-extrabold bg-linear-to-r from-cyan-400 via-emerald-400 to-cyan-500 text-gray-950 hover:opacity-90 transition"
             >
               Go to Reset Password →
