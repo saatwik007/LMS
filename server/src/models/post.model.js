@@ -91,6 +91,11 @@ const postSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  isArchived: {
+    type: Boolean,
+    default: false,
+    index: true
   }
 }, {
   timestamps: true

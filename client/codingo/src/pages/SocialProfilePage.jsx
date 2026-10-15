@@ -625,6 +625,17 @@ export default function SocialProfileSection() {
         )));
     };
 
+    const archivePost = async (postId) => {
+        const response = await axios.post(
+            `${apiUrl}/api/community/posts/${postId}/archive`,
+            {},
+            { withCredentials: true, headers: getAuthHeaders() }
+        );
+        if (response.data.archived) {
+            setUserPosts((posts) => posts.filter((post) => post.id !== postId));
+        }
+    };
+
     const showPostModal = (postIndex) => {
         setSelectedPostIndex(postIndex);
         setShowPostPreview(true);
@@ -896,6 +907,10 @@ export default function SocialProfileSection() {
                 onClose={() => setShowPostPreview(false)}
                 onView={recordPostView}
                 onLike={togglePostLike}
+                onArchive={isOwnProfile ? archivePost : undefined}
+                onSavedChange={({ postId, saved }) => setUserPosts((posts) => posts.map((post) => (
+                    post.id === postId ? { ...post, isSavedByCurrentUser: saved } : post
+                )))}
             />
         </div>
     );

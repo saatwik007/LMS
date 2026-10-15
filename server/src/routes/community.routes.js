@@ -5,6 +5,14 @@ const {
   getPost,
   recordPostView,
   toggleLike, 
+  getSavedLibrary,
+  toggleSavedPost,
+  setSavedPostCollections,
+  createSavedCollection,
+  renameSavedCollection,
+  deleteSavedCollection,
+  togglePostArchive,
+  getArchivedPosts,
   addComment,
   deletePost,
   deleteComment,
@@ -32,6 +40,16 @@ router.get('/posts/video/:fileId', getPostVideo);
 
 // Create a new post (with optional image)
 router.post('/posts', protect, postMediaUpload, createPost);
+
+// Private saved-post library and collections
+router.get('/saved', protect, getSavedLibrary);
+router.post('/saved/collections', protect, createSavedCollection);
+router.patch('/saved/collections/:collectionId', protect, renameSavedCollection);
+router.delete('/saved/collections/:collectionId', protect, deleteSavedCollection);
+router.get('/archive', protect, getArchivedPosts);
+router.post('/posts/:postId/save', protect, toggleSavedPost);
+router.put('/posts/:postId/save/collections', protect, setSavedPostCollections);
+router.post('/posts/:postId/archive', protect, togglePostArchive);
 
 // Get a single post
 router.get('/posts/:postId', protect, getPost);

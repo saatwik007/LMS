@@ -7,6 +7,8 @@ const { uploadBufferToDrive } = require('../utils/driveUpload');
 const { deleteFileFromDrive } = require('../utils/driveUpload');
 const { streamFileFromDrive } = require('../utils/driveUpload');
 
+const isArchivedForViewer = (post, userId) => post?.isArchived && String(post.author?._id || post.author) !== String(userId);
+
 // Create a new post
 async function createPost(req, res) {
   try {
@@ -152,7 +154,7 @@ async function getFeed(req, res) {
     const skip = (page - 1) * limit;
 
     const viewer = await User.findById(req.user.id)
-      .select('friends following blockedUsers')
+      .select('friends following blockedUsers savedPosts')
       .lean();
     if (!viewer) return res.status(404).json({ message: 'User not found' });
 
@@ -174,7 +176,7 @@ async function getFeed(req, res) {
       ]
     }).distinct('_id');
 
-    const filter = { isActive: true, author: { $in: visibleAuthorIds } };
+    const filter = { isActive: true, isArchived: { $ne: true }, author: { $in: visibleAuthorIds } };
 
     const total = await Post.countDocuments(filter);
     const totalPages = Math.ceil(total / limit);
@@ -189,6 +191,7 @@ async function getFeed(req, res) {
       .lean();
 
     const currentUserId = String(req.user?.id || "");
+    const savedPostIds = new Set((viewer.savedPosts || []).map(item => String(item.post)));
 
     const formattedPosts = posts
       .filter((post) => post?.author) // skip orphaned posts
@@ -239,6 +242,7 @@ async function getFeed(req, res) {
         viewsCount: post.viewedBy?.length || 0,
         isLikedByCurrentUser:
           post.likes?.some((id) => String(id) === currentUserId) ?? false,
+        isSavedByCurrentUser: savedPostIds.has(String(post._id)),
         createdAt: post.createdAt,
         updatedAt: post.updatedAt,
       }));
@@ -293,9 +297,13 @@ async function getPost(req, res) {
       return res.status(404).json({ message: 'Post not found' });
     }
 
+    if (post.isArchived && String(post.author._id) !== String(req.user.id)) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
     const authorId = String(post.author._id);
     const [viewer, profileOwner] = await Promise.all([
-      User.findById(req.user.id).select('friends following blockedUsers').lean(),
+      User.findById(req.user.id).select('friends following blockedUsers savedPosts').lean(),
       User.findById(authorId).select('isPrivate blockedUsers').lean()
     ]);
     if (!viewer || !profileOwner) {
@@ -358,6 +366,7 @@ async function getPost(req, res) {
       commentsCount: post.comments.length,
       viewsCount: post.viewedBy?.length || 0,
       isLikedByCurrentUser: post.likes.some(id => String(id) === currentUserId),
+      isSavedByCurrentUser: (viewer.savedPosts || []).some(item => String(item.post) === String(post._id)),
       createdAt: post.createdAt,
       updatedAt: post.updatedAt
     };
@@ -372,7 +381,11 @@ async function getPost(req, res) {
 async function recordPostView(req, res) {
   try {
     const post = await Post.findOneAndUpdate(
-      { _id: req.params.postId, isActive: true },
+      {
+        _id: req.params.postId,
+        isActive: true,
+        $or: [{ isArchived: { $ne: true } }, { author: req.user.id }]
+      },
       { $addToSet: { viewedBy: req.user.id } },
       { new: true }
     ).select('viewedBy');
@@ -396,7 +409,7 @@ async function toggleLike(req, res) {
 
     const post = await Post.findById(postId);
 
-    if (!post || !post.isActive) {
+    if (!post || !post.isActive || isArchivedForViewer(post, userId)) {
       return res.status(404).json({ message: 'Post not found' });
     }
 
@@ -444,6 +457,235 @@ async function toggleLike(req, res) {
   }
 }
 
+async function getSavedLibrary(req, res) {
+  try {
+    const user = await User.findById(req.user.id)
+      .select('friends following blockedUsers savedPosts savedCollections')
+      .lean();
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const savedIds = (user.savedPosts || []).map(item => item.post);
+    const posts = await Post.find({ _id: { $in: savedIds }, isActive: true, isArchived: { $ne: true } })
+      .select('author content image video likes comments viewedBy createdAt')
+      .populate('author', 'username profilePic isPrivate blockedUsers')
+      .lean();
+
+    const following = new Set((user.following || []).map(String));
+    const friends = new Set((user.friends || []).map(String));
+    const blocked = new Set((user.blockedUsers || []).map(String));
+    const savedAtByPost = new Map((user.savedPosts || []).map(item => [String(item.post), item.savedAt]));
+    const visiblePosts = posts.filter(post => {
+      if (!post.author) return false;
+      const authorId = String(post.author._id);
+      const authorBlockedViewer = (post.author.blockedUsers || []).some(id => String(id) === String(req.user.id));
+      return !blocked.has(authorId)
+        && !authorBlockedViewer
+        && (authorId === String(req.user.id) || post.author.isPrivate === false || following.has(authorId) || friends.has(authorId));
+    }).map(post => ({
+      id: String(post._id),
+      author: {
+        id: String(post.author._id),
+        username: post.author.username,
+        profilePic: post.author.profilePic || ''
+      },
+      content: post.content,
+      image: post.image || '',
+      video: post.video || '',
+      likesCount: post.likes?.length || 0,
+      commentsCount: post.comments?.length || 0,
+      viewsCount: post.viewedBy?.length || 0,
+      createdAt: post.createdAt,
+      savedAt: savedAtByPost.get(String(post._id))
+    }));
+
+    const postOrder = new Map((user.savedPosts || []).map((item, index) => [String(item.post), index]));
+    visiblePosts.sort((left, right) => postOrder.get(left.id) - postOrder.get(right.id));
+    const visibleIds = new Set(visiblePosts.map(post => post.id));
+
+    return res.status(200).json({
+      posts: visiblePosts,
+      collections: (user.savedCollections || []).map(collection => ({
+        id: String(collection._id),
+        name: collection.name,
+        postIds: (collection.posts || []).map(String).filter(id => visibleIds.has(id)),
+        createdAt: collection.createdAt,
+        updatedAt: collection.updatedAt
+      }))
+    });
+  } catch (error) {
+    console.error('Get saved library error:', error);
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+async function toggleSavedPost(req, res) {
+  try {
+    const post = await Post.findOne({ _id: req.params.postId, isActive: true, isArchived: { $ne: true } }).select('_id');
+    if (!post) return res.status(404).json({ message: 'Post not found' });
+
+    const user = await User.findById(req.user.id).select('savedPosts savedCollections');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const postId = String(post._id);
+    const existingIndex = user.savedPosts.findIndex(item => String(item.post) === postId);
+    if (existingIndex >= 0) {
+      user.savedPosts.splice(existingIndex, 1);
+      user.savedCollections.forEach(collection => collection.posts.pull(post._id));
+      await user.save();
+      return res.status(200).json({ saved: false, collectionIds: [] });
+    }
+
+    user.savedPosts.unshift({ post: post._id, savedAt: new Date() });
+    const collectionId = req.body.collectionId;
+    if (collectionId) {
+      const collection = user.savedCollections.id(collectionId);
+      if (!collection) return res.status(404).json({ message: 'Collection not found' });
+      collection.posts.addToSet(post._id);
+    }
+    await user.save();
+    return res.status(200).json({ saved: true, collectionIds: collectionId ? [String(collectionId)] : [] });
+  } catch (error) {
+    console.error('Toggle saved post error:', error);
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+async function setSavedPostCollections(req, res) {
+  try {
+    const collectionIds = Array.isArray(req.body.collectionIds) ? req.body.collectionIds.map(String) : [];
+    const user = await User.findById(req.user.id).select('savedPosts savedCollections');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const postId = String(req.params.postId);
+    if (!user.savedPosts.some(item => String(item.post) === postId)) {
+      return res.status(400).json({ message: 'Save the post before adding it to a collection' });
+    }
+    const validIds = new Set(user.savedCollections.map(collection => String(collection._id)));
+    if (collectionIds.some(id => !validIds.has(id))) {
+      return res.status(400).json({ message: 'One or more collections are invalid' });
+    }
+
+    user.savedCollections.forEach(collection => {
+      if (collectionIds.includes(String(collection._id))) collection.posts.addToSet(req.params.postId);
+      else collection.posts.pull(req.params.postId);
+    });
+    await user.save();
+    return res.status(200).json({ saved: true, collectionIds });
+  } catch (error) {
+    console.error('Set saved post collections error:', error);
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+async function createSavedCollection(req, res) {
+  try {
+    const name = String(req.body.name || '').trim();
+    if (!name) return res.status(400).json({ message: 'Collection name is required' });
+    if (name.length > 50) return res.status(400).json({ message: 'Collection name must be 50 characters or fewer' });
+
+    const user = await User.findById(req.user.id).select('savedCollections');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (user.savedCollections.length >= 30) return res.status(400).json({ message: 'Collection limit reached' });
+    if (user.savedCollections.some(collection => collection.name.toLowerCase() === name.toLowerCase())) {
+      return res.status(409).json({ message: 'A collection with this name already exists' });
+    }
+
+    user.savedCollections.push({ name, posts: [] });
+    await user.save();
+    const collection = user.savedCollections[user.savedCollections.length - 1];
+    return res.status(201).json({ collection: { id: String(collection._id), name: collection.name, postIds: [] } });
+  } catch (error) {
+    console.error('Create saved collection error:', error);
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+async function renameSavedCollection(req, res) {
+  try {
+    const name = String(req.body.name || '').trim();
+    if (!name || name.length > 50) return res.status(400).json({ message: 'Enter a collection name up to 50 characters' });
+    const user = await User.findById(req.user.id).select('savedCollections');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    const collection = user.savedCollections.id(req.params.collectionId);
+    if (!collection) return res.status(404).json({ message: 'Collection not found' });
+    if (user.savedCollections.some(item => String(item._id) !== String(collection._id) && item.name.toLowerCase() === name.toLowerCase())) {
+      return res.status(409).json({ message: 'A collection with this name already exists' });
+    }
+    collection.name = name;
+    await user.save();
+    return res.status(200).json({ collection: { id: String(collection._id), name: collection.name, postIds: collection.posts.map(String) } });
+  } catch (error) {
+    console.error('Rename saved collection error:', error);
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+async function deleteSavedCollection(req, res) {
+  try {
+    const user = await User.findById(req.user.id).select('savedCollections');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    const collection = user.savedCollections.id(req.params.collectionId);
+    if (!collection) return res.status(404).json({ message: 'Collection not found' });
+    collection.deleteOne();
+    await user.save();
+    return res.status(200).json({ message: 'Collection deleted' });
+  } catch (error) {
+    console.error('Delete saved collection error:', error);
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+async function togglePostArchive(req, res) {
+  try {
+    const post = await Post.findOne({ _id: req.params.postId, isActive: true });
+    if (!post) return res.status(404).json({ message: 'Post not found' });
+    if (String(post.author) !== String(req.user.id)) {
+      return res.status(403).json({ message: 'You can only archive your own posts' });
+    }
+
+    post.isArchived = !post.isArchived;
+    await post.save();
+    if (post.isArchived) {
+      await User.findByIdAndUpdate(req.user.id, { $pull: { profileGridLayout: { post: post._id } } });
+    }
+    return res.status(200).json({ archived: post.isArchived, postId: String(post._id) });
+  } catch (error) {
+    console.error('Toggle post archive error:', error);
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+async function getArchivedPosts(req, res) {
+  try {
+    const posts = await Post.find({ author: req.user.id, isActive: true, isArchived: true })
+      .populate('author', 'username profilePic')
+      .sort({ updatedAt: -1 })
+      .lean();
+
+    return res.status(200).json({
+      posts: posts.map(post => ({
+        id: String(post._id),
+        author: {
+          id: String(post.author._id),
+          username: post.author.username,
+          profilePic: post.author.profilePic || ''
+        },
+        content: post.content,
+        image: post.image || '',
+        video: post.video || '',
+        likesCount: post.likes?.length || 0,
+        commentsCount: post.comments?.length || 0,
+        viewsCount: post.viewedBy?.length || 0,
+        createdAt: post.createdAt,
+        archivedAt: post.updatedAt
+      }))
+    });
+  } catch (error) {
+    console.error('Get archived posts error:', error);
+    return res.status(500).json({ message: error.message });
+  }
+}
+
 // Add a comment to a post
 async function addComment(req, res) {
   try {
@@ -468,7 +710,7 @@ async function addComment(req, res) {
 
     const post = await Post.findById(postId);
 
-    if (!post || !post.isActive) {
+    if (!post || !post.isActive || isArchivedForViewer(post, req.user.id)) {
       return res.status(404).json({ message: 'Post not found' });
     }
 
@@ -538,11 +780,11 @@ async function commentReply(req, res) {
     }
 
     const post = await Post.findById(postId);
-    const comment = post.comments.id(commentId);
-
-    if (!post || !post.isActive) {
+    if (!post || !post.isActive || isArchivedForViewer(post, req.user.id)) {
       return res.status(400).json({ message: 'Post not found' })
     }
+    const comment = post.comments.id(commentId);
+    if (!comment) return res.status(404).json({ message: 'Comment not found' });
 
     const reply = {
       author: req.user.id,
@@ -583,7 +825,7 @@ async function likeComment(req, res) {
     const post = await Post.findById(postId);
 
 
-    if (!post || !post.isActive) {
+    if (!post || !post.isActive || isArchivedForViewer(post, userId)) {
       return res.status(404).json({ message: 'post not found' })
     }
     const comment = post.comments.id(commentId);
@@ -642,7 +884,7 @@ async function deleteComment(req, res) {
 
     const post = await Post.findById(postId);
 
-    if (!post || !post.isActive) {
+    if (!post || !post.isActive || isArchivedForViewer(post, req.user.id)) {
       return res.status(404).json({ message: 'Post not found' });
     }
 
@@ -681,7 +923,7 @@ async function getUserPosts(req, res) {
     const skip = (page - 1) * limit;
 
     const [viewer, profileOwner] = await Promise.all([
-      User.findById(req.user.id).select('following blockedUsers').lean(),
+      User.findById(req.user.id).select('following blockedUsers savedPosts').lean(),
       User.findById(userId).select('profileGridLayout isPrivate blockedUsers').lean()
     ]);
     if (!viewer || !profileOwner) {
@@ -699,7 +941,7 @@ async function getUserPosts(req, res) {
       return res.status(403).json({ message: 'Follow this private account to see their posts', isPrivate: true });
     }
 
-    const filter = { author: userId, isActive: true };
+    const filter = { author: userId, isActive: true, isArchived: { $ne: true } };
 
     const total = await Post.countDocuments(filter);
     const totalPages = Math.ceil(total / limit);
@@ -713,6 +955,7 @@ async function getUserPosts(req, res) {
       .lean();
 
     const currentUserId = String(req.user.id);
+    const savedPostIds = new Set((viewer.savedPosts || []).map(item => String(item.post)));
     const savedLayout = new Map(
       (profileOwner?.profileGridLayout || []).map((item, index) => [
         String(item.post),
@@ -747,6 +990,7 @@ async function getUserPosts(req, res) {
       commentsCount: post.comments.length,
       viewsCount: post.viewedBy?.length || 0,
       isLikedByCurrentUser: post.likes.some(id => String(id) === currentUserId),
+      isSavedByCurrentUser: savedPostIds.has(String(post._id)),
       gridSize: savedLayout.get(String(post._id))?.gridSize || '1x1',
       createdAt: post.createdAt,
       updatedAt: post.updatedAt
@@ -796,7 +1040,8 @@ async function updateProfileGridLayout(req, res) {
     const ownedPosts = await Post.find({
       _id: { $in: postIds },
       author: userId,
-      isActive: true
+      isActive: true,
+      isArchived: { $ne: true }
     }).select('_id').lean();
     const ownedPostIds = new Set(ownedPosts.map(post => String(post._id)));
     if (ownedPostIds.size !== postIds.length) {
@@ -871,6 +1116,14 @@ module.exports = {
   getPost,
   recordPostView,
   toggleLike,
+  getSavedLibrary,
+  toggleSavedPost,
+  setSavedPostCollections,
+  createSavedCollection,
+  renameSavedCollection,
+  deleteSavedCollection,
+  togglePostArchive,
+  getArchivedPosts,
   addComment,
   deletePost,
   deleteComment,
