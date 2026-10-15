@@ -220,7 +220,6 @@ async function getFeed(req, res) {
 
     return res.status(200).json({
       posts: formattedPosts,
-      hasSavedProfileGridLayout: savedLayout.size > 0,
       pagination: {
         page,
         limit,
@@ -675,6 +674,7 @@ async function getUserPosts(req, res) {
 
     return res.status(200).json({
       posts: formattedPosts,
+      hasSavedProfileGridLayout: savedLayout.size > 0,
       pagination: {
         page,
         limit,
